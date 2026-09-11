@@ -2979,8 +2979,21 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.59';
+const APP_VERSION='1.61';
 const CHANGELOG=[
+  {
+    version:'1.61', date:'11/09/2026',
+    changes:[
+      "Onglet Feuille : le chronomètre du match est désormais centré et affiché en grand (icône, temps et libellé de mi-temps regroupés en haut), avec les boutons Démarrer/Mi-temps/Reset, la durée et « Fin du match » regroupés juste en dessous. L'ancien affichage empilait ces éléments ligne par ligne faute de mise en page adaptée."
+    ]
+  },
+  {
+    version:'1.60', date:'11/09/2026',
+    changes:[
+      "Nouveau : rappel automatique de sauvegarde. Si aucun export JSON n'a été fait depuis un certain nombre de jours (5 par défaut), une fenêtre le rappelle à l'ouverture de l'app avec un bouton « Exporter maintenant ».",
+      "Nouveau réglage dans Paramètres → 💾 Données : activer/désactiver ce rappel et choisir sa fréquence (en jours), avec affichage de la date du dernier export."
+    ]
+  },
   {
     version:'1.59', date:'05/09/2026',
     changes:[
