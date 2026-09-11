@@ -5,7 +5,7 @@
 // déployée, augmente le numéro ci-dessous (v1 -> v2 -> v3...) pour que les
 // téléphones des coachs récupèrent bien la dernière version au lieu de
 // rester bloqués sur une copie mise en cache.
-const CACHE_NAME = 'capafoot-cache-v1';
+const CACHE_NAME = 'capafoot-cache-v2';
 
 const APP_SHELL = [
   './',
