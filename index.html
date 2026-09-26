@@ -359,6 +359,12 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 .stats-top{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
 .stats-top .kpi-card{flex:0 0 180px;}
 .kpi-card{background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:4px;position:relative;}
+/* Mode visiteur (lecture seule) : indication visuelle sur les actions désormais bloquées côté JS */
+body.viewer-mode .btn-primary,
+body.viewer-mode .btn-danger,
+body.viewer-mode .btn-danger-full{opacity:.45;cursor:not-allowed;}
+body.viewer-mode .ent-presence-chk,
+body.viewer-mode .jcr-check{cursor:not-allowed;opacity:.6;}
 .kpi-tip{display:none;position:absolute;left:0;top:calc(100% + 8px);min-width:210px;max-width:300px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.7;box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:80;text-align:left;white-space:normal;}
 .kpi-tip-title{font-weight:700;color:var(--texte);margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
 .kpi-card:hover .kpi-tip{display:block;}
@@ -1850,6 +1856,7 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
   <input type="file" id="club-logo-input" accept="image/*" style="display:none" onchange="uploadClubLogo(event)">
   <button onclick="removeClubLogo()" id="club-logo-reset" title="Revenir au ballon par défaut" style="display:none;background:var(--gris-card);border:1px solid var(--gris-border);color:var(--texte-muted);border-radius:8px;padding:5px 7px;cursor:pointer;font-size:11px;">↺</button>
   <h1 id="club-name-display">Gestionnaire Équipe — Foot à 8</h1>
+  <span id="viewer-badge" style="display:none;align-items:center;gap:4px;background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.4);color:#f5c518;border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:700;white-space:nowrap;">👁️ Lecture seule</span>
   <select id="equipe-select" onchange="switchEquipe(this.value)" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:8px;color:var(--texte);padding:5px 10px;font-size:13px;font-weight:600;outline:none;max-width:140px;cursor:pointer;"></select>
   <span id="equipe-categorie-badge" class="ex-theme-badge" style="cursor:pointer;" onclick="openCategoriesModal()" title="Gérer mes catégories"></span>
   <button onclick="openCategoriesModal()" title="Gérer mes catégories / équipes" style="background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.3);color:#7dd3fc;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">🗂️</button>
@@ -1865,8 +1872,8 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
       <button class="theme-opt" data-theme="system"  onclick="setTheme('system')" >🖥️ Système</button>
     </div>
   </div>
-  <button class="btn-settings" onclick="openSettings()" title="Paramètres">⚙️</button>
-  <button onclick="openClubShareInfo()" title="Code d'invitation du club" style="background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.3);color:#7dd3fc;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">🔗</button>
+  <button class="btn-settings" id="btn-settings-gear" onclick="openSettings()" title="Paramètres">⚙️</button>
+  <button id="club-share-btn" onclick="openClubShareInfo()" title="Code d'invitation du club" style="background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.3);color:#7dd3fc;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">🔗</button>
   <button onclick="openClubMembers()" title="Membres du club" style="background:rgba(45,168,88,.12);border:1px solid rgba(45,168,88,.3);color:#4ade80;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">👥</button>
   <button onclick="doLogout()" title="Se déconnecter" style="background:rgba(224,48,48,.12);border:1px solid rgba(224,48,48,.3);color:#ff8a8a;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">⎋</button>
 </header>
@@ -3594,8 +3601,18 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.78';
+const APP_VERSION='1.79';
 const CHANGELOG=[
+  {
+    version:'1.79', date:'26/09/2026',
+    changes:[
+      "Onglet Entraînements : les KPI (Séances, Assiduité moyenne, Moyenne présents / séance, Plus assidus) ne comptent plus les séances programmées dans le futur — seules les séances déjà passées (ou du jour) et non annulées sont prises en compte. Les pourcentages n'étaient plus faussés par des séances à venir sans présence encore saisie.",
+      "Onglet Entraînements : la carte « Plus assidu » affiche désormais le top 3 (🥇🥈🥉) au lieu d'un seul joueur, et la carte « Présents / séance » est renommée « Moyenne présents / séance » pour lever toute ambiguïté sur le calcul.",
+      "Stats & Dashboard : réorganisation des KPI en deux lignes cohérentes — les indicateurs à valeur unique (Matchs joués, Buts marqués, Buts encaissés, Passes décisives, Joueurs scoreurs, Dom./Ext., Distance parcourue) sur la première ligne, les classements top 3 (Buteurs, Passeurs, Homme du match, Plus décisifs) sur la seconde.",
+      "Stats & Dashboard : nouvelle carte « 📈 Top 3 rendement (b/m) », qui classe les joueurs par ratio buts/match plutôt que par volume brut, avec un seuil minimum de 2 matchs joués pour rester pertinent. Le détail complet (buts et matchs pour chaque joueur) est visible au survol.",
+      "Nouveau : compte visiteur en lecture seule. Un admin peut, depuis la modale « Membres du club », attribuer le rôle 👁️ Visiteur à un membre : celui-ci peut consulter toutes les pages mais ne peut plus ajouter, modifier, supprimer ou synchroniser aucune donnée (verrou appliqué au niveau de la synchronisation, avec un message « Mode lecture seule » à chaque tentative d'action). Un badge apparaît dans l'en-tête pour signaler ce mode. Nécessite la mise à jour des règles de sécurité Firestore côté console Firebase pour une protection totale."
+    ]
+  },
   {
     version:'1.78', date:'26/09/2026',
     changes:[
@@ -4098,6 +4115,19 @@ function renderStatsPage(){
   const mvpTries=arr.filter(a=>a.mvp>0).sort((a,b)=>b.mvp-a.mvp);
   const decisifsTries=arr.filter(a=>a.decisif>0).sort((a,b)=>b.decisif-a.decisif);
   const gardiensTries=arr.filter(a=>a.encaisses>0).sort((a,b)=>b.encaisses-a.encaisses);
+  const minMatchsRatio=2; // seuil pour éviter qu'1 but en 1 match écrase le classement
+  const ratioTries=arr.filter(a=>a.buts>0&&a.matchs>=minMatchsRatio).map(a=>({...a,ratio:a.buts/a.matchs})).sort((a,b)=>b.ratio-a.ratio||b.buts-a.buts);
+  const top3Ratio=ratioTries.slice(0,3);
+  const renderTop3Ratio=list=>{
+    if(!list.length) return '—';
+    const medailles=['🥇','🥈','🥉'];
+    return list.map((a,i)=>`<div>${medailles[i]} ${a.j.nom} <span style="color:var(--texte-muted)">(${a.ratio.toFixed(2)} b/m)</span></div>`).join('');
+  };
+  const renderTipRatio=(titre,list)=>{
+    if(!list.length) return '';
+    const rows=list.map((a,i)=>`<div>${i+1}. ${a.j.nom} — ${a.ratio.toFixed(2)} b/m (${a.buts}⚽ / ${a.matchs}m)</div>`).join('');
+    return `<div class="kpi-tip"><div class="kpi-tip-title">${titre}</div>${rows}<div style="margin-top:4px;font-size:10.5px;opacity:.75">Min. ${minMatchsRatio} matchs joués</div></div>`;
+  };
   const top3Buteurs=buteursTries.slice(0,3);
   const top3Passeurs=passeursTries.slice(0,3);
   const top3Mvp=mvpTries.slice(0,3);
@@ -4107,13 +4137,14 @@ function renderStatsPage(){
     <div class="kpi-card"><div class="kpi-label">Buts marqués</div><div class="kpi-val">⚽ ${totalButs}</div>${renderTip('Qui a marqué',buteursTries,'buts','⚽')}</div>
     <div class="kpi-card"><div class="kpi-label">Buts encaissés</div><div class="kpi-val" style="color:var(--rouge)">⛔ ${totalButsEncaisses}</div>${renderTip('Par gardien',gardiensTries,'encaisses','⛔')}</div>
     <div class="kpi-card"><div class="kpi-label">Passes décisives</div><div class="kpi-val">🎯 ${totalPasses}</div>${renderTip('Qui a passé',passeursTries,'passes','🎯')}</div>
+    <div class="kpi-card"><div class="kpi-label">Joueurs scoreurs</div><div class="kpi-val">${arr.filter(a=>a.buts>0).length}<span style="font-size:14px;color:var(--texte-muted)"> / ${joueurs.length}</span></div>${renderTip('Qui a marqué',buteursTries,'buts','⚽')}</div>
+    <div class="kpi-card" title="Un plateau ou un tournoi ne compte que pour 1, même avec plusieurs adversaires affrontés"><div class="kpi-label">🏠 Dom. / Ext. 🚗</div><div class="kpi-val" style="font-size:18px">${evenementsParLieu.domicile} <span style="color:var(--texte-muted);font-size:12px">dom.</span> — ${evenementsParLieu.exterieur} <span style="color:var(--texte-muted);font-size:12px">ext.</span></div></div>
+    ${distanceHTML}
     <div class="kpi-card"><div class="kpi-label">⚽ Top 3 buteurs</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3(top3Buteurs,'buts','⚽')}</div>${renderTip('Classement complet',buteursTries,'buts','⚽')}</div>
     <div class="kpi-card"><div class="kpi-label">🎯 Top 3 passeurs</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3(top3Passeurs,'passes','🎯')}</div>${renderTip('Classement complet',passeursTries,'passes','🎯')}</div>
-    <div class="kpi-card"><div class="kpi-label">Joueurs scoreurs</div><div class="kpi-val">${arr.filter(a=>a.buts>0).length}<span style="font-size:14px;color:var(--texte-muted)"> / ${joueurs.length}</span></div>${renderTip('Qui a marqué',buteursTries,'buts','⚽')}</div>
     <div class="kpi-card"><div class="kpi-label">🏅 Top 3 homme du match</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3(top3Mvp,'mvp','🏅')}</div>${renderTip('Classement complet',mvpTries,'mvp','🏅')}</div>
     <div class="kpi-card"><div class="kpi-label">🔥 Top 3 plus décisifs</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3(top3Decisifs,'decisif','🔥')}</div>${renderTip('Classement complet',decisifsTries,'decisif','🔥')}</div>
-    <div class="kpi-card" title="Un plateau ou un tournoi ne compte que pour 1, même avec plusieurs adversaires affrontés"><div class="kpi-label">🏠 Dom. / Ext. 🚗</div><div class="kpi-val" style="font-size:18px">${evenementsParLieu.domicile} <span style="color:var(--texte-muted);font-size:12px">dom.</span> — ${evenementsParLieu.exterieur} <span style="color:var(--texte-muted);font-size:12px">ext.</span></div></div>
-    ${distanceHTML}`;
+    <div class="kpi-card"><div class="kpi-label">📈 Top 3 rendement (b/m)</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3Ratio(top3Ratio)}</div>${renderTipRatio('Classement complet',ratioTries)}</div>`;
 
 
 
@@ -5006,23 +5037,25 @@ function renderEntrainements(){
   if(!list)return;
   const sorted=[...entrainements].sort((a,b)=>b.date.localeCompare(a.date));
 
-  // KPI d'assiduité (les séances annulées ne comptent pas)
-  const entsJouees=entrainements.filter(e=>!e.annule);
+  // KPI d'assiduité (les séances annulées ou à venir ne comptent pas)
+  const todayStr=new Date().toISOString().slice(0,10);
+  const entsJouees=entrainements.filter(e=>!e.annule&&e.date<=todayStr);
   const totalSeances=entsJouees.length;
   const tousJoueurs=[...joueurs].sort((a,b)=>a.numero-b.numero);
   const presenceParJoueur=tousJoueurs.map(j=>{
     const nb=entsJouees.filter(e=>e.presents&&e.presents.includes(j.id)).length;
     return {j, nb, pct: totalSeances?Math.round(nb/totalSeances*100):0};
   }).sort((a,b)=>b.pct-a.pct);
-  const meilleur=presenceParJoueur[0];
+  const top3=presenceParJoueur.filter(p=>p.nb>0).slice(0,3);
   const moyPct=presenceParJoueur.length?Math.round(presenceParJoueur.reduce((s,p)=>s+p.pct,0)/presenceParJoueur.length):0;
   const moyPresents=totalSeances?Math.round(entsJouees.reduce((s,e)=>s+(e.presents?e.presents.length:0),0)/totalSeances):0;
+  const top3Html=top3.length?top3.map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12.5px;line-height:1.5"><span>${['🥇','🥈','🥉'][i]} ${p.j.nom}</span><span style="color:var(--jaune);font-weight:700">${p.pct}%</span></div>`).join(''):'<div class="kpi-val" style="font-size:15px">—</div>';
 
   kpi.innerHTML=`
     <div class="kpi-card"><div class="ent-kpi-icon">🏃</div><div class="kpi-label">Séances</div><div class="kpi-val" style="color:#c084fc">${totalSeances}</div></div>
     <div class="kpi-card"><div class="ent-kpi-icon">📊</div><div class="kpi-label">Assiduité moyenne</div><div class="kpi-val" style="color:#c084fc">${moyPct}%</div></div>
-    <div class="kpi-card"><div class="ent-kpi-icon">👥</div><div class="kpi-label">Présents / séance</div><div class="kpi-val" style="color:#c084fc">${moyPresents}</div></div>
-    <div class="kpi-card"><div class="ent-kpi-icon">⭐</div><div class="kpi-label">Plus assidu</div><div class="kpi-val" style="font-size:15px">${meilleur&&meilleur.nb>0?meilleur.j.nom+' ('+meilleur.pct+'%)':'—'}</div></div>`;
+    <div class="kpi-card"><div class="ent-kpi-icon">👥</div><div class="kpi-label">Moyenne présents / séance</div><div class="kpi-val" style="color:#c084fc">${moyPresents}</div></div>
+    <div class="kpi-card"><div class="ent-kpi-icon">⭐</div><div class="kpi-label">Plus assidus</div>${top3Html}</div>`;
 
   if(!sorted.length){
     list.innerHTML=`<div class="no-data">🏃‍♂️ Aucune séance enregistrée.<br>Cliquez sur "+ Ajouter une séance" pour commencer.</div>`;
@@ -10991,6 +11024,37 @@ if ('serviceWorker' in navigator) {
   let unsubscribeClub = null;
   let lastPushedJSON = null;
 
+  // ---------- Rôles (admin / visiteur lecture seule) ----------
+  // window.currentUserRole est lu par isViewer() ; par défaut 'admin' pour ne pas
+  // casser les comptes existants créés avant l'introduction de cette fonctionnalité.
+  window.currentUserRole = 'admin';
+  window.isViewer = function(){ return window.currentUserRole === 'visiteur'; };
+
+  function showViewerToast(){
+    let t = document.getElementById('viewer-toast');
+    if(!t){
+      t = document.createElement('div');
+      t.id = 'viewer-toast';
+      t.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:99999;background:#252538;border:1px solid #f5c518;color:#f5c518;font-size:12.5px;font-weight:600;padding:9px 16px;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.4);pointer-events:none;transition:opacity .25s;';
+      document.body.appendChild(t);
+    }
+    t.textContent = '👁️ Mode lecture seule — action non disponible';
+    t.style.opacity = '1';
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(()=>{ t.style.opacity='0'; }, 2200);
+  }
+
+  function updateViewerModeUI(){
+    document.body.classList.toggle('viewer-mode', window.isViewer());
+    const badge = document.getElementById('viewer-badge');
+    if(badge) badge.style.display = window.isViewer() ? 'inline-flex' : 'none';
+    ['club-share-btn','btn-settings-gear'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = window.isViewer() ? 'none' : '';
+    });
+  }
+  window.updateViewerModeUI = updateViewerModeUI;
+
   // ---------- Utilitaires UI auth ----------
   window.setAuthTab = function(tab){
     document.getElementById('auth-form-login').style.display  = tab==='login'  ? 'block':'none';
@@ -11224,9 +11288,11 @@ if ('serviceWorker' in navigator) {
       if(listEl) listEl.innerHTML = '<div style="color:#8888aa;font-size:13px;text-align:center;padding:20px 0;">Aucun membre trouvé.</div>';
       return;
     }
+    const iAmAdmin = !window.isViewer();
     listEl.innerHTML = membersData.map(u=>{
       const isOwner = u.isOwner;
       const isMe = u.uid === currentUid;
+      const role = isOwner ? 'admin' : (u.role || 'admin');
       const badges = [
         isOwner ? '<span style="background:rgba(245,197,24,.15);border:1px solid rgba(245,197,24,.35);color:#f5c518;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:600;">Propriétaire</span>' : '',
         isMe ? '<span style="background:rgba(125,211,252,.15);border:1px solid rgba(125,211,252,.35);color:#7dd3fc;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:600;">Vous</span>' : ''
@@ -11237,6 +11303,16 @@ if ('serviceWorker' in navigator) {
       const dotColor = isOnline ? '#4ade80' : '#5a5a75';
       const statusLabel = isOnline ? 'En ligne' : formatLastSeen(lastActive);
       const statusColor = isOnline ? '#4ade80' : '#8888aa';
+      // Le rôle n'est modifiable ni pour le propriétaire (toujours admin), ni par un
+      // visiteur (lecture seule), ni sur soi-même (évite de se retirer les droits par erreur).
+      const roleControl = isOwner
+        ? '<span style="color:#8888aa;font-size:11px;">Admin</span>'
+        : (iAmAdmin && !isMe
+            ? `<select onchange="setMemberRole('${u.uid}',this.value)" style="background:#1e1e2e;border:1px solid #3a3a55;border-radius:6px;color:#e8e8f0;font-size:11.5px;padding:3px 6px;">
+                 <option value="admin"${role==='admin'?' selected':''}>Admin</option>
+                 <option value="visiteur"${role==='visiteur'?' selected':''}>👁️ Visiteur</option>
+               </select>`
+            : `<span style="color:${role==='visiteur'?'#f5c518':'#8888aa'};font-size:11px;">${role==='visiteur'?'👁️ Visiteur':'Admin'}</span>`);
       return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#1e1e2e;border:1px solid #3a3a55;border-radius:10px;padding:10px 12px;">
         <div style="display:flex;align-items:center;gap:9px;overflow:hidden;">
           <span title="${statusLabel}" style="width:9px;height:9px;flex-shrink:0;border-radius:50%;background:${dotColor};box-shadow:${isOnline ? '0 0 6px rgba(74,222,128,.7)' : 'none'};"></span>
@@ -11245,10 +11321,24 @@ if ('serviceWorker' in navigator) {
             <div style="color:${statusColor};font-size:11px;">${statusLabel}</div>
           </div>
         </div>
-        <span style="display:flex;gap:5px;flex-shrink:0;">${badges}</span>
+        <span style="display:flex;gap:5px;flex-shrink:0;align-items:center;">${badges}${roleControl}</span>
       </div>`;
     }).join('');
   }
+
+  window.setMemberRole = function(uid, newRole){
+    if(window.isViewer() || !currentClubId) return;
+    db.collection('clubs').doc(currentClubId).update({['roles.'+uid]: newRole})
+      .then(()=>{
+        const u = membersData.find(m=>m.uid===uid);
+        if(u) u.role = newRole;
+        renderClubMembers();
+      })
+      .catch(err=>{
+        console.error('Erreur changement de rôle :', err);
+        alert("Impossible de changer le rôle de ce membre. Vérifiez les règles Firestore.");
+      });
+  };
 
   window.openClubMembers = function(){
     document.getElementById('club-members-bg').style.display = 'flex';
@@ -11262,11 +11352,12 @@ if ('serviceWorker' in navigator) {
       const club = clubDoc.data();
       const memberUids = club.members || [];
       const ownerUid = club.ownerUid;
+      const roles = club.roles || {};
 
       return Promise.all(memberUids.map(uid=>
         db.collection('users').doc(uid).get()
-          .then(userDoc=> ({ uid, email: userDoc.exists ? userDoc.data().email : null, isOwner: uid===ownerUid }))
-          .catch(()=> ({ uid, email: null, isOwner: uid===ownerUid }))
+          .then(userDoc=> ({ uid, email: userDoc.exists ? userDoc.data().email : null, isOwner: uid===ownerUid, role: roles[uid]||'admin' }))
+          .catch(()=> ({ uid, email: null, isOwner: uid===ownerUid, role: roles[uid]||'admin' }))
       )).then(users=>{
         // Le propriétaire en premier, puis tri alphabétique par email
         users.sort((a,b)=>{
@@ -11317,7 +11408,7 @@ if ('serviceWorker' in navigator) {
   }
 
   function pushSnapshot(){
-    if(!currentClubId || applyingRemote) return Promise.resolve();
+    if(!currentClubId || applyingRemote || window.isViewer()) return Promise.resolve();
     const snap = collectSnapshot();
     const json = JSON.stringify(snap);
     if(json === lastPushedJSON) return Promise.resolve(); // rien de neuf
@@ -11350,13 +11441,26 @@ if ('serviceWorker' in navigator) {
 
   // On intercepte localStorage.setItem/removeItem pour déclencher la synchro
   // sans avoir à modifier les ~100 appels existants dans l'app.
+  // Un compte "visiteur" (lecture seule) ne doit jamais pouvoir modifier ni
+  // synchroniser les données du club : on bloque ici l'écriture elle-même,
+  // avant même que la synchro Firestore n'entre en jeu. C'est le verrou
+  // déterminant (les masquages de boutons ailleurs ne sont qu'un confort visuel).
+  const VIEWER_EXEMPT_KEYS = ['foot8_theme']; // préférences cosmétiques, pas des données club
   const _origSetItem = localStorage.setItem.bind(localStorage);
   const _origRemoveItem = localStorage.removeItem.bind(localStorage);
   localStorage.setItem = function(key, value){
+    if(!applyingRemote && window.isViewer() && SYNCED_PREFIXES.some(p => key.startsWith(p)) && !VIEWER_EXEMPT_KEYS.includes(key)){
+      showViewerToast();
+      return;
+    }
     _origSetItem(key, value);
     if(!applyingRemote && SYNCED_PREFIXES.some(p => key.startsWith(p))) schedulePush();
   };
   localStorage.removeItem = function(key){
+    if(!applyingRemote && window.isViewer() && SYNCED_PREFIXES.some(p => key.startsWith(p)) && !VIEWER_EXEMPT_KEYS.includes(key)){
+      showViewerToast();
+      return;
+    }
     _origRemoveItem(key);
     if(!applyingRemote && SYNCED_PREFIXES.some(p => key.startsWith(p))) schedulePush();
   };
@@ -11383,13 +11487,16 @@ if ('serviceWorker' in navigator) {
     unsubscribeClub = db.collection('clubs').doc(clubId).onSnapshot(doc=>{
       if(!doc.exists) return;
       const d = doc.data();
+      const roles = d.roles || {};
+      window.currentUserRole = roles[currentUid] || 'admin';
+      updateViewerModeUI();
       if(d.data && Object.keys(d.data).length>0){
         // Si aucune donnée locale n'existe encore (1ère connexion sur cet appareil), on applique tout.
         // Sinon on applique aussi (le club fait autorité), sauf pendant notre propre push.
         if(d.updatedBy !== currentUid || lastPushedJSON === null){
           applyRemoteSnapshot(d.data);
         }
-      } else {
+      } else if(!window.isViewer()) {
         // Club tout neuf sans données distantes : on pousse l'état local actuel (première init)
         pushSnapshot();
       }
@@ -11413,6 +11520,54 @@ if ('serviceWorker' in navigator) {
       pushSnapshot();
     }
   });
+
+  // ---------- Garde-fou UX pour le mode visiteur (lecture seule) ----------
+  // Le verrou déterminant est déjà en place plus haut (blocage de l'écriture/synchro).
+  // Ceci n'est qu'un confort d'interface : on empêche les actions évidentes de
+  // saisie/modification/suppression de se déclencher, avec un message clair,
+  // plutôt que de laisser un visiteur remplir un formulaire pour rien.
+  const VIEWER_BLOCKED_FUNCTIONS = [
+    'addEquipeFromModal','addEvent','addExerciceToSeanceBuilder','addRempl','ajouterJoueurPrete',
+    'ajouterTousJoueurs','changeFormat','chronoMiTemps','chronoReset','chronoToggle',
+    'clearActiveFeuille','confirmImport','confirmImportCycle','copyClubInviteCode',
+    'deleteEduc','deleteEntrainement','deleteEquipeConfirm','deleteEvenement','deleteExerciceCustom',
+    'deleteJoueur','deleteMatch','deletePlateauGroup','deleteRempl','deleteSeance','editMinute',
+    'executeReset','executeResetStats','finDeMatch','geocodeVille','invertPresences','moAddEvent',
+    'moFinMatch','moMiTemps','moveSeanceItem','openClubShareInfo','openImport','openResetStatsModal',
+    'preRemplirCompoDepuisFeuille','removeClubLogo','removeFromSeanceBuilder','removeFromSpot',
+    'removeRemplacant','repliquerTournoi','resetCompo','retirerJoueurPrete','saveCompoSnapshot',
+    'saveEduc','saveEntrainement','saveEvenement','saveExerciceCustom','saveJoueur','saveMatch',
+    'saveMinute','saveSeance','selectPresencesActifs','setNote','testerOrsKey','toggleAllPresences',
+    'toggleAnnulerEntrainement','toggleAnnulerMatch','toggleJourChip','togglePlateauLink','toggleRetenu',
+    'openEntrainementModal','openMatchModal','openEvenementModal','openPretModal','openCategoriesModal',
+    'openSeanceBuilder','openExerciceCustomForm','openModal','uploadClubLogo','importJSON','handleCSVFile'
+  ];
+  function callsBlockedFunction(str){
+    if(!str) return false;
+    return VIEWER_BLOCKED_FUNCTIONS.some(fn => str.indexOf(fn+'(') === 0 || str.indexOf(';'+fn+'(')!==-1 || str.indexOf(fn+'(')===0 || str.startsWith(fn+'('));
+  }
+  document.addEventListener('click', function(e){
+    if(!window.isViewer()) return;
+    const el = e.target.closest('[onclick]');
+    if(!el) return;
+    const code = el.getAttribute('onclick') || '';
+    // On ne bloque que les actions reconnues comme mutantes ; le verrou de
+    // synchro plus haut protège de toute façon les cas non couverts ici.
+    const firstCall = code.split('(')[0].trim();
+    if(VIEWER_BLOCKED_FUNCTIONS.includes(firstCall) || code.split(';').some(part=>VIEWER_BLOCKED_FUNCTIONS.includes(part.trim().split('(')[0].trim()))){
+      e.preventDefault(); e.stopPropagation();
+      showViewerToast();
+    }
+  }, true);
+  document.addEventListener('dragstart', function(e){
+    if(window.isViewer()){ e.preventDefault(); showViewerToast(); }
+  }, true);
+  document.addEventListener('change', function(e){
+    if(!window.isViewer()) return;
+    const t = e.target;
+    if(t && t.classList && t.classList.contains('ent-presence-chk')){ e.preventDefault(); t.checked=!t.checked; showViewerToast(); }
+    if(t && t.classList && t.classList.contains('jcr-check')){ e.preventDefault(); t.checked=!t.checked; showViewerToast(); }
+  }, true);
 
   // ---------- État d'authentification ----------
   auth.onAuthStateChanged(user => {
