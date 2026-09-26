@@ -369,6 +369,10 @@ body.viewer-mode .jcr-check{cursor:not-allowed;opacity:.6;}
 .kpi-tip-title{font-weight:700;color:var(--texte);margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
 .kpi-card:hover .kpi-tip{display:block;}
 .kpi-card:has(.kpi-tip):hover{cursor:help;border-color:var(--gris-border);}
+.pill-tip{position:relative;}
+.pill-tip:hover .kpi-tip{display:block;}
+.pill-tip:has(.kpi-tip):hover{cursor:help;}
+.feuille-section.cs-section{overflow:visible;}
 .kpi-label{font-size:12px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.05em;}
 .kpi-val{font-size:28px;font-weight:700;color:var(--jaune);}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
@@ -725,12 +729,34 @@ body.viewer-mode .jcr-check{cursor:not-allowed;opacity:.6;}
 #page-feuille{flex-direction:column;padding:24px;gap:20px;}
 .feuille-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .feuille-match-info{background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:12px;padding:16px 20px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
-.feuille-score{font-size:28px;font-weight:800;color:var(--jaune);}
+.feuille-kpi-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;margin-top:12px;padding-top:12px;border-top:1px solid var(--gris-border);}
+.feuille-score{font-size:38px;font-weight:800;color:var(--jaune);}
 .feuille-adv{font-size:18px;font-weight:600;}
 .feuille-meta{font-size:13px;color:var(--texte-muted);}
 .feuille-sections{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 .feuille-section{background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:12px;overflow:hidden;}
-.feuille-section-title{padding:12px 16px;border-bottom:1px solid var(--gris-border);font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.feuille-section-title{padding:12px 16px;border-bottom:1px solid var(--gris-border);font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.feuille-absents-toggle{padding:9px 16px;font-size:12px;color:var(--texte-muted);cursor:pointer;border-top:1px dashed var(--gris-border);transition:background .1s,color .1s;display:flex;align-items:center;gap:6px;}
+.feuille-absents-toggle:hover{background:var(--gris-card);color:var(--texte);}
+.feuille-absents-liste{border-top:1px solid var(--gris-border);background:rgba(0,0,0,.08);}
+.feuille-absents-liste .joueur-check-row{padding:6px 14px;}
+/* Info-bulle au survol des cartes KPI de la feuille de match */
+.kpi-tooltip-wrap{position:relative;cursor:help;}
+.kpi-tooltip-wrap .kpi-tooltip-pop{
+  display:none;position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);
+  background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:10px;
+  padding:10px 12px;min-width:210px;max-width:260px;max-height:260px;overflow-y:auto;
+  z-index:60;box-shadow:0 10px 28px rgba(0,0,0,.4);text-align:left;
+}
+.kpi-tooltip-wrap:hover .kpi-tooltip-pop{display:block;}
+.kpi-tooltip-pop::after{content:'';position:absolute;bottom:100%;left:var(--arrow-left,50%);transform:translateX(-50%);
+  border:6px solid transparent;border-bottom-color:var(--gris-border);}
+.kpi-tip-note{font-size:11px;color:var(--texte-muted);margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--gris-border);}
+.kpi-tip-group{margin-bottom:8px;}
+.kpi-tip-group:last-child{margin-bottom:0;}
+.kpi-tip-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--texte-muted);margin-bottom:4px;}
+.kpi-tip-item{font-size:12px;line-height:1.6;color:var(--texte);white-space:nowrap;}
+@media(max-width:768px){ .kpi-tooltip-wrap .kpi-tooltip-pop{display:none!important;} }
 .joueur-check-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--gris-border);transition:background .1s;}
 .joueur-check-row:last-child{border-bottom:none;}
 .joueur-check-row:hover{background:var(--gris-card);}
@@ -886,16 +912,16 @@ body.viewer-mode .jcr-check{cursor:not-allowed;opacity:.6;}
 .ev-plus.event-btn-pen{background:rgba(251,146,60,.18);color:#fdba74;border-color:rgba(251,146,60,.4);}
 /* Score en feuille éditable */
 .feuille-score-live{
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:14px;
   background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-  border-radius:12px;padding:8px 14px;
+  border-radius:14px;padding:14px 26px;
 }
 .score-input{
   width:40px;text-align:center;font-size:22px;font-weight:900;
   background:transparent;border:none;outline:none;
   color:var(--texte);font-family:inherit;
 }
-.score-sep{font-size:22px;font-weight:900;color:var(--texte-muted);}
+.score-sep{font-size:28px;font-weight:900;color:var(--texte-muted);}
 .score-auto-badge{
   font-size:10px;padding:2px 7px;border-radius:8px;
   background:rgba(45,168,88,.2);color:#4ade80;
@@ -2159,6 +2185,9 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
 
   <!-- ── KPIs globaux ── -->
   <div style="padding:12px 24px 0"><div class="stats-top" id="stats-kpi"></div></div>
+
+  <!-- ── Clean sheets (total + série en cours / meilleure série) ── -->
+  <div style="padding:12px 24px 0" id="stats-cleansheet-wrap"></div>
 
   <!-- ── Derniers temps forts (dernier plateau / dernière journée jouée) ── -->
   <div style="padding:12px 24px 0" id="stats-derniers-tf-wrap"></div>
@@ -3601,8 +3630,26 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.79';
+const APP_VERSION='1.81';
 const CHANGELOG=[
+  {
+    version:'1.81', date:'26/09/2026',
+    changes:[
+      "Stats & Dashboard : nouveau bloc « 🧤 Clean sheets » sur toute la largeur, placé juste au-dessus de « Derniers temps forts ». Il met en avant le nombre total de clean sheets (matchs sans but encaissé, avec le %), la série en cours et la meilleure série jamais réalisée. Le bloc respecte les filtres de saison/compétition et disparaît si aucun match n'est encore joué.",
+      "Le bloc « Clean sheets » affiche une info-bulle détaillée au survol de chaque indicateur (liste nominative des matchs concernés — date, adversaire, score — pour le total, la série en cours et la meilleure série).",
+      "Onglet Feuille : la ligne de KPI (Convoqués, Rotation, Buts, Buteurs, Passes D., Note moy., cartons) est désormais placée sur sa propre ligne sous le score, séparée par un fin trait, au lieu d'être poussée tout à droite sur la même ligne que le score. Cela supprime le grand vide qui apparaissait entre le score et les KPI sur les écrans larges, et donne un rendu plus régulier sur tablette et mobile.",
+      "Onglet Feuille : le score en direct, la ligne de KPI et la ligne des temps forts (Homme du match, Plus décisif, Historique, Distance) sont désormais centrés horizontalement, et le score est affiché plus grand pour mieux ressortir."
+    ]
+  },
+  {
+    version:'1.80', date:'26/09/2026',
+    changes:[
+      "Onglet Feuille : les joueurs non convoqués (non cochés présents) sont désormais masqués par défaut dans la liste principale, pour ne plus polluer la saisie en plein match ou lors d'un report a posteriori. Un interrupteur « 🙈 Masquer les non convoqués » permet de revenir à la liste complète (préférence mémorisée), et une petite ligne repliable en bas de liste permet d'ajouter en un clic un joueur oublié sans tout réafficher.",
+      "Onglet Feuille : deux nouveaux KPI — « 🧢 Buteurs » (nombre de joueurs différents ayant marqué, avec une mention « seul » si un même joueur a inscrit tous les buts) et « 🔁 Rotation » (% de convoqués par rapport à l'effectif actif total de l'équipe).",
+      "Onglet Feuille : les KPI Convoqués, Rotation, Buteurs et Passes D. affichent désormais une info-bulle détaillée au survol (liste nominative des convoqués/non convoqués, des buteurs avec leur nombre de buts, des passeurs avec leur nombre de passes). La bulle s'ouvre sous la carte et se recale automatiquement pour ne jamais déborder de l'écran, y compris en fenêtre étroite ; elle est désactivée sur mobile où le survol n'a pas de sens.",
+      "Onglet Feuille : le score en direct (Nous / Adversaire) est désormais positionné sous la ligne date/lieu, aligné avec le nom de l'adversaire, au lieu d'être décalé sur la même ligne que les cartes KPI."
+    ]
+  },
   {
     version:'1.79', date:'26/09/2026',
     changes:[
@@ -3984,6 +4031,64 @@ function populateSaisonFilter(){
   allSaisons().forEach(s=>{ const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o); });
   if(cur) sel.value=cur;
 }
+// ── Clean sheets équipe : total + série en cours + meilleure série (0 but encaissé sur un match joué) ──
+function computeCleanSheetsStats(filterSaison,filterComp){
+  const list=[...matchs].filter(m=>!m.annule&&!matchEstAVenir(m)&&(!filterSaison||m.saison===filterSaison)&&(!filterComp||m.comp===filterComp)).sort((a,b)=>a.date.localeCompare(b.date));
+  const records=list.map(m=>{
+    const s=scoreEffectif(m);
+    return {date:m.date,adversaire:m.adversaire||'—',comp:m.comp,cs:s.butsEux===0,butsNous:s.butsNous,butsEux:s.butsEux};
+  });
+  let bestStart=0,bestLen=0,runStart=0,curLen=0;
+  records.forEach((r,i)=>{
+    if(r.cs){ if(curLen===0) runStart=i; curLen++; if(curLen>bestLen){ bestLen=curLen; bestStart=runStart; } }
+    else curLen=0;
+  });
+  const total=records.filter(r=>r.cs).length;
+  const totalMatches=[...records].filter(r=>r.cs).reverse(); // plus récent en premier
+  const currentMatches=curLen?records.slice(records.length-curLen):[];
+  const bestMatches=bestLen?records.slice(bestStart,bestStart+bestLen):[];
+  return {total,current:curLen,best:bestLen,nbMatchs:list.length,totalMatches,currentMatches,bestMatches};
+}
+function renderCsTipRows(list,{empty,cap=15}={}){
+  if(!list.length) return `<div style="color:var(--texte-muted)">${empty||'Aucun match.'}</div>`;
+  const fmt=d=>new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  const shown=list.slice(0,cap);
+  const rows=shown.map(r=>`<div>${fmt(r.date)} — vs ${r.adversaire} <span style="color:var(--texte-muted)">(${r.butsNous}-${r.butsEux})</span></div>`).join('');
+  const rest=list.length-shown.length;
+  return rows+(rest>0?`<div style="color:var(--texte-muted);margin-top:4px">+ ${rest} autre${rest>1?'s':''}…</div>`:'');
+}
+function renderCleanSheetKPI(filterSaison,filterComp){
+  const el=document.getElementById('stats-cleansheet-wrap');
+  if(!el) return;
+  const cs=computeCleanSheetsStats(filterSaison,filterComp);
+  if(!cs.nbMatchs){ el.innerHTML=''; return; }
+  const pct=Math.round(cs.total/cs.nbMatchs*100);
+  const tipTotal=`<div class="kpi-tip"><div class="kpi-tip-title">Matchs sans encaisser</div>${renderCsTipRows(cs.totalMatches)}</div>`;
+  const tipCurrent=`<div class="kpi-tip"><div class="kpi-tip-title">Série en cours</div>${renderCsTipRows(cs.currentMatches,{empty:'Le dernier match joué a été encaissé.'})}</div>`;
+  const tipBest=`<div class="kpi-tip"><div class="kpi-tip-title">Meilleure série</div>${renderCsTipRows(cs.bestMatches,{empty:'Aucune série de clean sheets.'})}</div>`;
+  el.innerHTML=`
+    <div class="feuille-section cs-section">
+      <div class="feuille-section-title">🧤 Clean sheets</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;padding:14px">
+        <div class="pill-tip" style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px;flex:1;min-width:200px">
+          <span style="font-size:18px">🧤</span>
+          <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Clean sheets (total)</div><div style="font-weight:700;font-size:13px">${cs.total} <span style="color:var(--texte-muted);font-weight:400">/ ${cs.nbMatchs} match${cs.nbMatchs>1?'s':''} (${pct}%)</span></div></div>
+          ${tipTotal}
+        </div>
+        <div class="pill-tip" style="background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px;flex:1;min-width:200px">
+          <span style="font-size:18px">🔥</span>
+          <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Série en cours</div><div style="font-weight:700;font-size:13px">${cs.current} match${cs.current>1?'s':''} <span style="color:var(--texte-muted);font-weight:400">sans encaisser</span></div></div>
+          ${tipCurrent}
+        </div>
+        <div class="pill-tip" style="background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px;flex:1;min-width:200px">
+          <span style="font-size:18px">🏆</span>
+          <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Meilleure série</div><div style="font-weight:700;font-size:13px">${cs.best} match${cs.best>1?'s':''} <span style="color:var(--texte-muted);font-weight:400">d'affilée</span></div></div>
+          ${tipBest}
+        </div>
+      </div>
+    </div>`;
+}
+
 // ── Derniers temps forts : Homme du match / joueur décisif du dernier jour joué (plateau ou match simple) ──
 function getDerniersTempsForts(filterSaison){
   const list=[...matchs].filter(m=>!m.annule&&!matchEstAVenir(m)&&(!filterSaison||m.saison===filterSaison)).sort((a,b)=>b.date.localeCompare(a.date));
@@ -4059,6 +4164,7 @@ function renderStatsPage(){
   const filterSaison=document.getElementById('stats-saison-filter').value;
   const filterComp=document.getElementById('stats-comp-filter')?.value||'';
   const totalMatchsSaison=getTotalMatchsSaison(filterSaison,filterComp);
+  renderCleanSheetKPI(filterSaison,filterComp);
   renderDerniersTempsForts(filterSaison);
 
   // Agréger stats par joueur
@@ -4607,6 +4713,9 @@ function calendrierOuvrirJour(dateStr){
 //  ENTRAÎNEMENTS
 // ══════════════════════════════════════════════
 let editingEntrainementId=null;
+// Feuille de match : masquer les joueurs non convoqués (non cochés présents) pour alléger la liste
+let feuilleMasquerAbsents = localStorage.getItem('foot8_feuille_masquer_absents') !== '0'; // masqué par défaut
+let feuilleAbsentsOuvert = false; // liste repliable des non-convoqués, temporairement dépliée
 
 const ENTRAINEMENT_TYPES=['Technique','Tactique','Physique','Opposition / Jeu','Récupération','Gardiens','Vidéo / Théorie','Match amical','Reprise'];
 
@@ -6058,6 +6167,36 @@ function clearActiveFeuille(){
   renderSidebar();
 }
 
+// Petite liste formatée pour une info-bulle de KPI (survol)
+function kpiTipListe(titre,items){
+  return `<div class="kpi-tip-group"><div class="kpi-tip-title">${titre}</div>${
+    items.length? items.map(t=>`<div class="kpi-tip-item">${t}</div>`).join('')
+    : '<div class="kpi-tip-item" style="color:var(--texte-muted)">Aucun</div>'
+  }</div>`;
+}
+
+// Repositionne l'info-bulle de KPI pour qu'elle reste toujours visible sur petit écran
+function ajusterPositionKpiTooltip(wrap,pop){
+  const margin=8, popWidth=Math.min(260,window.innerWidth-margin*2);
+  const wrapRect=wrap.getBoundingClientRect();
+  const cardCenter=wrapRect.left+wrapRect.width/2;
+  let popLeftViewport=cardCenter-popWidth/2;
+  if(popLeftViewport<margin) popLeftViewport=margin;
+  if(popLeftViewport+popWidth>window.innerWidth-margin) popLeftViewport=window.innerWidth-margin-popWidth;
+  pop.style.maxWidth=popWidth+'px';
+  pop.style.left=(popLeftViewport-wrapRect.left)+'px';
+  pop.style.transform='none';
+  let arrowLeft=cardCenter-popLeftViewport;
+  arrowLeft=Math.max(14,Math.min(popWidth-14,arrowLeft));
+  pop.style.setProperty('--arrow-left',arrowLeft+'px');
+}
+document.addEventListener('mouseover',e=>{
+  const wrap=e.target.closest?.('.kpi-tooltip-wrap');
+  if(!wrap) return;
+  const pop=wrap.querySelector('.kpi-tooltip-pop');
+  if(pop) ajusterPositionKpiTooltip(wrap,pop);
+});
+
 function loadFeuille(){
   const mid=parseInt(document.getElementById('feuille-match-select').value);
   const content=document.getElementById('feuille-content');
@@ -6073,7 +6212,12 @@ function loadFeuille(){
   const actifs=[...joueurs,...pretesArr].filter(j=>j.statut==='Actif'||f.presents.includes(j.id)).sort((a,b)=>a.numero-b.numero);
   const PFR={G:'Gard.',DC:'Déf.C',DL:'Déf.G',DR:'Déf.D',MC:'Mil.C',MO:'Mil.O',ML:'Mil.G',MR:'Mil.D',AT:'Att.',BU:'But.','?':'—'};
 
-  const rowsHTML=actifs.map(j=>{
+  // Masquer les non-convoqués : on n'affiche en lignes complètes que les joueurs cochés présents.
+  // Les autres restent accessibles via une petite liste repliable, pour pouvoir en ajouter un vite.
+  const absentsActifs=actifs.filter(j=>!f.presents.includes(j.id));
+  const joueursAffiches=feuilleMasquerAbsents ? actifs.filter(j=>f.presents.includes(j.id)) : actifs;
+
+  const rowsHTML=joueursAffiches.map(j=>{
     const present=f.presents.includes(j.id);
     const retenu=estRetenu(f,j.id);
     const jouera=present&&retenu;
@@ -6175,6 +6319,11 @@ function loadFeuille(){
   const nonRetenusJoueurs=f.presents.filter(id=>!estRetenu(f,id)).map(id=>getJoueur(+id)).filter(Boolean).sort((a,b)=>a.numero-b.numero);
   const nbNonRetenus=nonRetenusJoueurs.length;
   const nbConvoques=nbPresents-nbNonRetenus;
+  const effectifActifTotal=joueurs.filter(j=>j.statut==='Actif').length;
+  const tauxRotation=effectifActifTotal>0?Math.round(nbConvoques/effectifActifTotal*100):null;
+  const convoquesIds=getConvoques(f);
+  const convoquesListe=convoquesIds.map(id=>getJoueur(+id)).filter(Boolean).sort((a,b)=>a.numero-b.numero);
+  const nonConvoquesListe=joueurs.filter(j=>j.statut==='Actif'&&!convoquesIds.some(id=>+id===+j.id)).sort((a,b)=>a.numero-b.numero);
   const scoreAuto=calcScoreFromFeuille(f);
   const butsNousAuto=scoreAuto.butsNous;
   const butsEuxAuto=scoreAuto.butsEux;
@@ -6183,6 +6332,20 @@ function loadFeuille(){
   const totalRouges=Object.values(f.rouges||{}).reduce((s,v)=>s+(+v||0),0);
   const totalBcs=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0);
   const totalPen=Object.values(f.penalties||{}).reduce((s,v)=>s+(+v||0),0);
+  const buteursSet=new Set();
+  Object.entries(f.buts||{}).forEach(([jid,v])=>{ if(+v>0) buteursSet.add(String(jid)); });
+  Object.entries(f.penalties||{}).forEach(([jid,v])=>{ if(+v>0) buteursSet.add(String(jid)); });
+  const nbButeurs=buteursSet.size;
+  const buteursDetail=[...buteursSet].map(jidS=>{
+    const j=getJoueur(+jidS);
+    const b=+(f.buts?.[jidS]||0);
+    const p=+(f.penalties?.[jidS]||0);
+    return j?{j,b,p,tot:b+p}:null;
+  }).filter(Boolean).sort((a,b)=>b.tot-a.tot||a.j.numero-b.j.numero);
+  const passesDetail=Object.entries(f.passes||{}).filter(([,v])=>+v>0).map(([jidS,v])=>{
+    const j=getJoueur(+jidS);
+    return j?{j,nb:+v}:null;
+  }).filter(Boolean).sort((a,b)=>b.nb-a.nb||a.j.numero-b.j.numero);
   const noteVals=Object.values(f.notes||{}).filter(n=>n>0);
   const moyNote=noteVals.length?Math.round(noteVals.reduce((s,n)=>s+n,0)/noteVals.length*10)/10:null;
   const rAuto=butsNousAuto>butsEuxAuto?'V':butsNousAuto===butsEuxAuto?'N':'D';
@@ -6194,7 +6357,7 @@ function loadFeuille(){
   const distanceInfo=getDistanceInfoMatch(m);
   if(distanceInfo===null && m.lieu==='E') ensureVillesGeocodees(()=>{ if(typeof loadFeuille==='function') loadFeuille(); });
   const highlightsHTML=(mvp||decisif||cleanSheet||historiqueAdv||(m.lieu==='E'&&distanceInfo!==null))?`
-    <div style="display:flex;gap:10px;flex-wrap:wrap;width:100%;margin-top:12px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;margin-top:12px">
       ${mvp?`<div style="background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px">
         <span style="font-size:18px">🏅</span>
         <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Homme du match</div><div style="font-weight:700;font-size:13px">${mvp.joueurs.map(j=>j.nom+' '+j.prenom).join(', ')} <span style="color:var(--jaune)">${mvp.note}/10</span></div></div>
@@ -6235,27 +6398,39 @@ function loadFeuille(){
 
   content.innerHTML=`
     <div class="feuille-match-info">
-      <div>
+      <div style="width:100%">
         <div class="feuille-adv">vs ${m.adversaire}</div>
         <div class="feuille-meta">${m.date?new Date(m.date).toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):''} · ${lieuTxt} · ${m.comp}${isPlateauType(m.comp)?` · 📍 ${m.plateauVille}`:(isTournoiType(m.comp)&&m.tournoiVille?` · 📍 ${m.tournoiVille}`:'')}</div>
       </div>
-      <div class="feuille-score-live">
-        <div style="text-align:center">
-          <div style="font-size:10px;color:var(--texte-muted);margin-bottom:2px">Nous</div>
-          <div class="feuille-score" style="color:${scoreCl};margin:0">${butsNousAuto}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;width:100%;margin-top:14px;">
+        <div class="feuille-score-live">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--texte-muted);margin-bottom:2px">Nous</div>
+            <div class="feuille-score" style="color:${scoreCl};margin:0">${butsNousAuto}</div>
+          </div>
+          <div class="score-sep">–</div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--texte-muted);margin-bottom:2px">${m.adversaire.split(' ')[0]}</div>
+            <div class="feuille-score" style="color:${scoreCl};margin:0">${butsEuxAuto}</div>
+          </div>
+          <span class="score-auto-badge">⚡ Auto</span>
         </div>
-        <div class="score-sep">–</div>
-        <div style="text-align:center">
-          <div style="font-size:10px;color:var(--texte-muted);margin-bottom:2px">${m.adversaire.split(' ')[0]}</div>
-          <div class="feuille-score" style="color:${scoreCl};margin:0">${butsEuxAuto}</div>
-        </div>
-        <span class="score-auto-badge">⚡ Auto</span>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-left:auto;">
-        <div class="kpi-card" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Convoqués</div><div class="kpi-val" style="font-size:20px">${nbConvoques}${nbNonRetenus?`<span style="font-size:11px;font-weight:600;color:var(--texte-muted)"> / ${nbPresents} prés.</span>`:''}</div></div>
+      <div class="feuille-kpi-row">
+        <div class="kpi-card kpi-tooltip-wrap" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Convoqués</div><div class="kpi-val" style="font-size:20px">${nbConvoques}${nbNonRetenus?`<span style="font-size:11px;font-weight:600;color:var(--texte-muted)"> / ${nbPresents} prés.</span>`:''}</div>
+          <div class="kpi-tooltip-pop">${kpiTipListe(`✅ Convoqués (${convoquesListe.length})`,convoquesListe.map(j=>`${j.numero}. ${j.nom} ${j.prenom}`))}${kpiTipListe(`— Non convoqués (${nonConvoquesListe.length})`,nonConvoquesListe.map(j=>`${j.numero}. ${j.nom} ${j.prenom}`))}</div>
+        </div>
+        ${tauxRotation!==null?`<div class="kpi-card kpi-tooltip-wrap" style="min-width:72px;padding:10px 12px"><div class="kpi-label">🔁 Rotation</div><div class="kpi-val" style="font-size:20px;color:#38bdf8">${tauxRotation}%</div>
+          <div class="kpi-tooltip-pop"><div class="kpi-tip-note">${nbConvoques} convoqués sur ${effectifActifTotal} joueurs actifs</div>${kpiTipListe(`✅ Convoqués (${convoquesListe.length})`,convoquesListe.map(j=>`${j.numero}. ${j.nom} ${j.prenom}`))}${kpiTipListe(`— Non convoqués (${nonConvoquesListe.length})`,nonConvoquesListe.map(j=>`${j.numero}. ${j.nom} ${j.prenom}`))}</div>
+        </div>`:''}
         <div class="kpi-card" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Buts</div><div class="kpi-val" style="font-size:20px;color:#4ade80">${butsNousAuto}${totalPen>0?`<span style="font-size:11px;color:var(--texte-muted);margin-left:3px">(${totalPen}p)</span>`:''}</div></div>
+        ${nbButeurs?`<div class="kpi-card kpi-tooltip-wrap" style="min-width:72px;padding:10px 12px"><div class="kpi-label">🧢 Buteurs</div><div class="kpi-val" style="font-size:20px;color:#4ade80">${nbButeurs}${nbButeurs===1&&butsNousAuto>1?`<span style="font-size:11px;color:var(--texte-muted);margin-left:3px">seul</span>`:''}</div>
+          <div class="kpi-tooltip-pop">${kpiTipListe('⚽ Buteurs',buteursDetail.map(d=>`${d.j.numero}. ${d.j.nom} ${d.j.prenom} — ${d.b?`${d.b}⚽`:''}${d.b&&d.p?' + ':''}${d.p?`${d.p}🎯pen`:''}`))}</div>
+        </div>`:''}
         ${totalBcs?`<div class="kpi-card" style="min-width:64px;padding:10px 12px"><div class="kpi-label">BCS</div><div class="kpi-val" style="font-size:20px;color:#d8b4fe">${totalBcs}</div></div>`:''}
-        <div class="kpi-card" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Passes D.</div><div class="kpi-val" style="font-size:20px;color:var(--bleu)">${totalPasses}</div></div>
+        <div class="kpi-card kpi-tooltip-wrap" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Passes D.</div><div class="kpi-val" style="font-size:20px;color:var(--bleu)">${totalPasses}</div>
+          <div class="kpi-tooltip-pop">${kpiTipListe('🎯 Passeurs',passesDetail.map(d=>`${d.j.numero}. ${d.j.nom} ${d.j.prenom} — ${d.nb}🎯`))}</div>
+        </div>
         ${moyNote!==null?`<div class="kpi-card" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Note moy.</div><div class="kpi-val" style="font-size:20px;color:var(--jaune)">${moyNote}</div></div>`:''}
         ${totalJaunes?`<div class="kpi-card" style="min-width:60px;padding:10px 12px"><div class="kpi-label">🟨</div><div class="kpi-val" style="font-size:20px">${totalJaunes}</div></div>`:''}
         ${totalRouges?`<div class="kpi-card" style="min-width:60px;padding:10px 12px"><div class="kpi-label">🟥</div><div class="kpi-val" style="font-size:20px;color:var(--rouge)">${totalRouges}</div></div>`:''}
@@ -6288,8 +6463,23 @@ function loadFeuille(){
       <div class="feuille-section">
         <div class="feuille-section-title">👥 Présents · Événements · Note /10
           <span style="font-size:10px;font-weight:400;color:var(--texte-muted);margin-left:6px">Bouton + pour ajouter · − pour corriger</span>
+          <label class="no-print" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--texte-muted);cursor:pointer;white-space:nowrap">
+            <input type="checkbox" ${feuilleMasquerAbsents?'checked':''} onchange="toggleMasquerAbsents(this.checked)" style="cursor:pointer">
+            🙈 Masquer les non convoqués
+          </label>
         </div>
-        ${rowsHTML}
+        ${rowsHTML || `<div class="no-data" style="padding:20px">${feuilleMasquerAbsents?'Aucun joueur convoqué pour l\'instant. Dépliez la liste ci-dessous pour cocher les présents.':'Aucun joueur.'}</div>`}
+        ${feuilleMasquerAbsents && absentsActifs.length ? `
+        <div class="feuille-absents-toggle no-print" onclick="toggleAbsentsOuvert()">
+          <span>${feuilleAbsentsOuvert?'▲':'▼'}</span> ${absentsActifs.length} joueur${absentsActifs.length>1?'s':''} non convoqué${absentsActifs.length>1?'s':''} masqué${absentsActifs.length>1?'s':''} — cliquer pour ${feuilleAbsentsOuvert?'masquer':'afficher et cocher un oubli'}
+        </div>
+        ${feuilleAbsentsOuvert?`<div class="feuille-absents-liste">${absentsActifs.map(j=>`
+          <div class="joueur-check-row" style="opacity:.65">
+            <input type="checkbox" class="jcr-check" onchange="togglePresence(${mid},${j.id},this.checked)">
+            <span class="jcr-num">${j.numero}</span>
+            <span class="jcr-nom">${j.nom} <span style="font-weight:400">${j.prenom}</span><br><span style="font-size:10px;color:var(--texte-muted)">${PFR[j.poste]||''}</span></span>
+          </div>`).join('')}</div>`:''}
+        `:''}
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="feuille-section">
@@ -6469,6 +6659,19 @@ function togglePlateauLink(mid){
   showNotif(newState
     ? `🔗 Présents liés entre les ${nb} feuilles du plateau${ajouts?` — ${ajouts} présence(s) ajoutée(s)`:''}`
     : '🔓 Présents dissociés — chaque feuille est indépendante','green');
+}
+
+// Bascule l'affichage "masquer les non convoqués" dans la feuille (préférence mémorisée)
+function toggleMasquerAbsents(checked){
+  feuilleMasquerAbsents=checked;
+  localStorage.setItem('foot8_feuille_masquer_absents', checked?'1':'0');
+  if(!checked) feuilleAbsentsOuvert=false;
+  loadFeuille();
+}
+// Déplie/replie la petite liste des non-convoqués (pour en ajouter un rapidement)
+function toggleAbsentsOuvert(){
+  feuilleAbsentsOuvert=!feuilleAbsentsOuvert;
+  loadFeuille();
 }
 
 function togglePresence(mid,jid,checked){
