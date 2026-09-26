@@ -3,7 +3,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>⚽ Tracking Player App — Gestion Équipe</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2da858">
@@ -332,6 +332,14 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 .badge-statut{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
 .statut-actif{background:var(--vert-clair);} .statut-blesse,.statut-blessc3a9{background:var(--rouge);} .statut-suspendu{background:var(--jaune);}
 .actions-cell{display:flex;gap:5px;}
+/* ── Encadrement / éducateurs (onglet Licences) ── */
+.educ-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.educ-head h3{font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px;}
+#educ-section .table-container{overflow-x:auto;}
+#page-maillots .table-container{overflow-x:auto;}
+#educ-section td.educ-lic,#educ-section td.educ-tel{font-family:monospace;font-size:13px;white-space:nowrap;}
+.educ-fonction{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:500;background:#1a3a5e;color:#7fb5f5;}
+.educ-empty{text-align:center;padding:22px;color:var(--texte-muted);font-size:13px;}
 .table-container{background:var(--gris-panel);border-radius:var(--radius);border:1px solid var(--gris-border);overflow:hidden;}
 
 /* ── MODAL ── */
@@ -349,7 +357,8 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 
 /* ── STATS JOUEURS ── */
 #page-stats{flex-direction:column;padding:24px;gap:20px;}
-.stats-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
+.stats-top{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
+.stats-top .kpi-card{flex:0 0 180px;}
 .kpi-card{background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:4px;}
 .kpi-label{font-size:12px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.05em;}
 .kpi-val{font-size:28px;font-weight:700;color:var(--jaune);}
@@ -366,7 +375,8 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 
 /* ── RESULTATS ── */
 #page-resultats{flex-direction:column;padding:24px;gap:20px;}
-.resultats-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;}
+.resultats-top{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
+.resultats-top .kpi-card{flex:0 0 150px;}
 .saison-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .saison-header h2{font-size:16px;font-weight:600;}
 .saison-input{background:var(--gris-card);border:1px solid var(--gris-border);border-radius:8px;color:var(--texte);padding:6px 12px;font-size:14px;outline:none;width:100px;}
@@ -526,7 +536,7 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 #modal-entrainement-bg .ent-presence-panel .ent-presence-group-title{grid-column:1/-1;}
 #modal-entrainement-bg .ent-presence-search,#modal-entrainement-bg .ent-presence-quickfilters{flex-shrink:0;}
 @media (max-width:860px){
-  #modal-entrainement-bg .modal{width:100vw;height:100vh;max-height:100vh;border-radius:0;margin:0;}
+  #modal-entrainement-bg .modal{width:100vw;height:100vh;max-height:100vh;height:100dvh;max-height:100dvh;border-radius:0;margin:0;}
   #modal-entrainement-bg .ent-modal-body{flex-direction:column;overflow-y:auto;}
   #modal-entrainement-bg .ent-modal-form{width:auto;border-right:none;border-bottom:1px solid var(--gris-border);overflow-y:visible;}
   #modal-entrainement-bg .ent-modal-presence{overflow:visible;min-height:420px;}
@@ -1055,6 +1065,7 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 .theme-settings-btn:hover{border-color:var(--vert-clair);background:var(--gris-border);}
 .theme-settings-btn.active{border-color:var(--vert-clair);color:var(--vert-clair);background:rgba(45,168,88,.1);font-weight:700;}
 /* ══ BADGE ALERTE ONGLET ══ */
+.tab-badge{
   display:inline-flex;align-items:center;justify-content:center;
   background:#e03030;color:#fff;font-size:10px;font-weight:800;
   border-radius:10px;padding:1px 6px;margin-left:6px;min-width:18px;
@@ -1294,6 +1305,8 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
 }
 @media(max-width:480px){
   header h1{display:none;} /* Libère la place sur très petit écran */
+  /* KPI (Stats & Dashboard, Résultats, Entraînements, Maillots) : 2 colonnes fixes et propres sur mobile */
+  .stats-top .kpi-card,.resultats-top .kpi-card{flex-basis:calc(50% - 6px);}
 }
 
 /* ── Tabs ── */
@@ -1310,7 +1323,7 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
   .toolbar input[type=text]{min-width:0;flex:1;}
   .kpi-val{font-size:20px;}
   .stats-grid{grid-template-columns:1fr;}
-  .th-hide,.td-hide{display:none!important;}
+  /* colonnes Licences : affichées en cartes sur mobile (voir RESPONSIVE v2) */
   .btn{padding:7px 11px;font-size:12px;}
   .btn-icon{padding:5px 8px;font-size:13px;}
 }
@@ -1339,14 +1352,7 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
   .ev-minus{padding:7px 7px;font-size:13px;}
   .ev-count{min-width:20px;font-size:11px;padding:7px 3px;}
 }
-@media(max-width:480px){
-  .feuille-header .btn{display:none;}
-  .feuille-header .btn-launch-match{display:flex;}
-  .feuille-header #feuille-match-select{display:block;}
-  /* Ne cacher que certains boutons secondaires */
-  .feuille-header button.btn.btn-primary{display:flex;}
-  .feuille-header button.btn.btn-secondary:not(.keep){display:none;}
-}
+/* boutons de la feuille : réorganisés en grille (voir RESPONSIVE v2) */
 
 /* ── Mode match en cours (overlay) ── */
 @media(max-width:768px){
@@ -1573,6 +1579,185 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
   body.printing-seance *{visibility:hidden;}
   body.printing-seance #print-seance-area, body.printing-seance #print-seance-area *{visibility:visible;}
   body.printing-seance #print-seance-area{position:absolute;top:0;left:0;width:100%;}
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE v2 (v1.65) — téléphone / tablette / paysage / grands écrans
+   ══════════════════════════════════════════════════════════════════ */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+img{max-width:100%;}
+/* Encoche / barres système (viewport-fit=cover) */
+body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}
+header{padding-top:calc(14px + env(safe-area-inset-top));}
+.app-footer{padding-bottom:calc(18px + env(safe-area-inset-bottom));}
+
+/* Page Entraînements : la mise en colonne manquait (KPI et liste côte à côte, même sur ordinateur) */
+#page-entrainements{flex-direction:column;padding:24px;gap:20px;}
+
+/* Calendrier : les colonnes ne doivent pas être élargies par le contenu */
+.calendrier-grid,.calendrier-grid-head{grid-template-columns:repeat(7,minmax(0,1fr));}
+
+/* Onglets : défilement horizontal sur toute largeur (8 onglets ne tiennent pas sous ~950px) */
+.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;white-space:nowrap;}
+/* Cartes de stats : jamais de contenu coupé */
+.stats-card{overflow-x:auto;}
+.cib-input{min-width:0;}
+
+/* Licences : tableau défilable en secours (tablette) ; tri mobile masqué sur grand écran */
+#page-licences .table-container{overflow-x:auto;}
+.sort-mobile{display:none;}
+
+/* ── En-tête téléphone : tout tient sur une ligne, sinon passe proprement à la ligne ── */
+@media(max-width:600px){
+  header{flex-wrap:wrap;gap:6px;padding:calc(6px + env(safe-area-inset-top)) 10px 6px;}
+  #club-logo-wrap{width:30px!important;height:30px!important;}
+  #club-logo-emoji{font-size:18px!important;}
+  header h1{display:none;}
+  #equipe-select{flex:1 1 90px;min-width:0;max-width:none!important;font-size:12px!important;padding:4px 6px!important;}
+  header>button:not(#club-logo-reset),#btn-theme-toggle,header .btn-settings{
+    width:30px;height:30px;padding:0!important;font-size:14px!important;flex-shrink:0;
+    display:inline-flex!important;align-items:center;justify-content:center;margin-left:0;}
+  #theme-label-btn{display:none!important;}
+}
+@media(max-width:480px){ #equipe-categorie-badge{display:none;} }
+
+/* ── Tablette et téléphone ── */
+@media(max-width:768px){
+  #page-entrainements{padding:12px;gap:10px;}
+  /* Modales : boutons Annuler / Enregistrer toujours visibles */
+  .modal{max-height:90vh;max-height:90dvh;}
+  .modal .modal-footer{position:sticky;bottom:0;margin:16px -20px -20px;padding:12px 20px;background:var(--gris-panel);border-top:1px solid var(--gris-border);z-index:2;}
+  #modal-entrainement-bg .modal .modal-footer{position:static;margin:0;}
+  /* Compo : la liste des joueurs à placer doit rester visible */
+  .compo-sidebar{max-height:none;overflow:visible;}
+  .sidebar-title{padding:8px 12px;}
+  .sidebar-postes{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+  .sidebar-postes::-webkit-scrollbar{display:none;}
+  .poste-chip{flex-shrink:0;white-space:nowrap;}
+  #joueurs-liste{max-height:170px;}
+  .jc-info{display:block;}
+  .jc-poste{display:none;}
+  .jc-nom{max-width:76px;font-size:11px;}
+  .sidebar-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  /* Catégories / équipes : lignes qui passent à la ligne */
+  .cat-row{flex-wrap:wrap;}
+}
+
+/* ── Stats : tableaux lisibles sur téléphone ── */
+@media(max-width:600px){
+  #page-stats>div[style*="padding"]{padding-left:12px!important;padding-right:12px!important;}
+  .stats-table th,.stats-table td{padding:8px 6px;}
+  .stats-table th:first-child,.stats-table td:first-child{padding-left:10px;}
+  .bar-wrap{width:34px;margin-left:4px;}
+  .stats-card{overflow-x:auto;}
+}
+
+/* ── Feuille de match : tous les boutons restent accessibles (grille 2 colonnes) ── */
+@media(max-width:480px){
+  .feuille-header{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .feuille-header h2,.feuille-header #feuille-match-select{grid-column:1/-1;}
+  .feuille-header .btn,.feuille-header .btn-launch-match{width:100%;justify-content:center;text-align:center;font-size:12px;padding:8px 6px;white-space:normal;}
+}
+
+/* ── Licences : le tableau devient une liste de cartes (toutes les infos, sans défilement latéral) ── */
+@media(max-width:720px){
+  #page-licences .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  #page-licences .toolbar #search-input{grid-column:1/-1;width:100%;}
+  #page-licences .toolbar select{width:100%;min-width:0;font-size:13px;padding:8px 10px;}
+  #page-licences .toolbar .btn{width:100%;justify-content:center;}
+}
+@media(max-width:900px){
+  .sort-mobile{display:block;}
+
+  #page-licences .table-container{background:transparent;border:none;border-radius:0;overflow:visible;}
+  #page-licences .table-container table,#page-licences .table-container tbody{display:block;width:100%;}
+  #page-licences .table-container thead{display:none;}
+  #joueurs-tbody tr,#educ-tbody tr{display:grid;align-items:center;gap:3px 10px;padding:12px;margin-bottom:10px;
+    background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:12px;}
+  #joueurs-tbody td,#educ-tbody td{display:block;padding:0;border:none;min-width:0;width:auto;}
+  #joueurs-tbody .actions-cell,#educ-tbody .actions-cell{flex-direction:column;}
+
+  /* Joueurs : # | nom prénom / poste cat statut / licence / tél / naissance | actions */
+  #joueurs-tbody tr{grid-template-columns:42px auto auto minmax(0,1fr) auto;}
+  #joueurs-tbody td:nth-child(1){grid-column:1;grid-row:1/6;}
+  #joueurs-tbody td:nth-child(2){grid-column:2;grid-row:1;font-size:15px;}
+  #joueurs-tbody td:nth-child(3){grid-column:3/5;grid-row:1;font-size:15px;}
+  #joueurs-tbody td:nth-child(4){grid-column:2;grid-row:2;justify-self:start;}
+  #joueurs-tbody td:nth-child(6){grid-column:3;grid-row:2;justify-self:start;}
+  #joueurs-tbody td:nth-child(9){grid-column:4;grid-row:2;font-size:12px;}
+  #joueurs-tbody td:nth-child(7){grid-column:2/5;grid-row:3;font-size:12.5px;}
+  #joueurs-tbody td:nth-child(8){grid-column:2/5;grid-row:4;font-size:12.5px;}
+  #joueurs-tbody td:nth-child(5){grid-column:2/5;grid-row:5;font-size:12px;}
+  #joueurs-tbody td:nth-child(10){grid-column:5;grid-row:1/6;}
+  #joueurs-tbody td:nth-child(7)::before{content:"Licence : ";font-family:system-ui,sans-serif;color:var(--texte-muted);}
+  #joueurs-tbody td:nth-child(5)::before{content:"Né(e) le ";color:var(--texte-muted);}
+
+  /* Éducateurs : nom prénom / fonction / licence / tél | actions */
+  #educ-tbody tr{grid-template-columns:auto minmax(0,1fr) auto;}
+  #educ-tbody td:nth-child(1){grid-column:1;grid-row:1;font-size:15px;}
+  #educ-tbody td:nth-child(2){grid-column:2;grid-row:1;font-size:15px;}
+  #educ-tbody td:nth-child(4){grid-column:1/3;grid-row:2;justify-self:start;}
+  #educ-tbody td:nth-child(3){grid-column:1/3;grid-row:3;}
+  #educ-tbody td:nth-child(5){grid-column:1/3;grid-row:4;}
+  #educ-tbody td:nth-child(6){grid-column:3;grid-row:1/5;}
+  #educ-tbody td:nth-child(3)::before{content:"Licence : ";font-family:system-ui,sans-serif;color:var(--texte-muted);}
+
+  /* Ligne « aucun résultat » */
+  #joueurs-tbody td[colspan],#educ-tbody td[colspan]{grid-column:1/-1;grid-row:auto;justify-self:stretch;}
+  #joueurs-tbody tr:has(td[colspan]),#educ-tbody tr:has(td[colspan]){grid-template-columns:1fr;}
+}
+/* Tablette (601–900px) : cartes en 2 colonnes */
+@media(min-width:601px) and (max-width:900px){
+  #page-licences .table-container #joueurs-tbody,#page-licences .table-container #educ-tbody{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  #joueurs-tbody tr,#educ-tbody tr{margin-bottom:0;}
+  #joueurs-tbody tr:has(td[colspan]),#educ-tbody tr:has(td[colspan]){grid-column:1/-1;}
+}
+
+/* Calendrier : filtres qui passent à la ligne sur très petit écran */
+@media(max-width:420px){
+  .calendrier-filtres{flex-wrap:wrap;max-width:100%;}
+  .cal-filtre-chip{padding:6px 9px;}
+}
+
+/* ── Écrans tactiles : zones de toucher plus confortables ── */
+@media(pointer:coarse){
+  .btn{min-height:38px;}
+  .btn-icon{min-width:38px;min-height:38px;}
+  .tab{min-height:38px;}
+}
+
+/* ── Téléphone en paysage : gagner de la hauteur ── */
+@media(max-height:480px) and (orientation:landscape){
+  header{padding-top:calc(4px + env(safe-area-inset-top));padding-bottom:4px;}
+  .tabs{padding-top:4px;}
+  .tab{padding:5px 12px;}
+  .modal{max-height:96vh;max-height:96dvh;}
+  #modal-entrainement-bg .ent-modal-head{padding:10px 56px 8px 20px;}
+  #modal-entrainement-bg .ent-modal-footer{padding:8px 20px;}
+  /* Mode match en cours : score et chrono compacts pour voir plusieurs joueurs */
+  .mo-header{padding:4px 12px;}
+  .mo-score-zone{padding:2px 12px 0;}
+  .mo-score{font-size:34px;}
+  .mo-adversaire{font-size:11px;}
+  .mo-chrono-bar{padding:2px 12px 4px;gap:4px;}
+  .mo-chrono-display{min-width:0;padding:3px 16px 8px;}
+  #mo-chrono-time{font-size:24px;}
+  #mo-btn-startstop{padding:5px 12px!important;font-size:12px!important;}
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ZOOM ACCESSIBLE (v1.66) : le pincement est autorisé (accessibilité),
+   mais on évite les zooms involontaires.
+   ══════════════════════════════════════════════════════════════════ */
+/* Pas de zoom au double-tap (boutons +/− du mode match, chrono…) ; défilement et pincement conservés */
+*{touch-action:manipulation;}
+/* iPhone zoome automatiquement dans un champ dont la police est < 16px : on évite ça sur écran tactile */
+@media(pointer:coarse){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),
+  select,textarea,
+  #equipe-select,#duree-match-input{font-size:16px!important;}
 }
 </style>
 </head>
@@ -1843,12 +2028,14 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
   <button class="tab" onclick="showTab('feuille')">📝 Feuille</button>
   <button class="tab" onclick="showTab('compo')">🟩 Compo</button>
   <button class="tab" onclick="showTab('seances')">🎯 Préparation séances</button>
+  <button class="tab" onclick="showTab('maillots')">🧺 Maillots</button>
 </div>
 
 <!-- ══════════════════ PAGE LICENCES ══════════════════ -->
 <div id="page-licences" class="page active">
   <div id="next-match-card"></div>
   <div id="alert-banner-licences"></div>
+  <div id="anniversaires-banner"></div>
   <div class="toolbar">
     <input type="text" id="search-input" placeholder="🔍 Nom, prénom, n°, licence, tél…" oninput="renderTable()" style="flex:1;min-width:160px;">
     <select id="filter-poste" onchange="renderTable()">
@@ -1858,6 +2045,15 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
     <select id="filter-statut" onchange="renderTable()">
       <option value="">Tous statuts</option>
       <option>Actif</option><option>Blessé</option><option>Suspendu</option>
+    </select>
+    <select id="sort-mobile" class="sort-mobile" onchange="setSortFromSelect(this.value)" title="Trier la liste">
+      <option value="numero:1">Tri : N° maillot</option>
+      <option value="nom:1">Tri : Nom A→Z</option>
+      <option value="nom:-1">Tri : Nom Z→A</option>
+      <option value="categorie:1">Tri : Catégorie</option>
+      <option value="poste:1">Tri : Poste</option>
+      <option value="statut:1">Tri : Statut</option>
+      <option value="naissance:1">Tri : Date de naissance</option>
     </select>
     <select id="filter-categorie" onchange="renderTable()">
       <option value="">Toutes catégories</option>
@@ -1869,6 +2065,7 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
     <button class="btn btn-primary" onclick="openModal()">＋ Ajouter</button>
     <button class="btn btn-orange" onclick="openImport()">📥 CSV</button>
     <button class="btn btn-secondary" onclick="exportCSV()">↓ Export</button>
+    <button class="btn btn-secondary" onclick="exportLicencesPDF()" title="Exporter la liste affichée en PDF (tient sur 1 page)">📄 PDF</button>
   </div>
   <div class="stats-bar" id="stats-bar"></div>
   <div class="table-container">
@@ -1887,6 +2084,23 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
       </tr></thead>
       <tbody id="joueurs-tbody"></tbody>
     </table>
+  </div>
+
+  <!-- ── Encadrement : éducateurs en charge de la catégorie ── -->
+  <div id="educ-section">
+    <div class="educ-head">
+      <h3>🧑‍🏫 Éducateurs / Encadrement <span class="stat-pill" id="educ-count"></span></h3>
+      <button class="btn btn-primary" onclick="openEducModal()">＋ Ajouter un éducateur</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead><tr>
+          <th>Nom</th><th>Prénom</th><th>N° Licence</th><th>Fonction</th><th>Téléphone</th>
+          <th style="width:90px">Actions</th>
+        </tr></thead>
+        <tbody id="educ-tbody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -1914,6 +2128,9 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
 
   <!-- ── KPIs globaux ── -->
   <div style="padding:12px 24px 0"><div class="stats-top" id="stats-kpi"></div></div>
+
+  <!-- ── Derniers temps forts (dernier plateau / dernière journée jouée) ── -->
+  <div style="padding:12px 24px 0" id="stats-derniers-tf-wrap"></div>
 
   <div style="padding:12px 24px 0">
     <div class="stats-grid">
@@ -1945,6 +2162,20 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
           <tbody id="stats-gardiens"></tbody>
         </table>
       </div>
+      <div class="stats-card">
+        <div class="stats-card-header">🏅 Homme du match (cumul saison)</div>
+        <table class="stats-table">
+          <thead><tr><th>#</th><th>Joueur</th><th>🏅</th><th>Matchs</th><th>%</th></tr></thead>
+          <tbody id="stats-mvp"></tbody>
+        </table>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-header">🔥 Joueur le plus décisif (cumul saison)</div>
+        <table class="stats-table">
+          <thead><tr><th>#</th><th>Joueur</th><th>🔥</th><th>Buts+Passes</th><th>Matchs</th></tr></thead>
+          <tbody id="stats-decisifs"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -1965,7 +2196,7 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
 <div id="page-resultats" class="page">
   <div class="saison-header">
     <h2>Résultats de la saison</h2>
-    <input type="text" id="saison-nom" class="saison-input" placeholder="2024-25" value="2024-25" oninput="save()">
+    <input type="text" id="saison-nom" class="saison-input" placeholder="AAAA-AA" value="" oninput="onSaisonResultatsInput(this.value)" title="Saison courante (modifiable aussi dans ⚙️ Paramètres)">
     <button class="btn btn-primary" onclick="openMatchModal()">＋ Ajouter un match</button>
     <button class="btn btn-secondary" onclick="exportResultatsCSV()">↓ Export CSV</button>
   </div>
@@ -2347,6 +2578,34 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
   </div>
 </div>
 
+<!-- ══════════════════ PAGE MAILLOTS ══════════════════ -->
+<div id="page-maillots" class="page">
+  <div class="saison-header">
+    <h2>🧺 Lavage des maillots</h2>
+  </div>
+  <div class="resultats-top" id="maillots-kpi"></div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+    <div style="flex:2;min-width:320px">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Date</th><th>Adversaire</th><th>Compétition</th><th>Qui lave ?</th></tr></thead>
+          <tbody id="maillots-list"></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="flex:1;min-width:260px;display:flex;flex-direction:column;gap:16px">
+      <div class="feuille-section">
+        <div class="feuille-section-title">🔄 Prochain tour</div>
+        <div id="maillots-suggestion" style="padding:14px;font-size:13px"></div>
+      </div>
+      <div class="feuille-section">
+        <div class="feuille-section-title">📊 Répartition sur la saison</div>
+        <div id="maillots-repartition"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════ MODAL DÉTAIL CYCLE ══════════════════ -->
 <div class="modal-bg" id="modal-cycle-detail-bg">
   <div class="modal" style="width:600px;">
@@ -2487,6 +2746,28 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
   </div>
 </div>
 
+<!-- ══════════════════ MODAL ÉDUCATEUR ══════════════════ -->
+<div class="modal-bg" id="modal-educ-bg">
+  <div class="modal">
+    <h2 id="modal-educ-title">Ajouter un éducateur</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Nom *</label><input type="text" id="fe-nom" placeholder="Nom"></div>
+      <div class="form-group"><label>Prénom *</label><input type="text" id="fe-prenom" placeholder="Prénom"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>N° Licence</label><input type="text" id="fe-licence" placeholder="N° de licence"></div>
+      <div class="form-group"><label>Téléphone</label><input type="tel" id="fe-tel" placeholder="06 00 00 00 00"></div>
+    </div>
+    <div class="form-group"><label>Fonction</label>
+      <select id="fe-fonction"></select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-educ-bg')">Annuler</button>
+      <button class="btn btn-primary" id="modal-educ-save-btn" onclick="saveEduc()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════ MODAL MATCH ══════════════════ -->
 <div class="modal-bg" id="modal-match-bg">
   <div class="modal">
@@ -2501,11 +2782,12 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
       </div>
     </div>
     <div class="form-row" id="fm-adversaire-row">
-      <div class="form-group"><label>Adversaire *</label><input type="text" id="fm-adversaire" placeholder="FC Exemple"></div>
+      <div class="form-group"><label>Adversaire *</label><input type="text" id="fm-adversaire" placeholder="FC Exemple" oninput="updateHistoriqueAdversaireFM()"></div>
       <div class="form-group"><label>Lieu</label>
         <select id="fm-lieu"><option value="D">Domicile</option><option value="E">Extérieur</option><option value="N">Neutre</option></select>
       </div>
     </div>
+    <div id="fm-historique-adv" style="display:none;font-size:12px;color:var(--texte-muted);background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:8px;padding:8px 12px;margin:-8px 0 16px"></div>
     <!-- Champs spécifiques aux Plateaux -->
     <div id="plateau-fields" style="display:none;border:1px solid var(--gris-border);border-radius:8px;padding:12px;background:rgba(45,168,88,.06);margin-bottom:16px;">
       <div style="font-size:12px;font-weight:600;color:var(--texte-muted);margin-bottom:10px;text-transform:uppercase;">⚽ Informations Plateau</div>
@@ -2516,13 +2798,20 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
         <div style="font-size:11px;color:var(--texte-muted);margin-top:4px">Un match sera créé automatiquement pour chaque équipe listée ci-dessus (une par ligne).</div>
       </div>
     </div>
+    <!-- Champ spécifique aux Tournois -->
+    <div id="tournoi-fields" style="display:none;border:1px solid var(--gris-border);border-radius:8px;padding:12px;background:rgba(45,168,88,.06);margin-bottom:16px;">
+      <div class="form-group"><label>Lieu du tournoi</label><input type="text" id="fm-tournoi-ville" placeholder="Ex: Lyon, Paris, Marseille…" style="width:100%"></div>
+    </div>
     <div class="form-row" id="fm-score-row">
       <div class="form-group"><label>Nos buts *</label><input type="number" id="fm-buts-nous" min="0" value="0"></div>
       <div class="form-group"><label>Buts adversaire *</label><input type="number" id="fm-buts-eux" min="0" value="0"></div>
     </div>
     <div class="form-row">
       <div class="form-group"><label>Saison</label><input type="text" id="fm-saison" placeholder="2024-25" style="font-family:monospace"></div>
-      <div class="form-group"><label>Buteurs (ex: Dupont×2, Martin)</label><input type="text" id="fm-buteurs" placeholder="Noms des buteurs…"></div>
+      <div class="form-group"><label>🧺 Qui lave les maillots ?</label><input type="text" id="fm-laveur" list="fm-laveur-list" placeholder="Nom du joueur / de la famille…"><datalist id="fm-laveur-list"></datalist></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Buteurs (ex: Dupont×2, Martin)</label><input type="text" id="fm-buteurs" placeholder="Noms des buteurs…" style="width:100%"></div>
     </div>
     <div class="form-group"><label>Notes / Résumé</label><textarea id="fm-notes" rows="2" placeholder="Résumé du match…"></textarea></div>
     <div class="modal-footer">
@@ -2615,6 +2904,7 @@ let entrainements = JSON.parse(localStorage.getItem(eqKey('entrainements')) || '
 let evenements = JSON.parse(localStorage.getItem(eqKey('evenements')) || '[]');
 let exercicesPerso = JSON.parse(localStorage.getItem(eqKey('exercices_perso')) || '[]');
 let seances = JSON.parse(localStorage.getItem(eqKey('seances')) || '[]');
+let educateurs = JSON.parse(localStorage.getItem(eqKey('educateurs')) || '[]'); // encadrement de la catégorie
 let currentSchema = localStorage.getItem(eqKey('schema')) || '1-2-3-1';
 
 // Migration silencieuse : si des données existent dans les anciennes clés globales, les migrer vers eq1
@@ -2654,6 +2944,7 @@ function save() {
   localStorage.setItem(eqKey('evenements'),  JSON.stringify(evenements));
   localStorage.setItem(eqKey('exercices_perso'), JSON.stringify(exercicesPerso));
   localStorage.setItem(eqKey('seances'),     JSON.stringify(seances));
+  localStorage.setItem(eqKey('educateurs'),  JSON.stringify(educateurs));
   localStorage.setItem(eqKey('schema'),      currentSchema);
   localStorage.setItem('foot8_equipes',      JSON.stringify(equipes));
   localStorage.setItem('foot8_current_equipe', String(currentEquipeId));
@@ -2676,6 +2967,7 @@ window.reloadAppState = function(){
     evenements = JSON.parse(localStorage.getItem(eqKey('evenements')) || '[]');
     exercicesPerso = JSON.parse(localStorage.getItem(eqKey('exercices_perso')) || '[]');
     seances = JSON.parse(localStorage.getItem(eqKey('seances')) || '[]');
+    educateurs = JSON.parse(localStorage.getItem(eqKey('educateurs')) || '[]');
     currentSchema = localStorage.getItem(eqKey('schema')) || '1-2-3-1';
     currentFormat = localStorage.getItem('foot8_format') || '8';
 
@@ -2714,17 +3006,31 @@ function getJoueur(id){
   }
   return undefined;
 }
-function getSaisonCourante(){
-  // Priorité : valeur du champ saison dans la modale si ouverte
-  const el=document.getElementById('fm-saison');
-  if(el&&el.value) return el.value;
-  // Sinon : calculer depuis la date courante
-  // La saison commence en juillet (mois 7)
-  const now=new Date();
-  const year=now.getFullYear();
-  const month=now.getMonth()+1; // 1-12
+function getSaisonDepuisDate(){
+  // La saison de football commence en juillet (mois 7)
+  const now=new Date(), year=now.getFullYear(), month=now.getMonth()+1;
   const startYear=month>=7?year:year-1;
   return `${startYear}-${String(startYear+1).slice(2)}`;
+}
+function getSaisonCourante(){
+  // 1) Modale « match » réellement OUVERTE : la saison saisie dans la modale
+  const modal=document.getElementById('modal-match-bg');
+  const el=document.getElementById('fm-saison');
+  if(modal&&modal.classList.contains('open')&&el&&el.value) return el.value;
+  // 2) Saison courante choisie dans ⚙️ Paramètres (ou dans l'onglet Résultats)
+  const reglage=(localStorage.getItem('foot8_saison_courante')||'').trim();
+  if(reglage) return reglage;
+  // 3) Sinon : calculée depuis la date du jour
+  return getSaisonDepuisDate();
+}
+// Champ « saison » de l'onglet Résultats : reflète la saison courante
+function syncSaisonResultats(){
+  const i=document.getElementById('saison-nom');
+  if(i && document.activeElement!==i) i.value=getSaisonCourante();
+}
+function onSaisonResultatsInput(v){
+  localStorage.setItem('foot8_saison_courante',String(v||'').trim());
+  showSaveIndicator();
 }
 function getStatKey(jid, saison){ return jid+'_'+saison; }
 function allSaisons(){
@@ -2736,11 +3042,12 @@ function allSaisons(){
 // ══════════════════════════════════════════════
 //  TABS
 // ══════════════════════════════════════════════
-const TABS = ['licences','stats','resultats','calendrier','entrainements','feuille','compo','seances'];
+const TABS = ['licences','stats','resultats','calendrier','entrainements','feuille','compo','seances','maillots'];
 function showTab(tab){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',TABS[i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
+  const at=document.querySelector('.tab.active'); if(at&&at.scrollIntoView) at.scrollIntoView({inline:'center',block:'nearest'});
   if(tab==='licences')  { renderNextMatchCard(); }
   if(tab==='compo')     { updateFormatButtons(currentFormat); populateSchemaSelect(currentFormat); renderTerrain(); renderSidebar(); renderSpots(); renderRemplacants(); loadCompoMeta(); loadSpotDisplay(); }
   if(tab==='stats')     { populateSaisonFilter(); renderStatsPage(); }
@@ -2749,6 +3056,7 @@ function showTab(tab){
   if(tab==='entrainements'){ renderEntrainements(); }
   if(tab==='feuille')   { populateFeuilleSelect(); }
   if(tab==='seances')   { renderSeancesPage(); }
+  if(tab==='maillots')  { renderMaillots(); }
 }
 
 // ══════════════════════════════════════════════
@@ -2789,6 +3097,14 @@ function getCategorieAge(naissance) {
 //  LICENCES — tri & recherche
 // ══════════════════════════════════════════════
 let sortCol='numero', sortDir=1; // 1=asc, -1=desc
+function setSortFromSelect(v){
+  const [c,d]=String(v).split(':'); sortCol=c; sortDir=parseInt(d)||1;
+  document.querySelectorAll('#licences-thead .th-sort').forEach(t=>{
+    t.classList.remove('sort-asc','sort-desc');
+    if(t.dataset.col===sortCol) t.classList.add(sortDir===1?'sort-asc':'sort-desc');
+  });
+  renderTable();
+}
 
 function initSortHeaders(){
   document.querySelectorAll('#licences-thead .th-sort').forEach(th=>{
@@ -2804,13 +3120,15 @@ function initSortHeaders(){
   });
 }
 
-function renderTable(){
+// Liste filtrée + triée telle qu'affichée dans l'onglet Licences (utilisée par le tableau ET l'export PDF)
+const LIC_PM = {G:'Gardien',DC:'Défenseur',DL:'Défenseur',DR:'Défenseur',MC:'Milieu',MO:'Milieu',ML:'Milieu',MR:'Milieu',AT:'Attaquant',BU:'Attaquant','?':'?'};
+const LIC_POSTE_FR = {G:'Gard.',DC:'Déf. Ctr',DL:'Déf. G',DR:'Déf. D',MC:'Mil. Ctr',MO:'Mil. Off',ML:'Mil. G',MR:'Mil. D',AT:'Attaq.',BU:'Buteur','?':'—'};
+function getJoueursFiltres(){
   const q  = document.getElementById('search-input').value.toLowerCase().trim();
   const fp = document.getElementById('filter-poste').value;
   const fs = document.getElementById('filter-statut').value;
   const fc = document.getElementById('filter-categorie').value;
-  const PM = {G:'Gardien',DC:'Défenseur',DL:'Défenseur',DR:'Défenseur',MC:'Milieu',MO:'Milieu',ML:'Milieu',MR:'Milieu',AT:'Attaquant',BU:'Attaquant','?':'?'};
-  const POSTE_FR = {G:'Gard.',DC:'Déf. Ctr',DL:'Déf. G',DR:'Déf. D',MC:'Mil. Ctr',MO:'Mil. Off',ML:'Mil. G',MR:'Mil. D',AT:'Attaq.',BU:'Buteur','?':'—'};
+  const PM = LIC_PM, POSTE_FR = LIC_POSTE_FR;
 
   let filtered = joueurs.filter(j=>{
     const mq = !q || [j.nom,j.prenom,String(j.numero),j.licence||'',j.tel||'',j.naissance||'',j.statut||'',POSTE_FR[j.poste]||''].join(' ').toLowerCase().includes(q);
@@ -2820,7 +3138,6 @@ function renderTable(){
     return mq&&mp&&ms&&mc;
   });
 
-  // Tri
   filtered.sort((a,b)=>{
     let va=a[sortCol]??'', vb=b[sortCol]??'';
     if(sortCol==='numero'){va=Number(va);vb=Number(vb);return sortDir*(va-vb);}
@@ -2833,6 +3150,13 @@ function renderTable(){
     }
     return sortDir*String(va).localeCompare(String(vb),'fr');
   });
+  return filtered;
+}
+
+function renderTable(){
+  const POSTE_FR = LIC_POSTE_FR;
+  const filtered = getJoueursFiltres();
+
 
   const tbody = document.getElementById('joueurs-tbody');
   tbody.innerHTML = filtered.length ? filtered.map(j=>{
@@ -2863,7 +3187,267 @@ function renderTable(){
     <div class="stat-pill">Actifs : <strong>${act}</strong></div>
     ${ble?`<div class="stat-pill">Blessés : <strong style="color:var(--rouge)">${ble}</strong></div>`:''}
     ${sus?`<div class="stat-pill">Suspendus : <strong style="color:var(--jaune)">${sus}</strong></div>`:''}`;
+  renderEducTable();
 }
+
+// ══════════════════════════════════════════════
+//  ÉDUCATEURS / ENCADREMENT (onglet Licences)
+//  Propres à chaque équipe/catégorie (clé foot8_eq{id}_educateurs),
+//  donc synchronisés Firestore comme le reste.
+// ══════════════════════════════════════════════
+let editingEducId = null;
+const FONCTIONS_EDUC = ['Responsable de catégorie','Educateur','Dirigeant','Senior'];
+const FONCTION_DEFAUT = 'Educateur'; // présélectionnée à l'ajout
+// Rapproche une ancienne valeur (ex. « Éducateur ») de la liste, sans tenir compte des accents/majuscules
+function normFonction(v){
+  const k=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+  return FONCTIONS_EDUC.find(f=>k(f)===k(v)) || String(v||'').trim();
+}
+function getEducateursTries(){
+  return [...educateurs].sort((a,b)=>
+    String(a.nom||'').localeCompare(String(b.nom||''),'fr') ||
+    String(a.prenom||'').localeCompare(String(b.prenom||''),'fr'));
+}
+function renderEducTable(){
+  const tbody=document.getElementById('educ-tbody');
+  if(!tbody) return;
+  const liste=getEducateursTries();
+  const cnt=document.getElementById('educ-count');
+  if(cnt) cnt.innerHTML = liste.length ? `<strong>${liste.length}</strong>` : '';
+  if(cnt) cnt.style.display = liste.length ? '' : 'none';
+  tbody.innerHTML = liste.length ? liste.map(e=>{
+    const telLink = e.tel ? `<a href="tel:${licEsc(String(e.tel).replace(/\s/g,''))}" style="color:var(--vert-clair);text-decoration:none">📞 ${licEsc(e.tel)}</a>` : '—';
+    return `<tr>
+      <td><strong>${licEsc(e.nom)}</strong></td>
+      <td>${licEsc(e.prenom)}</td>
+      <td class="educ-lic">${licEsc(e.licence)||'—'}</td>
+      <td>${e.fonction?`<span class="educ-fonction">${licEsc(normFonction(e.fonction))}</span>`:'—'}</td>
+      <td class="educ-tel">${telLink}</td>
+      <td><div class="actions-cell">
+        <button class="btn btn-secondary btn-icon" onclick="openEducModal(${e.id})">✏️</button>
+        <button class="btn btn-danger btn-icon" onclick="deleteEduc(${e.id})">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('') :
+    `<tr><td colspan="6" class="educ-empty">Aucun éducateur saisi pour cette catégorie — clique sur « ＋ Ajouter un éducateur »</td></tr>`;
+}
+function openEducModal(id=null){
+  editingEducId=id;
+  const e = id ? educateurs.find(x=>x.id===id) : null;
+  document.getElementById('modal-educ-title').textContent = e ? "Modifier l'éducateur" : 'Ajouter un éducateur';
+  document.getElementById('modal-educ-save-btn').textContent = e ? 'Enregistrer' : 'Ajouter';
+  document.getElementById('fe-nom').value      = e ? (e.nom||'')      : '';
+  document.getElementById('fe-prenom').value   = e ? (e.prenom||'')   : '';
+  document.getElementById('fe-licence').value  = e ? (e.licence||'')  : '';
+  document.getElementById('fe-tel').value      = e ? (e.tel||'')      : '';
+  const selF=document.getElementById('fe-fonction');
+  const curF = e ? normFonction(e.fonction) : FONCTION_DEFAUT;
+  // une valeur historique hors liste est conservée plutôt que perdue
+  const optsF = (!curF || FONCTIONS_EDUC.includes(curF)) ? FONCTIONS_EDUC : [...FONCTIONS_EDUC, curF];
+  selF.innerHTML = optsF.map(f=>`<option value="${licEsc(f)}">${licEsc(f)}</option>`).join('');
+  selF.value = curF || FONCTION_DEFAUT;
+  document.getElementById('modal-educ-bg').classList.add('open');
+  setTimeout(()=>document.getElementById('fe-nom').focus(),50);
+}
+function saveEduc(){
+  const nom=document.getElementById('fe-nom').value.trim();
+  const prenom=document.getElementById('fe-prenom').value.trim();
+  if(!nom||!prenom){ alert('Nom et prénom sont obligatoires.'); return; }
+  const data={
+    nom, prenom,
+    licence:document.getElementById('fe-licence').value.trim(),
+    tel:document.getElementById('fe-tel').value.trim(),
+    fonction:document.getElementById('fe-fonction').value.trim()
+  };
+  if(editingEducId){
+    const i=educateurs.findIndex(x=>x.id===editingEducId);
+    if(i>=0) educateurs[i]={...educateurs[i],...data};
+  } else {
+    let nid=Date.now();
+    while(educateurs.some(x=>x.id===nid)) nid++; // identifiant toujours unique
+    data.id=nid;
+    educateurs.push(data);
+  }
+  save(); closeModal('modal-educ-bg'); renderEducTable();
+}
+function deleteEduc(id){
+  const e=educateurs.find(x=>x.id===id);
+  if(!e) return;
+  if(!confirm(`Supprimer ${e.nom} ${e.prenom} de l'encadrement ?`)) return;
+  educateurs=educateurs.filter(x=>x.id!==id);
+  save(); renderEducTable();
+}
+
+// ══════════════════════════════════════════════
+//  EXPORT PDF — LICENCES (tient sur 1 page, s'adapte au nombre de joueurs)
+//  Respecte les filtres / la recherche / le tri en cours.
+//  La taille de police est réduite automatiquement jusqu'à ce que
+//  la liste tienne sur une page A4 ; au-delà (~70 joueurs) elle
+//  passe sur plusieurs pages avec l'en-tête répété.
+// ══════════════════════════════════════════════
+function licEsc(v){ return String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function exportLicencesPDF(){
+  const liste = getJoueursFiltres();
+  if(!liste.length){ showNotif('Aucun joueur à exporter','red'); return; }
+
+  // Nettoyage d'un éventuel export précédent
+  document.getElementById('print-licences-area')?.remove();
+
+  // Feuille de style d'impression (injectée une seule fois)
+  if(!document.getElementById('print-licences-css')){
+    const st=document.createElement('style');
+    st.id='print-licences-css';
+    st.textContent = `
+#print-licences-area{position:fixed;left:-99999px;top:0;width:190mm;background:#fff;color:#111;
+  font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:var(--pl-fs,12px);line-height:1.25;box-sizing:border-box;}
+#print-licences-area *{box-sizing:border-box;margin:0;padding:0;color:inherit;}
+#print-licences-area .pl-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+  border-bottom:2px solid #1a7a3c;padding-bottom:.5em;margin-bottom:.6em;}
+#print-licences-area .pl-club{font-size:1.05em;font-weight:700;color:#1a7a3c;}
+#print-licences-area .pl-title{font-size:1.75em;font-weight:800;line-height:1.1;}
+#print-licences-area .pl-meta{font-size:.85em;color:#555;margin-top:.15em;}
+#print-licences-area .pl-counts{display:flex;gap:.9em;font-size:.9em;color:#444;text-align:center;}
+#print-licences-area .pl-counts b{display:block;font-size:1.5em;line-height:1.1;color:#111;}
+#print-licences-area .pl-filters{font-size:.8em;color:#666;margin-bottom:.5em;font-style:italic;}
+#print-licences-area table{width:100%;border-collapse:collapse;}
+#print-licences-area th{background:#1a7a3c;color:#fff!important;text-align:left;font-size:.8em;
+  text-transform:uppercase;letter-spacing:.03em;padding:.4em .5em;}
+#print-licences-area td{padding:.3em .5em;border-bottom:1px solid #ddd;vertical-align:middle;}
+#print-licences-area tbody tr:nth-child(even) td{background:#f4f7f5;}
+#print-licences-area .c{text-align:center;}
+#print-licences-area th.c{text-align:center;}
+#print-licences-area .num{font-weight:700;width:2.6em;text-align:center;}
+#print-licences-area .mono{font-family:Consolas,'Courier New',monospace;font-size:.95em;white-space:nowrap;}
+#print-licences-area .nw{white-space:nowrap;}
+#print-licences-area .st-actif{color:#1a7a3c!important;font-weight:600;}
+#print-licences-area .st-blesse{color:#c02828!important;font-weight:600;}
+#print-licences-area .st-suspendu{color:#b07a00!important;font-weight:600;}
+#print-licences-area .pl-sub{font-size:.8em;color:#777!important;font-weight:400;}
+#print-licences-area .pl-foot{margin-top:.6em;text-align:right;font-size:.7em;color:#999;}
+#print-licences-area .pl-sec{margin:1em 0 .4em;font-size:1.05em;font-weight:700;color:#1a7a3c;}
+#print-licences-area thead{display:table-header-group;}
+#print-licences-area tr{break-inside:avoid;page-break-inside:avoid;}
+@media print{
+  html,body.printing-licences{height:auto!important;min-height:0!important;overflow:visible!important;}
+  body.printing-licences{display:block!important;background:#fff!important;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body.printing-licences > *:not(#print-licences-area){display:none!important;}
+  body.printing-licences #print-licences-area{position:static;left:auto;top:auto;width:auto;}
+}`;
+    document.head.appendChild(st);
+  }
+
+  // ── Données d'en-tête ──
+  const clubName = (document.getElementById('club-name-display')?.textContent||'').trim();
+  const eq = (typeof equipes!=='undefined') ? equipes.find(e=>e.id===currentEquipeId) : null;
+  const metaTxt = [eq&&eq.nom, 'Saison '+getSaisonCourante()].filter(Boolean).join(' · ');
+  const tot=liste.length,
+        act=liste.filter(j=>j.statut==='Actif').length,
+        ble=liste.filter(j=>j.statut==='Blessé').length,
+        sus=liste.filter(j=>j.statut==='Suspendu').length;
+
+  // Rappel des filtres actifs
+  const filtres=[];
+  const q=document.getElementById('search-input').value.trim();
+  const fp=document.getElementById('filter-poste').value;
+  const fs=document.getElementById('filter-statut').value;
+  const fc=document.getElementById('filter-categorie').value;
+  if(fc) filtres.push('Catégorie : '+fc);
+  if(fp) filtres.push('Poste : '+fp);
+  if(fs) filtres.push('Statut : '+fs);
+  if(q)  filtres.push('Recherche : « '+q+' »');
+
+  // ── Lignes du tableau ──
+  const rows = liste.map(j=>{
+    const cat=getCategorieAge(j.naissance);
+    const slug=(j.statut||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s/g,'');
+    const retour=(j.statut==='Blessé'||j.statut==='Suspendu')&&j.retourPrevu
+      ? ` <span class="pl-sub">↩ ${new Date(j.retourPrevu).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})}</span>` : '';
+    const naiss=j.naissance ? new Date(j.naissance).toLocaleDateString('fr-FR') : '—';
+    return `<tr>
+      <td class="num">${licEsc(j.numero)}</td>
+      <td><strong>${licEsc(j.nom)}</strong></td>
+      <td>${licEsc(j.prenom)}</td>
+      <td class="nw">${licEsc(LIC_POSTE_FR[j.poste]||j.poste)}</td>
+      <td class="c nw">${naiss}</td>
+      <td class="c">${licEsc(cat.label)}</td>
+      <td class="mono">${licEsc(j.licence)||'—'}</td>
+      <td class="mono">${licEsc(j.tel)||'—'}</td>
+      <td class="nw st-${slug}">${licEsc(j.statut)}${retour}</td>
+    </tr>`;
+  }).join('');
+
+  // ── Encadrement (éducateurs de la catégorie) ──
+  const educListe = getEducateursTries();
+  const educRows = educListe.map(e=>`<tr>
+      <td><strong>${licEsc(e.nom)}</strong></td>
+      <td>${licEsc(e.prenom)}</td>
+      <td class="nw">${licEsc(normFonction(e.fonction))||'—'}</td>
+      <td class="mono">${licEsc(e.licence)||'—'}</td>
+      <td class="mono">${licEsc(e.tel)||'—'}</td>
+    </tr>`).join('');
+  const educHtml = educListe.length ? `
+    <div class="pl-sec">Encadrement</div>
+    <table>
+      <thead><tr><th>Nom</th><th>Prénom</th><th>Fonction</th><th>N° Licence</th><th>Téléphone</th></tr></thead>
+      <tbody>${educRows}</tbody>
+    </table>` : '';
+
+  const area=document.createElement('div');
+  area.id='print-licences-area';
+  area.innerHTML = `
+    <div class="pl-head">
+      <div>
+        ${clubName?`<div class="pl-club">${licEsc(clubName)}</div>`:''}
+        <div class="pl-title">Licences — Effectif</div>
+        <div class="pl-meta">${licEsc(metaTxt)}</div>
+      </div>
+      <div class="pl-counts">
+        <div><b>${tot}</b>joueur${tot>1?'s':''}</div>
+        <div><b>${act}</b>actif${act>1?'s':''}</div>
+        ${ble?`<div><b>${ble}</b>blessé${ble>1?'s':''}</div>`:''}
+        ${sus?`<div><b>${sus}</b>suspendu${sus>1?'s':''}</div>`:''}
+      </div>
+    </div>
+    ${filtres.length?`<div class="pl-filters">Filtres appliqués — ${licEsc(filtres.join(' · '))}</div>`:''}
+    <table>
+      <thead><tr>
+        <th class="c">#</th><th>Nom</th><th>Prénom</th><th>Poste</th>
+        <th class="c">Naissance</th><th class="c">Cat.</th><th>N° Licence</th><th>Téléphone</th><th>Statut</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${educHtml}
+    <div class="pl-foot">Imprimé le ${new Date().toLocaleDateString('fr-FR')}${typeof APP_VERSION!=='undefined'?' · Player Tracking App v'+APP_VERSION:''}</div>`;
+  document.body.appendChild(area);
+
+  // ── Ajustement automatique à 1 page A4 ──
+  // Hauteur utile : 297 mm − 2×10 mm de marge ≈ 1047 px ; on garde 5 % de sécurité.
+  const cible = (277/25.4*96) * 0.95;
+  let fits=false;
+  for(let fsz=12; fsz>=7; fsz-=0.25){
+    area.style.setProperty('--pl-fs', fsz+'px');
+    if(area.offsetHeight<=cible){ fits=true; break; }
+  }
+  if(!fits){ // trop de joueurs pour une page → plusieurs pages, police lisible
+    area.style.setProperty('--pl-fs','9px');
+  }
+
+  // Format de page (retiré après impression pour ne pas impacter les autres impressions)
+  let pg=document.getElementById('print-licences-page');
+  if(!pg){ pg=document.createElement('style'); pg.id='print-licences-page'; document.head.appendChild(pg); }
+  pg.textContent='@page{size:A4 portrait;margin:10mm;}';
+
+  document.body.classList.add('printing-licences');
+  setTimeout(()=>window.print(), 50);
+}
+window.addEventListener('afterprint',()=>{
+  if(!document.body.classList.contains('printing-licences')) return;
+  document.body.classList.remove('printing-licences');
+  document.getElementById('print-licences-area')?.remove();
+  document.getElementById('print-licences-page')?.remove();
+});
 
 // ══════════════════════════════════════════════
 //  MODAL JOUEUR
@@ -2979,8 +3563,124 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.61';
+const APP_VERSION='1.78';
 const CHANGELOG=[
+  {
+    version:'1.78', date:'26/09/2026',
+    changes:[
+      "Cartes KPI (Stats & Dashboard, Résultats, Entraînements, Maillots) : réorganisation de l'affichage pour qu'il reste propre quel que soit le nombre de cartes et la taille d'écran. La dernière ligne incomplète est désormais centrée au lieu de laisser une carte isolée collée à gauche avec du vide à droite. Sur mobile, les cartes restent groupées par 2 par ligne au lieu de s'empiler une par une.",
+    ]
+  },
+  {
+    version:'1.77', date:'26/09/2026',
+    changes:[
+      "Page Stats & Dashboard : nouveau bloc ⭐ Derniers temps forts, juste sous les KPI. Il met en avant le 🏅 Homme du match et le 🔥 Joueur le plus décisif du dernier jour joué (un plateau entier si le dernier événement en est un — buts/passes cumulés et meilleure note sur l'ensemble des matchs du plateau, sinon simplement le dernier match). Les ex-aequo y sont tous affichés. Le bloc respecte le filtre de saison et disparaît si aucune feuille de match n'a encore été renseignée pour cette journée.",
+    ]
+  },
+  {
+    version:'1.76', date:'26/09/2026',
+    changes:[
+      "Correctif Homme du match / Plus décisif : en cas d'égalité stricte entre deux joueurs sur un même match (même note, ou même total buts+passes décisives), les DEUX (ou plus) sont désormais crédités — au lieu d'en choisir un seul arbitrairement selon l'ordre de la liste. Cela s'applique aussi bien à l'affichage sur la feuille de match qu'aux cumuls saison de la page Stats & Dashboard.",
+    ]
+  },
+  {
+    version:'1.75', date:'26/09/2026',
+    changes:[
+      "Page Stats & Dashboard : deux nouveaux classements cumulés sur la saison — 🏅 Homme du match (nombre de fois où un joueur a eu la meilleure note en feuille de match) et 🔥 Joueur le plus décisif (nombre de fois où un joueur a été l'auteur du plus de buts + passes décisives d'un match).",
+      "Ajout de deux KPI en tête de la page Stats & Dashboard mettant en avant le leader de chaque classement.",
+      "Ces cumuls se recalculent automatiquement à partir des feuilles de match déjà saisies (aucune ressaisie nécessaire).",
+    ]
+  },
+  {
+    version:'1.74', date:'26/09/2026',
+    changes:[
+      "Onglet 🧺 Maillots : le champ « qui lave ? » est désormais une liste déroulante des joueurs ayant une licence active (au lieu d'un champ texte libre), pour éviter les fautes de frappe et les doublons de noms.",
+      "Onglet 🧺 Maillots : les matchs d'un même plateau, ainsi que plusieurs matchs joués le même jour contre le même adversaire dans la même compétition, sont désormais regroupés en une seule ligne de lavage (au lieu d'un lavage par match) — la répartition et les statistiques de rotation en tiennent compte.",
+      "Correctif d'affichage : sur les écrans d'ordinateur un peu étroits, cliquer sur un onglet situé à droite (comme le nouvel onglet Maillots) pouvait le laisser à moitié masqué hors de la zone visible de la barre d'onglets ; l'onglet cliqué se recentre désormais automatiquement, quelle que soit la taille d'écran.",
+      "Correctif d'affichage : le tableau de l'onglet Maillots ne risque plus d'être tronqué sur petit écran (défilement horizontal ajouté si besoin).",
+    ]
+  },
+  {
+    version:'1.72', date:'26/09/2026',
+    changes:[
+      "Nouvel onglet 🧺 Maillots : chaque match (championnat, coupe, amical, tournoi, plateau…) peut désormais indiquer qui lave le jeu de maillots. L'onglet liste tous les matchs avec ce champ éditable, calcule la répartition par personne sur la saison, et suggère automatiquement à qui revient le prochain tour (en priorisant qui a le moins souvent lavé / depuis le plus longtemps).",
+      "Le lavage assigné à un match s'affiche aussi dans l'onglet Résultats (🧺 sous la ligne du match).",
+    ]
+  },
+  {
+    version:'1.71', date:'26/09/2026',
+    changes:[
+      "Historique face-à-face : lors de l'ajout/modification d'un match, le nombre de confrontations passées contre le même adversaire (V/N/D, buts, date du dernier match) s'affiche automatiquement. Ce rappel apparaît aussi dans la feuille de match, à côté de l'Homme du match et du Clean sheet.",
+      "Anniversaires à venir : un nouvel encart sur la page Licences signale les joueurs dont l'anniversaire tombe dans les 30 prochains jours, avec l'âge qu'ils auront et le nombre de jours restants.",
+    ]
+  },
+  {
+    version:'1.70', date:'26/09/2026',
+    changes:[
+      "Feuille de match : mise en avant de trois temps forts calculés automatiquement — 🏅 Homme du match (meilleure note /10), ⭐ Plus décisif (buts + passes décisives cumulés), 🧤 Clean sheet gardien (aucun but encaissé). Ces badges n'apparaissent que lorsque la donnée est renseignée.",
+    ]
+  },
+  {
+    version:'1.69', date:'26/09/2026',
+    changes:[
+      "Tournois : comme pour les plateaux, il est maintenant possible de renseigner le lieu où se déroule le tournoi. Ce lieu s'affiche dans l'onglet Résultats, le calendrier, la feuille de match, la convocation WhatsApp, la composition/impression et l'export .ics.",
+    ]
+  },
+  {
+    version:'1.68', date:'26/09/2026',
+    changes:[
+      "Onglet Résultats et détail du calendrier : les matchs planifiés (pas encore joués) affichent désormais « À venir » à la place du score « 0 – 0 », pour ne plus les confondre avec un match nul.",
+    ]
+  },
+  {
+    version:'1.67', date:'19/09/2026',
+    changes:[
+      "Correction : le champ « saison » de l'onglet Résultats affichait toujours 2024-25. Il affiche maintenant la saison courante (réglage ⚙️ Paramètres, sinon calculée depuis la date : la saison change en juillet) et reste synchronisé avec les Paramètres.",
+      "Correction : le réglage « Saison courante » des Paramètres n'était jamais utilisé pour les nouveaux matchs ; c'est maintenant le cas.",
+      "Correction : « Ajouter un match » après avoir modifié un ancien match reprenait la saison de l'ancien match ; le nouveau match reçoit désormais la saison courante.",
+    ]
+  },
+  {
+    version:'1.66', date:'19/09/2026',
+    changes:[
+      "Accessibilité : le zoom par pincement est de nouveau autorisé (utile en plein soleil ou pour les personnes malvoyantes).",
+      "Le zoom involontaire au double-tap (boutons + / − et chrono du mode match) reste bloqué, et les champs de saisie passent à 16 px sur écran tactile pour éviter le zoom automatique d'iPhone.",
+    ]
+  },
+  {
+    version:'1.65', date:'19/09/2026',
+    changes:[
+      "Application entièrement adaptée aux téléphones, tablettes (portrait/paysage) et grands écrans, avec gestion de l'encoche et des barres système.",
+      "En-tête compact sur téléphone : tous les boutons restent accessibles sans faire défiler la page horizontalement.",
+      "Licences : sur téléphone, la liste des joueurs et des éducateurs s'affiche en cartes avec toutes les informations (licence, téléphone, statut, actions) ; un sélecteur « Tri » remplace les en-têtes de colonnes.",
+      "Correction : la page Entraînements s'affichait en colonnes cassées (KPI et liste côte à côte), y compris sur ordinateur.",
+      "Correction : le calendrier ne déborde plus en largeur tablette ; les tableaux de stats ne sont plus tronqués.",
+      "Correction : la feuille de match ne masque plus les boutons Convocation, Joueur prêté, Tournoi, Imprimer… sur petit écran (grille 2 colonnes).",
+      "Correction : dans la Compo sur téléphone, la liste des joueurs à placer est de nouveau visible.",
+      "Modales : boutons Annuler / Enregistrer toujours visibles sur téléphone ; onglet actif automatiquement centré ; zones de toucher agrandies sur écrans tactiles.",
+    ]
+  },
+  {
+    version:'1.64', date:'18/09/2026',
+    changes:[
+      "Onglet Licences : nouvelle zone « 🧑‍🏫 Éducateurs / Encadrement » sous la liste des joueurs pour saisir les éducateurs en charge de la catégorie (nom, prénom, n° de licence, fonction — Responsable de catégorie, Educateur, Dirigeant ou Senior —, téléphone). Les éducateurs sont propres à chaque catégorie/équipe et synchronisés comme le reste des données.",
+      "L'export PDF des licences ajoute une section « Encadrement » sous l'effectif quand au moins un éducateur est saisi (la mise en page continue de s'adapter pour tenir sur une page A4).",
+    ]
+  },
+  {
+    version:'1.63', date:'18/09/2026',
+    changes:[
+      "Onglet Licences : nouveau bouton « 📄 PDF » qui exporte la liste des joueurs (filtres, recherche et tri en cours respectés). Le document tient sur une seule page A4 : la taille du texte s'adapte automatiquement au nombre de joueurs, et bascule sur plusieurs pages (en-tête répété) au-delà d'environ 70 joueurs.",
+    ]
+  },
+  {
+    version:'1.62', date:'18/09/2026',
+    changes:[
+      "Onglet Feuille — Plateau : les présents sont désormais liés entre les feuilles d'un même plateau (ou futsal). Cocher / décocher un joueur, utiliser « Tous présents » ou ajouter / retirer un joueur prêté met à jour automatiquement les feuilles des autres équipes du plateau : plus besoin de ressaisir les présents match par match.",
+      "Un bouton « 🔗 Présents liés » (bloc Plateau de la feuille) permet de dissocier les feuilles si un joueur ne participe qu'à un seul match, et de les relier à nouveau (fusion des présents). Un joueur qui a déjà des stats (but, passe, carton, remplacement…) sur une autre feuille n'y est jamais retiré automatiquement.",
+      "Le bouton « 🔁 Tournoi » se limite maintenant aux matchs du même plateau quand la feuille ouverte appartient à un plateau, et copie aussi les joueurs prêtés. Les autres matchs du plateau sont cliquables pour passer directement à leur feuille.",
+    ]
+  },
   {
     version:'1.61', date:'11/09/2026',
     changes:[
@@ -3236,15 +3936,87 @@ function populateSaisonFilter(){
   allSaisons().forEach(s=>{ const o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o); });
   if(cur) sel.value=cur;
 }
+// ── Derniers temps forts : Homme du match / joueur décisif du dernier jour joué (plateau ou match simple) ──
+function getDerniersTempsForts(filterSaison){
+  const list=[...matchs].filter(m=>!m.annule&&!matchEstAVenir(m)&&(!filterSaison||m.saison===filterSaison)).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!list.length) return null;
+  const lastDate=list[0].date;
+  const dayMatches=list.filter(m=>m.date===lastDate);
+
+  const noteMax={}, butsSum={}, passesSum={};
+  let anyFeuille=false;
+  dayMatches.forEach(m=>{
+    const f=feuilles[m.id];
+    if(!f||!f.presents||!f.presents.length) return;
+    anyFeuille=true;
+    f.presents.forEach(jid=>{
+      const jidN=+jid, jidS=String(jid);
+      const note=+(f.notes?.[jidS]||f.notes?.[jidN]||0);
+      if(note>(noteMax[jidN]||0)) noteMax[jidN]=note;
+      const b=+(f.buts?.[jidS]||f.buts?.[jidN]||0)+(+(f.penalties?.[jidS]||f.penalties?.[jidN]||0));
+      const p=+(f.passes?.[jidS]||f.passes?.[jidN]||0);
+      butsSum[jidN]=(butsSum[jidN]||0)+b;
+      passesSum[jidN]=(passesSum[jidN]||0)+p;
+    });
+  });
+  if(!anyFeuille) return null;
+
+  // Homme du match : meilleure note obtenue sur un match de la journée (ex-aequo compris)
+  let mvpNote=0;
+  Object.values(noteMax).forEach(n=>{ if(n>mvpNote) mvpNote=n; });
+  const mvpJoueurs=mvpNote>0?Object.entries(noteMax).filter(([,n])=>n===mvpNote).map(([jid])=>getJoueur(+jid)).filter(Boolean):[];
+
+  // Joueur le plus décisif : total buts+passes cumulé sur l'ensemble des matchs de la journée (ex-aequo compris)
+  const totByJid={};
+  new Set([...Object.keys(butsSum),...Object.keys(passesSum)]).forEach(jid=>{ totByJid[jid]=(butsSum[jid]||0)+(passesSum[jid]||0); });
+  let decVal=0;
+  Object.values(totByJid).forEach(t=>{ if(t>decVal) decVal=t; });
+  const decisifJoueurs=decVal>0?Object.entries(totByJid).filter(([,t])=>t===decVal).map(([jid])=>{
+    const j=getJoueur(+jid); return j?{joueur:j,buts:butsSum[jid]||0,passes:passesSum[jid]||0}:null;
+  }).filter(Boolean):[];
+
+  // Libellé du contexte (plateau avec plusieurs adversaires, ou match simple)
+  const isPlateauDay=dayMatches.some(m=>isPlateauType(m.comp));
+  const adversaires=[...new Set(dayMatches.map(m=>m.adversaire).filter(Boolean))];
+  const ville=dayMatches.find(m=>m.plateauVille)?.plateauVille;
+  const comp=dayMatches[0].comp;
+  const label=isPlateauDay
+    ? `⚽ ${comp}${ville?' — '+ville:''}${adversaires.length?' (vs '+adversaires.join(', ')+')':''}`
+    : (dayMatches.length>1?`vs ${adversaires.join(', ')}`:`vs ${dayMatches[0].adversaire||''}`);
+
+  return {date:lastDate,label,mvpJoueurs,mvpNote,decisifJoueurs,decVal};
+}
+function renderDerniersTempsForts(filterSaison){
+  const el=document.getElementById('stats-derniers-tf-wrap');
+  if(!el) return;
+  const tf=getDerniersTempsForts(filterSaison);
+  if(!tf||(!tf.mvpJoueurs.length&&!tf.decisifJoueurs.length)){ el.innerHTML=''; return; }
+  const d=tf.date?new Date(tf.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}):'';
+  el.innerHTML=`
+    <div class="feuille-section">
+      <div class="feuille-section-title">⭐ Derniers temps forts <span style="font-weight:400;color:var(--texte-muted);font-size:12px">— ${tf.label} · ${d}</span></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;padding:14px">
+        ${tf.mvpJoueurs.length?`<div style="background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px;flex:1;min-width:220px">
+          <span style="font-size:18px">🏅</span>
+          <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Dernier homme du match</div><div style="font-weight:700;font-size:13px">${tf.mvpJoueurs.map(j=>j.nom+' '+j.prenom).join(', ')} <span style="color:var(--jaune)">${tf.mvpNote}/10</span></div></div>
+        </div>`:''}
+        ${tf.decisifJoueurs.length?`<div style="background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px;flex:1;min-width:220px">
+          <span style="font-size:18px">🔥</span>
+          <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Dernier joueur décisif</div><div style="font-weight:700;font-size:13px">${tf.decisifJoueurs.map(d=>`${d.joueur.nom} ${d.joueur.prenom} <span style="color:#4ade80">${d.buts?d.buts+'⚽':''}${d.buts&&d.passes?' + ':''}${d.passes?d.passes+'🎯':''}</span>`).join(', ')}</div></div>
+        </div>`:''}
+      </div>
+    </div>`;
+}
 function renderStatsPage(){
   const filterSaison=document.getElementById('stats-saison-filter').value;
   const filterComp=document.getElementById('stats-comp-filter')?.value||'';
   const totalMatchsSaison=getTotalMatchsSaison(filterSaison,filterComp);
+  renderDerniersTempsForts(filterSaison);
 
   // Agréger stats par joueur
   const agg={};
   joueurs.forEach(j=>{
-    agg[j.id]={j,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,presences:getPresences(j.id,filterSaison,filterComp)};
+    agg[j.id]={j,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,mvp:0,decisif:0,presences:getPresences(j.id,filterSaison,filterComp)};
   });
   Object.values(stats).forEach(st=>{
     if(filterSaison&&st.saison!==filterSaison)return;
@@ -3253,6 +4025,7 @@ function renderStatsPage(){
     a.matchs+=st.matchs||0; a.buts+=st.buts||0; a.passes+=st.passes||0;
     a.jaunes+=st.jaunes||0; a.rouges+=st.rouges||0;
     a.cs+=st.cs||0; a.encaisses+=st.encaisses||0;
+    a.mvp+=st.mvp||0; a.decisif+=st.decisif||0;
   });
   const arr=Object.values(agg);
   const totalButs=arr.reduce((s,a)=>s+a.buts,0);
@@ -3267,7 +4040,9 @@ function renderStatsPage(){
     <div class="kpi-card"><div class="kpi-label">Buts encaissés</div><div class="kpi-val" style="color:var(--rouge)">⛔ ${totalButsEncaisses}</div></div>
     <div class="kpi-card"><div class="kpi-label">Passes décisives</div><div class="kpi-val">🎯 ${totalPasses}</div></div>
     <div class="kpi-card"><div class="kpi-label">Meilleur buteur</div><div class="kpi-val" style="font-size:16px">${(()=>{const t=arr.filter(a=>a.buts>0).sort((a,b)=>b.buts-a.buts||b.passes-a.passes)[0];return t?t.j.nom+' ('+t.buts+')':'—';})()}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Joueurs scoreurs</div><div class="kpi-val">${arr.filter(a=>a.buts>0).length}<span style="font-size:14px;color:var(--texte-muted)"> / ${joueurs.length}</span></div></div>`;
+    <div class="kpi-card"><div class="kpi-label">Joueurs scoreurs</div><div class="kpi-val">${arr.filter(a=>a.buts>0).length}<span style="font-size:14px;color:var(--texte-muted)"> / ${joueurs.length}</span></div></div>
+    <div class="kpi-card"><div class="kpi-label">🏅 Homme du match</div><div class="kpi-val" style="font-size:16px">${(()=>{const t=arr.filter(a=>a.mvp>0).sort((a,b)=>b.mvp-a.mvp)[0];return t?t.j.nom+' ('+t.mvp+')':'—';})()}</div></div>
+    <div class="kpi-card"><div class="kpi-label">🔥 Plus décisif</div><div class="kpi-val" style="font-size:16px">${(()=>{const t=arr.filter(a=>a.decisif>0).sort((a,b)=>b.decisif-a.decisif)[0];return t?t.j.nom+' ('+t.decisif+')':'—';})()}</div></div>`;
 
   const saisonLabel=filterSaison||getSaisonCourante();
 
@@ -3320,6 +4095,30 @@ function renderStatsPage(){
       <td>${g.a.presences}</td>
     </tr>`;}).join('') : '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--texte-muted)">Aucun gardien enregistré</td></tr>';
 
+  // ── Homme du match (cumul) ──
+  const mvps=[...arr].filter(a=>a.mvp>0||a.presences>0).sort((a,b)=>b.mvp-a.mvp||b.presences-a.presences);
+  const maxMvp=Math.max(1,...mvps.map(a=>a.mvp));
+  document.getElementById('stats-mvp').innerHTML=mvps.length?mvps.map((a,i)=>`
+    <tr>
+      <td class="${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''}">${i+1}</td>
+      <td><strong>${a.j.nom}</strong> <span style="color:var(--texte-muted);font-size:11px">${a.j.prenom}</span></td>
+      <td><strong>${a.mvp}</strong><span class="bar-wrap"><span class="bar-fill" style="width:${(a.mvp/maxMvp*100).toFixed(0)}%;background:#facc15"></span></span></td>
+      <td>${a.presences}</td>
+      <td style="color:var(--texte-muted)">${a.presences?Math.round(a.mvp/a.presences*100)+'%':'—'}</td>
+    </tr>`).join('') : '<tr><td colspan="5" class="no-data">Aucune note saisie pour l\'instant.</td></tr>';
+
+  // ── Joueur le plus décisif (cumul) : nombre de fois où il a été LE plus décisif d'un match ──
+  const decisifs=[...arr].filter(a=>a.decisif>0||a.presences>0).sort((a,b)=>b.decisif-a.decisif||(b.buts+b.passes)-(a.buts+a.passes));
+  const maxDec=Math.max(1,...decisifs.map(a=>a.decisif));
+  document.getElementById('stats-decisifs').innerHTML=decisifs.length?decisifs.map((a,i)=>`
+    <tr>
+      <td class="${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''}">${i+1}</td>
+      <td><strong>${a.j.nom}</strong> <span style="color:var(--texte-muted);font-size:11px">${a.j.prenom}</span></td>
+      <td><strong>${a.decisif}</strong><span class="bar-wrap"><span class="bar-fill" style="width:${(a.decisif/maxDec*100).toFixed(0)}%;background:#4ade80"></span></span></td>
+      <td style="color:var(--texte-muted)">${a.buts+a.passes}</td>
+      <td>${a.presences}</td>
+    </tr>`).join('') : '<tr><td colspan="5" class="no-data">Aucune donnée pour l\'instant.</td></tr>';
+
   // ── Graphiques (section visuelle, sans doublons avec les tableaux ci-dessus) ──
   renderDashboard(filterSaison, filterComp);
 }
@@ -3328,10 +4127,37 @@ function renderStatsPage(){
 //  PAGE RÉSULTATS
 // ══════════════════════════════════════════════
 function isPlateauType(comp){ return comp==='Plateau'||comp==='Futsal'; }
+function isTournoiType(comp){ return comp==='Tournoi'; }
 // Un match "groupe plateau" = un match auto-créé (un par équipe adverse) lors de la saisie d'un plateau.
 function isPlateauGroupMatch(m){ return !!(m && isPlateauType(m.comp) && m.plateauGroupId); }
 function genPlateauGroupId(){ return 'pg_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
 function resultat(m){ return m.butsNous>m.butsEux?'V':m.butsNous===m.butsEux?'N':'D'; }
+
+// ── Historique face-à-face contre un adversaire donné ──
+function getHistoriqueAdversaire(adversaire,excludeId=null){
+  const nom=(adversaire||'').trim().toLowerCase();
+  if(!nom) return null;
+  const prec=matchs.filter(m=>m.id!==excludeId&&!m.annule&&!matchEstAVenir(m)&&(m.adversaire||'').trim().toLowerCase()===nom)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  if(!prec.length) return null;
+  const V=prec.filter(m=>resultat(m)==='V').length;
+  const N=prec.filter(m=>resultat(m)==='N').length;
+  const D=prec.filter(m=>resultat(m)==='D').length;
+  const bp=prec.reduce((s,m)=>s+(m.butsNous||0),0);
+  const bc=prec.reduce((s,m)=>s+(m.butsEux||0),0);
+  return {nb:prec.length,V,N,D,bp,bc,dernier:prec[0]};
+}
+function updateHistoriqueAdversaireFM(){
+  const box=document.getElementById('fm-historique-adv');
+  if(!box) return;
+  const adversaire=document.getElementById('fm-adversaire').value;
+  const h=getHistoriqueAdversaire(adversaire,editingMatchId);
+  if(!h){ box.style.display='none'; box.innerHTML=''; return; }
+  const dCl=h.dernier?resultat(h.dernier):null;
+  const dTxt=h.dernier?`Dernière : ${new Date(h.dernier.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'})} (${h.dernier.butsNous}-${h.dernier.butsEux})`:'';
+  box.style.display='block';
+  box.innerHTML=`🤝 <strong>${h.nb} confrontation${h.nb>1?'s':''}</strong> — <span style="color:#4ade80">${h.V}V</span> <span style="color:var(--jaune)">${h.N}N</span> <span style="color:#f87171">${h.D}D</span> · buts ${h.bp}-${h.bc}${dTxt?' · '+dTxt:''}`;
+}
 // Un match dont la date n'est pas encore passée (et pour lequel aucune feuille
 // n'a été commencée aujourd'hui) n'a pas encore de résultat réel : il ne doit
 // pas être compté dans les stats/bilan V-N-D, sous peine d'apparaître comme
@@ -3547,7 +4373,7 @@ function calendrierExportICS(){
   };
   let ics='BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Foot8 Manager//FR\r\n';
   evts.forEach(m=>{
-    const titre=(m.annule?'🚫 ANNULÉ — ':'')+(isPlateauType(m.comp)?(m.plateauGroupId?`${m.comp} vs ${m.adversaire} (${m.plateauVille||''})`:`Plateau — ${m.comp}`):`Match vs ${m.adversaire}`);
+    const titre=(m.annule?'🚫 ANNULÉ — ':'')+(isPlateauType(m.comp)?(m.plateauGroupId?`${m.comp} vs ${m.adversaire} (${m.plateauVille||''})`:`Plateau — ${m.comp}`):`Match vs ${m.adversaire}${(isTournoiType(m.comp)&&m.tournoiVille)?' ('+m.tournoiVille+')':''}`);
     const statut=m.annule?'STATUS:CANCELLED\r\n':'';
     ics+=`BEGIN:VEVENT\r\nUID:match-${m.id}@foot8manager\r\nDTSTART:${dtstamp(m.date,'15:00')}\r\nSUMMARY:${titre}\r\n${statut}DESCRIPTION:${m.comp||''}\r\nEND:VEVENT\r\n`;
   });
@@ -3594,11 +4420,11 @@ function calendrierOuvrirJour(dateStr){
         const r=resultat(m);
         const cl=r==='V'?'score-v':r==='N'?'score-n':'score-d';
         const lieuTxt={D:'🏠 Domicile',E:'✈️ Extérieur',N:'⚖️ Neutre'}[m.lieu]||'';
-        const advTxt=(isPlateauType(m.comp)&&!m.plateauGroupId)?`⚽ ${m.comp}${m.plateauVille?' à '+m.plateauVille:''}`:(m.plateauGroupId?`⚽ vs ${m.adversaire}${m.plateauVille?' ('+m.plateauVille+')':''}`:`vs ${m.adversaire}`);
+        const advTxt=(isPlateauType(m.comp)&&!m.plateauGroupId)?`⚽ ${m.comp}${m.plateauVille?' à '+m.plateauVille:''}`:(m.plateauGroupId?`⚽ vs ${m.adversaire}${m.plateauVille?' ('+m.plateauVille+')':''}`:`vs ${m.adversaire}${(isTournoiType(m.comp)&&m.tournoiVille)?' ('+m.tournoiVille+')':''}`);
         return `<div class="match-card" style="margin-bottom:8px${m.annule?';opacity:.75':''}">
           <div class="match-adversaire"><strong style="${m.annule?'text-decoration:line-through':''}">${advTxt}</strong>${m.annule?'<span class="ent-badge-annule">🚫 Annulé</span>':''}</div>
           <div class="match-lieu">${lieuTxt}</div>
-          ${m.annule?'':`<div class="match-score ${cl}">${m.butsNous} – ${m.butsEux}</div>`}
+          ${m.annule?'':(matchEstAVenir(m)?`<div class="match-score" style="color:var(--texte-muted);font-size:14px;font-weight:600">À venir</div>`:`<div class="match-score ${cl}">${m.butsNous} – ${m.butsEux}</div>`)}
           <div class="match-comp" style="color:var(--texte-muted);font-size:12px">${m.comp}</div>
           <div class="match-actions">
             <button class="btn btn-feuille btn-icon" onclick="ouvrirFeuille(${m.id})" title="Feuille de match">📝</button>
@@ -4123,6 +4949,7 @@ function renderEntrainements(){
 }
 
 function renderResultats(){
+  syncSaisonResultats();
   const ms=[...matchs].sort((a,b)=>b.date.localeCompare(a.date));
   const msJoues=ms.filter(m=>!m.annule&&!matchEstAVenir(m));
   const V=msJoues.filter(m=>resultat(m)==='V').length;
@@ -4150,7 +4977,8 @@ function renderResultats(){
     const f=feuilles[m.id];
     const nbPresents=f&&f.presents?f.presents.length:0;
     const feuilleLabel=nbPresents?`📝 ${nbPresents}j`:'📝';
-    const villeInfo=isPlateauType(m.comp)?`<div style="font-size:11px;color:#7dd3fc;margin-top:2px">📍 ${m.plateauVille}</div>`:'';
+    const villeInfo=isPlateauType(m.comp)?`<div style="font-size:11px;color:#7dd3fc;margin-top:2px">📍 ${m.plateauVille}</div>`:(isTournoiType(m.comp)&&m.tournoiVille?`<div style="font-size:11px;color:#7dd3fc;margin-top:2px">📍 ${m.tournoiVille}</div>`:'');
+    const laveurInfo=m.laveur?`<div style="font-size:11px;color:#f0abfc;margin-top:2px">🧺 ${m.laveur}</div>`:'';
     const groupMembres=m.plateauGroupId?matchs.filter(x=>x.plateauGroupId===m.plateauGroupId):[];
     const groupBadge=groupMembres.length>1?`<span style="font-size:10px;color:#7dd3fc;font-weight:600;margin-left:6px">👥 plateau · ${groupMembres.length} équipes</span>`:'';
     const groupDeleteBtn=groupMembres.length>1?`<button class="btn btn-danger btn-icon" onclick="deletePlateauGroup('${m.plateauGroupId}')" title="Supprimer tout le plateau (${groupMembres.length} matchs)">🗑️👥</button>`:'';
@@ -4158,8 +4986,8 @@ function renderResultats(){
       <div class="match-date">${m.date?new Date(m.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}):'—'}</div>
       <div class="match-adversaire"><strong style="${m.annule?'text-decoration:line-through':''}">vs ${m.adversaire}</strong>${m.annule?'<span class="ent-badge-annule">🚫 Annulé</span>':''}${m.buteurs&&!m.annule?`<div style="font-size:11px;color:var(--texte-muted);margin-top:2px">⚽ ${m.buteurs}</div>`:''}</div>
       <div class="match-lieu">${lieuTxt}</div>
-      ${m.annule?'':`<div class="match-score ${cl}">${m.butsNous} – ${m.butsEux}</div>`}
-      <div class="match-comp" style="color:var(--texte-muted);font-size:12px">${m.comp}${groupBadge}${villeInfo}</div>
+      ${m.annule?'':(matchEstAVenir(m)?`<div class="match-score" style="color:var(--texte-muted);font-size:14px;font-weight:600">À venir</div>`:`<div class="match-score ${cl}">${m.butsNous} – ${m.butsEux}</div>`)}
+      <div class="match-comp" style="color:var(--texte-muted);font-size:12px">${m.comp}${groupBadge}${villeInfo}${laveurInfo}</div>
       <div class="match-actions">
         <button class="btn btn-feuille btn-icon" onclick="ouvrirFeuille(${m.id})" title="Feuille de match">${feuilleLabel}</button>
         <button class="btn btn-secondary btn-icon" onclick="openMatchModal(${m.id})" title="Modifier">✏️</button>
@@ -4184,6 +5012,7 @@ function openMatchModal(id=null,presetDate=null){
     document.getElementById('fm-buts-eux').value=m.butsEux||0;
     document.getElementById('fm-saison').value=m.saison||getSaisonCourante();
     document.getElementById('fm-buteurs').value=m.buteurs||'';
+    document.getElementById('fm-laveur').value=m.laveur||'';
     document.getElementById('fm-notes').value=m.notes||'';
     // Charger les données plateau
     if(isPlateauType(m.comp)){
@@ -4193,6 +5022,7 @@ function openMatchModal(id=null,presetDate=null){
       document.getElementById('fm-plateau-ville').value='';
       document.getElementById('fm-plateau-equipes').value='';
     }
+    document.getElementById('fm-tournoi-ville').value=isTournoiType(m.comp)?(m.tournoiVille||''):'';
   } else {
     document.getElementById('fm-date').value=presetDate||new Date().toISOString().slice(0,10);
     document.getElementById('fm-comp').value='Championnat';
@@ -4202,21 +5032,150 @@ function openMatchModal(id=null,presetDate=null){
     document.getElementById('fm-buts-eux').value=0;
     document.getElementById('fm-saison').value=getSaisonCourante();
     document.getElementById('fm-buteurs').value='';
+    document.getElementById('fm-laveur').value='';
     document.getElementById('fm-notes').value='';
     document.getElementById('fm-plateau-ville').value='';
     document.getElementById('fm-plateau-equipes').value='';
+    document.getElementById('fm-tournoi-ville').value='';
   }
   updateMatchTypeFields();
+  updateHistoriqueAdversaireFM();
+  populateLaveurDatalist();
   document.getElementById('modal-match-bg').classList.add('open');
+}
+function populateLaveurDatalist(){
+  const dl=document.getElementById('fm-laveur-list');
+  if(!dl) return;
+  const nomsJoueurs=joueurs.filter(j=>j.statut==='Actif').map(j=>`${j.nom} ${j.prenom||''}`.trim());
+  const nomsHistorique=matchs.map(m=>(m.laveur||'').trim());
+  const noms=[...new Set([...nomsJoueurs,...nomsHistorique])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));
+  dl.innerHTML=noms.map(n=>`<option value="${licEsc(n)}">`).join('');
+}
+
+// ══════════════════════════════════════════════
+//  PAGE MAILLOTS — rotation du lavage des maillots
+// ══════════════════════════════════════════════
+// Joueurs ayant une licence active, triés par nom — utilisés pour la liste déroulante "laveur".
+function getJoueursActifsPourLaveur(){
+  return [...joueurs].filter(j=>j.statut==='Actif').sort((a,b)=>a.nom.localeCompare(b.nom,'fr')||(a.prenom||'').localeCompare(b.prenom||'','fr'));
+}
+// Regroupe les matchs par "événement de lavage" : un plateau (plusieurs matchs partageant
+// le même plateauGroupId), ou plusieurs matchs joués le même jour contre le même adversaire
+// dans la même compétition (ex : plusieurs mi-temps/rencontres d'un même amical), ne comptent
+// que pour UN seul jeu de maillots à laver.
+function getMaillotEntries(){
+  const list=[...matchs].filter(m=>!m.annule).sort((a,b)=>b.date.localeCompare(a.date));
+  const vus=new Set();
+  const entries=[];
+  list.forEach(m=>{
+    if(m.plateauGroupId){
+      if(vus.has('pg_'+m.plateauGroupId)) return;
+      vus.add('pg_'+m.plateauGroupId);
+      const membres=matchs.filter(x=>x.plateauGroupId===m.plateauGroupId&&!x.annule);
+      entries.push({
+        key:'pg_'+m.plateauGroupId,
+        matchIds:membres.map(x=>x.id),
+        date:m.date,
+        comp:m.comp,
+        label:`⚽ ${m.comp}${m.plateauVille?' — '+m.plateauVille:''}`+(membres.length>1?` <span style="color:var(--texte-muted);font-size:11px">(${membres.length} équipes : ${membres.map(x=>x.adversaire).join(', ')})</span>`:(membres[0]?` <span style="color:var(--texte-muted);font-size:11px">vs ${membres[0].adversaire}</span>`:'')),
+        laveur:(membres.find(x=>x.laveur&&x.laveur.trim())||{}).laveur||''
+      });
+    } else {
+      const dk='dk_'+m.date+'|'+m.comp+'|'+(m.adversaire||'');
+      if(vus.has(dk)) return;
+      vus.add(dk);
+      const doublons=matchs.filter(x=>!x.annule&&!x.plateauGroupId&&x.date===m.date&&x.comp===m.comp&&(x.adversaire||'')===(m.adversaire||''));
+      entries.push({
+        key:dk,
+        matchIds:doublons.map(x=>x.id),
+        date:m.date,
+        comp:m.comp,
+        label:`vs ${m.adversaire}`+(doublons.length>1?` <span style="color:var(--texte-muted);font-size:11px">(${doublons.length} matchs ce jour-là)</span>`:''),
+        laveur:(doublons.find(x=>x.laveur&&x.laveur.trim())||{}).laveur||''
+      });
+    }
+  });
+  return entries;
+}
+function getLaveurStats(){
+  const map={};
+  getMaillotEntries().filter(e=>e.laveur&&e.laveur.trim()).forEach(e=>{
+    const n=e.laveur.trim();
+    if(!map[n]) map[n]={nom:n,count:0,lastDate:null};
+    map[n].count++;
+    if(!map[n].lastDate||e.date>map[n].lastDate) map[n].lastDate=e.date;
+  });
+  return Object.values(map);
+}
+function updateLaveurEntry(key,value){
+  const v=value.trim();
+  const entry=getMaillotEntries().find(e=>e.key===key);
+  if(!entry) return;
+  const idSet=new Set(entry.matchIds);
+  matchs.filter(x=>idSet.has(x.id)).forEach(x=>{ x.laveur=v; });
+  save();
+  populateLaveurDatalist();
+  renderMaillots();
+}
+function renderMaillots(){
+  const entries=getMaillotEntries();
+  const avecLaveur=entries.filter(e=>e.laveur&&e.laveur.trim());
+  const stats=getLaveurStats();
+  const joueursActifs=getJoueursActifsPourLaveur();
+
+  document.getElementById('maillots-kpi').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">Lavages à répartir</div><div class="kpi-val">${entries.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Lavages assignés</div><div class="kpi-val">${avecLaveur.length}<span style="font-size:14px;color:var(--texte-muted)"> / ${entries.length}</span></div></div>
+    <div class="kpi-card"><div class="kpi-label">Personnes impliquées</div><div class="kpi-val">${stats.length}</div></div>`;
+
+  document.getElementById('maillots-list').innerHTML=entries.length?entries.map(e=>{
+    const d=e.date?new Date(e.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'}):'—';
+    const val=(e.laveur||'').trim();
+    let found=!val;
+    let optsHtml='<option value="">—</option>'+joueursActifs.map(j=>{
+      const nomComplet=`${j.nom} ${j.prenom||''}`.trim();
+      if(nomComplet===val) found=true;
+      return `<option value="${licEsc(nomComplet)}"${nomComplet===val?' selected':''}>${licEsc(nomComplet)}${j.numero?' (n°'+j.numero+')':''}</option>`;
+    }).join('');
+    if(val&&!found) optsHtml+=`<option value="${licEsc(val)}" selected>${licEsc(val)} ⚠️ (pas de licence active)</option>`;
+    return `<tr>
+      <td style="white-space:nowrap">${d}</td>
+      <td>${e.label}</td>
+      <td style="color:var(--texte-muted);font-size:12px">${e.comp}</td>
+      <td><select style="width:100%;min-width:160px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:6px;padding:5px 8px;color:var(--texte)" onchange="updateLaveurEntry('${e.key}',this.value)">${optsHtml}</select></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="4" class="no-data">Aucun match enregistré.</td></tr>';
+
+  const parRotation=[...stats].sort((a,b)=>a.count-b.count||(a.lastDate||'').localeCompare(b.lastDate||''));
+  const suggestions=parRotation.slice(0,3);
+  document.getElementById('maillots-suggestion').innerHTML=suggestions.length?`
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${suggestions.map((s,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;${i===0?'font-weight:700':''}">
+        <span>${i===0?'👉 ':''}${s.nom}</span>
+        <span style="color:var(--texte-muted);font-size:12px">${s.count}× ${s.lastDate?'· dernier '+new Date(s.lastDate).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}):''}</span>
+      </div>`).join('')}
+    </div>`:'<div style="color:var(--texte-muted)">Renseigne le lavage sur quelques matchs pour voir apparaître une suggestion de rotation.</div>';
+
+  const repartition=[...stats].sort((a,b)=>b.count-a.count);
+  const maxC=Math.max(1,...repartition.map(s=>s.count));
+  document.getElementById('maillots-repartition').innerHTML=repartition.length?repartition.map(s=>`
+    <div style="padding:8px 14px;display:flex;align-items:center;gap:10px">
+      <span style="flex:1;font-size:13px">${s.nom}</span>
+      <span class="bar-wrap" style="width:80px"><span class="bar-fill" style="width:${(s.count/maxC*100).toFixed(0)}%"></span></span>
+      <span style="font-size:13px;font-weight:700;min-width:18px;text-align:right">${s.count}</span>
+    </div>`).join(''):'<div style="padding:14px;color:var(--texte-muted);font-size:13px">Aucune donnée pour l\'instant.</div>';
 }
 
 function updateMatchTypeFields(){
   const comp=document.getElementById('fm-comp').value;
   const plateauFields=document.getElementById('plateau-fields');
+  const tournoiFields=document.getElementById('tournoi-fields');
   const adversaireRow=document.getElementById('fm-adversaire-row');
   const scoreRow=document.getElementById('fm-score-row');
   const equipesGroup=document.getElementById('fm-plateau-equipes-group');
   const villeLabel=plateauFields.querySelector('label');
+
+  tournoiFields.style.display=isTournoiType(comp)?'block':'none';
 
   if(!isPlateauType(comp)){
     plateauFields.style.display='none';
@@ -4256,6 +5215,7 @@ function saveMatch(){
   const saison=document.getElementById('fm-saison').value.trim()||getSaisonCourante();
   const lieu=document.getElementById('fm-lieu').value;
   const notes=document.getElementById('fm-notes').value.trim();
+  const laveur=document.getElementById('fm-laveur').value.trim();
 
   const isNewGroupCreation=isPlateauType(comp)&&!editingMatchId;
 
@@ -4276,6 +5236,7 @@ function saveMatch(){
         buteurs:'', notes,
         plateauVille:ville,
         plateauGroupId:groupId,
+        laveur,
       });
     });
     save(); closeModal('modal-match-bg'); renderResultats(); renderNextMatchCard();
@@ -4309,6 +5270,7 @@ function saveMatch(){
     butsEux:parseInt(document.getElementById('fm-buts-eux').value)||0,
     buteurs:document.getElementById('fm-buteurs').value.trim(),
     notes,
+    laveur,
   };
 
   if(isPlateauType(comp)){
@@ -4316,6 +5278,11 @@ function saveMatch(){
     if(isLegacyAggregate){
       data.plateauEquipes=document.getElementById('fm-plateau-equipes').value.trim().split('\n').filter(x=>x.trim()).map(x=>x.trim());
     }
+  }
+  if(isTournoiType(comp)){
+    data.tournoiVille=document.getElementById('fm-tournoi-ville').value.trim();
+  } else {
+    data.tournoiVille='';
   }
 
   if(editingMatchId){ const i=matchs.findIndex(m=>m.id===editingMatchId); matchs[i]={...matchs[i],...data}; }
@@ -4420,6 +5387,44 @@ function getTempsJeu(f,jid,duree=80){
   return Math.max(0,fin-debut);
 }
 
+// ── Temps forts de la feuille de match : Homme du match, Plus décisif, Clean sheet ──
+// Renvoie TOUS les joueurs à égalité sur la meilleure valeur (pas un seul choisi arbitrairement).
+function getMvpFeuille(f,actifs){
+  let bestVal=0;
+  (f.presents||[]).forEach(jid=>{
+    const n=+(f.notes?.[jid]||f.notes?.[String(jid)]||0);
+    if(n>bestVal) bestVal=n;
+  });
+  if(bestVal<=0) return null;
+  const bestIds=(f.presents||[]).filter(jid=>+(f.notes?.[jid]||f.notes?.[String(jid)]||0)===bestVal);
+  const joueursList=bestIds.map(jid=>actifs.find(x=>+x.id===+jid)||getJoueur(+jid)).filter(Boolean);
+  return joueursList.length?{joueurs:joueursList,note:bestVal}:null;
+}
+function getDecisifFeuille(f,actifs){
+  let bestVal=0;
+  const totByJid={};
+  (f.presents||[]).forEach(jid=>{
+    const jidS=String(jid);
+    const b=+(f.buts?.[jidS]||f.buts?.[jid]||0);
+    const p=+(f.passes?.[jidS]||f.passes?.[jid]||0);
+    const tot=b+p;
+    totByJid[jid]={b,p,tot};
+    if(tot>bestVal) bestVal=tot;
+  });
+  if(bestVal<=0) return null;
+  const bestIds=(f.presents||[]).filter(jid=>totByJid[jid].tot===bestVal);
+  const joueursList=bestIds.map(jid=>{
+    const j=actifs.find(x=>+x.id===+jid)||getJoueur(+jid);
+    return j?{joueur:j,buts:totByJid[jid].b,passes:totByJid[jid].p}:null;
+  }).filter(Boolean);
+  return joueursList.length?joueursList:null;
+}
+function getCleanSheetFeuille(f,actifs,butsEuxAuto){
+  if(butsEuxAuto>0) return null;
+  const gardiens=actifs.filter(j=>j.poste==='G'&&(f.presents||[]).includes(j.id));
+  return gardiens.length?gardiens:null;
+}
+
 function setNote(mid,jid,val){
   const f=getFeuille(mid);
   f.notes[jid]=val;
@@ -4495,7 +5500,7 @@ function renderNextMatchCard(){
     ? (groupSiblingsNext.length>1
         ? `⚽ ${m.comp} à ${m.plateauVille||''} — vs ${groupSiblingsNext.map(x=>x.adversaire).join(', ')}`
         : `⚽ ${m.comp}${m.plateauVille?' à '+m.plateauVille:''}`)
-    : `vs ${m.adversaire}`;
+    : `vs ${m.adversaire}${(isTournoiType(m.comp)&&m.tournoiVille)?' à '+m.tournoiVille:''}`;
   const f=feuilles[m.id];
   const nbPresents=f&&f.presents?f.presents.length:0;
   el.innerHTML = `
@@ -4652,6 +5657,8 @@ function loadFeuille(){
   const m=matchs.find(x=>x.id===mid);
   if(!m){ content.innerHTML='<div class="no-data">Match introuvable.</div>'; return; }
   const f=getFeuille(mid);
+  const plateauLie=isPlateauLinked(m);
+  const nbMembresPlateau=m.plateauGroupId?matchs.filter(x=>x.plateauGroupId===m.plateauGroupId&&!x.annule).length:0;
   const lieuTxt={D:'🏠 Domicile',E:'✈️ Extérieur',N:'⚖️ Neutre'}[m.lieu]||'';
   const pretesArr=Object.entries(f.pretes||{}).map(([jid,info])=>({id:+jid,nom:info.nom,prenom:info.prenom,numero:info.numero,poste:info.poste,statut:'Actif',_prete:true,_equipeNom:info.equipeNom}));
   const actifs=[...joueurs,...pretesArr].filter(j=>j.statut==='Actif'||f.presents.includes(j.id)).sort((a,b)=>a.numero-b.numero);
@@ -4765,6 +5772,29 @@ function loadFeuille(){
   const moyNote=noteVals.length?Math.round(noteVals.reduce((s,n)=>s+n,0)/noteVals.length*10)/10:null;
   const rAuto=butsNousAuto>butsEuxAuto?'V':butsNousAuto===butsEuxAuto?'N':'D';
   const scoreCl=rAuto==='V'?'#4ade80':rAuto==='N'?'var(--jaune)':'#f87171';
+  const mvp=getMvpFeuille(f,actifs);
+  const decisif=getDecisifFeuille(f,actifs);
+  const cleanSheet=getCleanSheetFeuille(f,actifs,butsEuxAuto);
+  const historiqueAdv=getHistoriqueAdversaire(m.adversaire,m.id);
+  const highlightsHTML=(mvp||decisif||cleanSheet||historiqueAdv)?`
+    <div style="display:flex;gap:10px;flex-wrap:wrap;width:100%;margin-top:12px">
+      ${mvp?`<div style="background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px">
+        <span style="font-size:18px">🏅</span>
+        <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Homme du match</div><div style="font-weight:700;font-size:13px">${mvp.joueurs.map(j=>j.nom+' '+j.prenom).join(', ')} <span style="color:var(--jaune)">${mvp.note}/10</span></div></div>
+      </div>`:''}
+      ${decisif?`<div style="background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px">
+        <span style="font-size:18px">⭐</span>
+        <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Plus décisif</div><div style="font-weight:700;font-size:13px">${decisif.map(d=>`${d.joueur.nom} ${d.joueur.prenom} <span style="color:#4ade80">${d.buts?d.buts+'⚽':''}${d.buts&&d.passes?' + ':''}${d.passes?d.passes+'🎯':''}</span>`).join(', ')}</div></div>
+      </div>`:''}
+      ${cleanSheet?`<div style="background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px">
+        <span style="font-size:18px">🧤</span>
+        <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Clean sheet</div><div style="font-weight:700;font-size:13px">${cleanSheet.map(g=>g.nom+' '+g.prenom).join(', ')}</div></div>
+      </div>`:''}
+      ${historiqueAdv?`<div style="background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px">
+        <span style="font-size:18px">🤝</span>
+        <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Historique vs ${m.adversaire}</div><div style="font-weight:700;font-size:13px"><span style="color:#4ade80">${historiqueAdv.V}V</span> <span style="color:var(--jaune)">${historiqueAdv.N}N</span> <span style="color:#f87171">${historiqueAdv.D}D</span> <span style="color:var(--texte-muted);font-weight:400">(${historiqueAdv.bp}-${historiqueAdv.bc})</span></div></div>
+      </div>`:''}
+    </div>`:'';
 
   // Remplacements
   const remplaHTML=(f.remplacements||[]).map((re,i)=>{
@@ -4786,7 +5816,7 @@ function loadFeuille(){
     <div class="feuille-match-info">
       <div>
         <div class="feuille-adv">vs ${m.adversaire}</div>
-        <div class="feuille-meta">${m.date?new Date(m.date).toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):''} · ${lieuTxt} · ${m.comp}${isPlateauType(m.comp)?` · 📍 ${m.plateauVille}`:''}</div>
+        <div class="feuille-meta">${m.date?new Date(m.date).toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):''} · ${lieuTxt} · ${m.comp}${isPlateauType(m.comp)?` · 📍 ${m.plateauVille}`:(isTournoiType(m.comp)&&m.tournoiVille?` · 📍 ${m.tournoiVille}`:'')}</div>
       </div>
       <div class="feuille-score-live">
         <div style="text-align:center">
@@ -4809,13 +5839,18 @@ function loadFeuille(){
         ${totalJaunes?`<div class="kpi-card" style="min-width:60px;padding:10px 12px"><div class="kpi-label">🟨</div><div class="kpi-val" style="font-size:20px">${totalJaunes}</div></div>`:''}
         ${totalRouges?`<div class="kpi-card" style="min-width:60px;padding:10px 12px"><div class="kpi-label">🟥</div><div class="kpi-val" style="font-size:20px;color:var(--rouge)">${totalRouges}</div></div>`:''}
       </div>
+      ${highlightsHTML}
     </div>
     ${isPlateauType(m.comp)?`
     <div style="background:rgba(45,168,88,.06);border:1px solid rgba(45,168,88,.2);border-radius:10px;padding:14px;margin-bottom:16px;">
       <div style="font-size:12px;font-weight:600;color:var(--texte-muted);margin-bottom:8px;text-transform:uppercase">⚽ ${m.comp}: ${m.plateauVille}</div>
+      ${nbMembresPlateau>1?`<div class="no-print" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn ${plateauLie?'btn-primary':'btn-secondary'}" style="font-size:12px;padding:5px 12px" onclick="togglePlateauLink(${mid})" title="Lier ou dissocier les présents des feuilles de ce plateau">${plateauLie?'🔗 Présents liés':'🔓 Présents non liés'}</button>
+        <span style="font-size:11px;color:var(--texte-muted)">${plateauLie?`Les présents sont partagés entre les ${nbMembresPlateau} feuilles du plateau.`:'Chaque feuille est indépendante. Cliquez pour relier les présents.'}</span>
+      </div>`:''}
       <div style="font-size:13px;color:var(--texte);line-height:1.6">
         ${m.plateauGroupId
-          ? matchs.filter(x=>x.plateauGroupId===m.plateauGroupId).map(x=>`<div style="display:flex;align-items:center;gap:8px"><span>•</span><span>${x.id===m.id?'<strong>vs '+x.adversaire+' (ce match)</strong>':'vs '+x.adversaire}</span></div>`).join('')
+          ? matchs.filter(x=>x.plateauGroupId===m.plateauGroupId).map(x=>`<div style="display:flex;align-items:center;gap:8px"><span>•</span><span>${x.id===m.id?'<strong>vs '+x.adversaire+' (ce match)</strong>':`<a href="#" onclick="ouvrirFeuille(${x.id});return false" style="color:#7dd3fc;text-decoration:none" title="Ouvrir la feuille de ce match">vs ${x.adversaire} ↗</a>`}</span></div>`).join('')
           : (m.plateauEquipes?.map(eq=>`<div style="display:flex;align-items:center;gap:8px"><span>•</span><span>${eq}</span></div>`).join('') || 'Aucune équipe')}
       </div>
     </div>
@@ -4929,11 +5964,89 @@ function renderFeuilleRecap(mid,f){
   }).join('');
 }
 
+// ── Plateau : présents liés entre les feuilles d'un même plateau (même plateauGroupId) ──
+// Par défaut, les feuilles d'un plateau sont liées (m.plateauLie !== false).
+function isPlateauLinked(m){ return !!(m && m.plateauGroupId && m.plateauLie!==false); }
+function getPlateauSiblings(mid){
+  const m=matchs.find(x=>x.id===mid);
+  if(!m||!m.plateauGroupId) return [];
+  return matchs.filter(x=>x.plateauGroupId===m.plateauGroupId&&x.id!==mid&&!x.annule);
+}
+// Un joueur a-t-il déjà de l'activité saisie sur cette feuille ? (on ne le retire alors jamais automatiquement)
+function joueurAActiviteFeuille(f,jid){
+  const k=String(jid);
+  if(['buts','passes','jaunes','rouges','encaisses','bcs','penalties'].some(t=>+(f[t]?.[k]||0)>0)) return true;
+  if(+(f.notes?.[k]||0)>0) return true;
+  if((f.events||[]).some(e=>+e.jid===+jid)) return true;
+  if((f.remplacements||[]).some(r=>+r.entrant===+jid||+r.sortant===+jid)) return true;
+  return false;
+}
+// Répercute la présence (ou l'absence) d'un joueur sur les autres feuilles du plateau.
+function propagerPresence(mid,jid,checked){
+  const res={maj:0,gardes:[]};
+  const m=matchs.find(x=>x.id===mid);
+  if(!isPlateauLinked(m)) return res;
+  const src=getFeuille(mid);
+  getPlateauSiblings(mid).forEach(x=>{
+    const fx=getFeuille(x.id);
+    const has=fx.presents.some(p=>+p===+jid);
+    if(checked){
+      if(!has){ fx.presents.push(+jid); res.maj++; }
+      if(src.pretes&&src.pretes[jid]&&!fx.pretes[jid]) fx.pretes[jid]={...src.pretes[jid]};
+    } else if(has){
+      if(joueurAActiviteFeuille(fx,jid)) res.gardes.push(x.adversaire);
+      else { fx.presents=fx.presents.filter(p=>+p!==+jid); res.maj++; }
+    }
+  });
+  return res;
+}
+// Fusionne les présents (et prêtés) de toutes les feuilles du plateau. Retourne le nombre d'ajouts.
+function synchroniserPresentsPlateau(mid){
+  const m=matchs.find(x=>x.id===mid);
+  if(!m||!m.plateauGroupId) return 0;
+  const membres=matchs.filter(x=>x.plateauGroupId===m.plateauGroupId&&!x.annule);
+  if(membres.length<2) return 0;
+  const union=[]; const pretes={};
+  membres.forEach(x=>{
+    const fx=getFeuille(x.id);
+    fx.presents.forEach(p=>{ if(!union.includes(+p)) union.push(+p); });
+    Object.entries(fx.pretes||{}).forEach(([k,v])=>{ if(!pretes[k]) pretes[k]=v; });
+  });
+  let ajouts=0;
+  membres.forEach(x=>{
+    const fx=getFeuille(x.id);
+    union.forEach(jid=>{
+      if(!fx.presents.some(p=>+p===jid)){ fx.presents.push(jid); ajouts++; }
+      if(pretes[jid]&&!fx.pretes[jid]) fx.pretes[jid]={...pretes[jid]};
+    });
+  });
+  return ajouts;
+}
+function togglePlateauLink(mid){
+  const m=matchs.find(x=>x.id===mid);
+  if(!m||!m.plateauGroupId) return;
+  const nb=matchs.filter(x=>x.plateauGroupId===m.plateauGroupId&&!x.annule).length;
+  const newState=!isPlateauLinked(m);
+  if(newState && !confirm(`Lier les présents des ${nb} feuilles de ce plateau ?\n\nLes présents de chaque feuille seront fusionnés : un joueur présent sur l'une sera ajouté aux autres.`)) return;
+  matchs.filter(x=>x.plateauGroupId===m.plateauGroupId).forEach(x=>{ x.plateauLie=newState; });
+  let ajouts=0;
+  if(newState) ajouts=synchroniserPresentsPlateau(mid);
+  save(); recalcStatsFromFeuilles(); loadFeuille();
+  showNotif(newState
+    ? `🔗 Présents liés entre les ${nb} feuilles du plateau${ajouts?` — ${ajouts} présence(s) ajoutée(s)`:''}`
+    : '🔓 Présents dissociés — chaque feuille est indépendante','green');
+}
+
 function togglePresence(mid,jid,checked){
   const f=getFeuille(mid);
   if(checked){ if(!f.presents.includes(jid)) f.presents.push(jid); }
   else { f.presents=f.presents.filter(id=>id!==jid); delete f.buts[jid]; delete f.passes[jid]; delete f.jaunes[jid]; delete f.rouges[jid]; delete f.notes[jid]; }
+  const r=propagerPresence(mid,jid,checked);
   save(); recalcStatsFromFeuilles(); loadFeuille();
+  if(r.gardes.length){
+    const j=getJoueur(+jid);
+    showNotif(`⚠️ ${j?j.nom:'Joueur'} conservé sur la feuille vs ${r.gardes.join(', ')} (stats déjà saisies)`,'red');
+  }
 }
 
 // Clic gauche = +1 (avec minute) / Clic droit = -1 (supprime le dernier event du type)
@@ -4975,13 +6088,17 @@ function repliquerTournoi(){
   if(!m){ return; }
   // Trouver tous les matchs du même tournoi = même compétition + même saison + même date (journée)
   // On cherche tous les matchs avec la même comp et saison
-  const memesTournoi=matchs.filter(x=>
-    x.id!==mid &&
-    x.comp===m.comp &&
-    x.saison===m.saison
-  );
+  // Feuille appartenant à un plateau : on se limite aux autres matchs de CE plateau.
+  const memesTournoi=m.plateauGroupId
+    ? getPlateauSiblings(mid)
+    : matchs.filter(x=>
+        x.id!==mid &&
+        x.comp===m.comp &&
+        x.saison===m.saison
+      );
   if(!memesTournoi.length){
-    alert(`Aucun autre match trouvé en "${m.comp}" pour la saison ${m.saison}.\n\nPour grouper des matchs en tournoi, ils doivent avoir la même compétition et la même saison.`);
+    if(m.plateauGroupId) alert('Aucun autre match dans ce plateau.');
+    else alert(`Aucun autre match trouvé en "${m.comp}" pour la saison ${m.saison}.\n\nPour grouper des matchs en tournoi, ils doivent avoir la même compétition et la même saison.`);
     return;
   }
   const liste=memesTournoi.map(x=>`  • ${new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})} vs ${x.adversaire}`).join('\n');
@@ -4992,6 +6109,7 @@ function repliquerTournoi(){
     let ajout=0;
     f.presents.forEach(jid=>{
       if(!fx.presents.some(p=>+p===+jid)){ fx.presents.push(+jid); ajout++; }
+      if(f.pretes&&f.pretes[jid]&&!fx.pretes[jid]) fx.pretes[jid]={...f.pretes[jid]};
     });
     nb+=ajout;
   });
@@ -5006,7 +6124,9 @@ function ajouterTousJoueurs(){
   const actifs=joueurs.filter(j=>j.statut==='Actif');
   let ajouts=0;
   actifs.forEach(j=>{ if(!f.presents.some(p=>+p===j.id)){ f.presents.push(j.id); ajouts++; } });
-  if(ajouts===0){ alert('Tous les joueurs actifs sont déjà présents.'); return; }
+  const mCur=matchs.find(x=>x.id===mid);
+  const ajoutsPlateau=isPlateauLinked(mCur)?synchroniserPresentsPlateau(mid):0;
+  if(ajouts===0&&ajoutsPlateau===0){ alert('Tous les joueurs actifs sont déjà présents.'); return; }
   save(); recalcStatsFromFeuilles(); loadFeuille();
 }
 
@@ -5050,6 +6170,7 @@ function ajouterJoueurPrete(mid,jid){
   const f=getFeuille(mid);
   f.pretes[jid]={nom:j.nom, prenom:j.prenom, numero:j.numero, poste:j.poste, equipeId:j._equipeId, equipeNom:j._equipeNom};
   if(!f.presents.some(p=>+p===jid)) f.presents.push(jid);
+  propagerPresence(mid,jid,true);
   save(); recalcStatsFromFeuilles(); loadFeuille();
   closeModal('modal-prete-bg');
   showNotif(`🔄 ${j.nom} ${j.prenom} ajouté depuis ${j._equipeNom}`,'green');
@@ -5063,6 +6184,16 @@ function retirerJoueurPrete(mid,jid){
   const jidS=String(jid);
   ['buts','passes','jaunes','rouges','notes','encaisses','bcs','penalties'].forEach(key=>{ if(f[key]) delete f[key][jidS]; });
   f.events=(f.events||[]).filter(e=>+e.jid!==jid);
+  const mCur=matchs.find(x=>x.id===mid);
+  if(isPlateauLinked(mCur)){
+    getPlateauSiblings(mid).forEach(x=>{
+      const fx=getFeuille(x.id);
+      if(fx.pretes[jid]&&!joueurAActiviteFeuille(fx,jid)){
+        delete fx.pretes[jid];
+        fx.presents=fx.presents.filter(p=>+p!==jid);
+      }
+    });
+  }
   save(); recalcStatsFromFeuilles(); loadFeuille();
 }
 
@@ -5393,6 +6524,7 @@ function generateConvocation(){
     const equipesListe = autresEquipes.length?autresEquipes.map(eq=>`• ${eq}`).join('\n'):'';
     if(equipesListe) msg+=`🆚 Autres équipes présentes au plateau :\n${equipesListe}\n`;
   }
+  if(isTournoiType(m.comp)&&m.tournoiVille) msg+=`📌 Lieu du tournoi : ${m.tournoiVille}\n`;
   msg+=`\n👥 Convoqués (${f.presents.length}) :\n${joueursListe}\n`;
   if(withEquip) msg+=`\n🎽 Pensez à votre équipement complet (gourde, maillot, short, crampons, protège-tibias).\n`;
   msg+=`\n ⚽  Merci de préciser vos besoins en co-voiturage afin de nous organiser  ⚽`;
@@ -5439,7 +6571,7 @@ function recalcStatsFromFeuilles(){
     f.presents.forEach(jid=>{
       const jidN=+jid, jidS=String(jid);
       const k=getStatKey(jidN,saison);
-      if(!cumul[k]) cumul[k]={joueurId:jidN,saison,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,penalties:0};
+      if(!cumul[k]) cumul[k]={joueurId:jidN,saison,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,penalties:0,mvp:0,decisif:0};
       cumul[k].matchs++;
       // Buts normaux
       cumul[k].buts  +=(f.buts     ?+(f.buts[jidS]     ||f.buts[jidN]     ||0):0);
@@ -5460,6 +6592,32 @@ function recalcStatsFromFeuilles(){
         if((enc+bcsAdv)===0) cumul[k].cs++;
       }
     });
+    // Homme du match (meilleure note) et joueur le plus décisif (buts+passes) de ce match précis
+    // — en cas d'égalité stricte, TOUS les joueurs à égalité sont crédités (pas un seul choisi arbitrairement).
+    let mvpBestVal=0;
+    let decBestVal=0;
+    const noteByJid={},totByJid={};
+    f.presents.forEach(jid=>{
+      const jidN=+jid, jidS=String(jid);
+      const note=+(f.notes?.[jidS]||f.notes?.[jidN]||0);
+      noteByJid[jidN]=note;
+      if(note>mvpBestVal) mvpBestVal=note;
+      const b=+(f.buts?.[jidS]||f.buts?.[jidN]||0)+(+(f.penalties?.[jidS]||f.penalties?.[jidN]||0));
+      const p=+(f.passes?.[jidS]||f.passes?.[jidN]||0);
+      const tot=b+p;
+      totByJid[jidN]=tot;
+      if(tot>decBestVal) decBestVal=tot;
+    });
+    if(mvpBestVal>0){
+      Object.entries(noteByJid).forEach(([jid,note])=>{
+        if(note===mvpBestVal){ const k=getStatKey(+jid,saison); if(cumul[k]) cumul[k].mvp++; }
+      });
+    }
+    if(decBestVal>0){
+      Object.entries(totByJid).forEach(([jid,tot])=>{
+        if(tot===decBestVal){ const k=getStatKey(+jid,saison); if(cumul[k]) cumul[k].decisif++; }
+      });
+    }
     // Mettre à jour le score du match depuis la feuille
     const score=calcScoreFromFeuille(f);
     if(score.butsNous!==m.butsNous||score.butsEux!==m.butsEux){
@@ -5468,7 +6626,7 @@ function recalcStatsFromFeuilles(){
     }
   });
   Object.entries(cumul).forEach(([k,c])=>{
-    if(!stats[k]) stats[k]={joueurId:c.joueurId,saison:c.saison,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,penalties:0};
+    if(!stats[k]) stats[k]={joueurId:c.joueurId,saison:c.saison,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,penalties:0,mvp:0,decisif:0};
     stats[k].matchs   =c.matchs;
     stats[k].buts     =c.buts;
     stats[k].passes   =c.passes;
@@ -5477,6 +6635,8 @@ function recalcStatsFromFeuilles(){
     stats[k].cs       =c.cs;
     stats[k].encaisses=c.encaisses;
     stats[k].penalties=c.penalties||0;
+    stats[k].mvp      =c.mvp||0;
+    stats[k].decisif  =c.decisif||0;
   });
   save();
 }
@@ -6193,6 +7353,8 @@ function loadCompoMeta(){
       document.getElementById('cib-adv').value=m.adversaire;
     if(!document.getElementById('cib-ville').value && isPlateauType(m.comp) && m.plateauVille)
       document.getElementById('cib-ville').value=m.plateauVille;
+    if(!document.getElementById('cib-ville').value && isTournoiType(m.comp) && m.tournoiVille)
+      document.getElementById('cib-ville').value=m.tournoiVille;
     // Afficher/cacher le champ ville selon le type de match
     updateCompoPlateauFields(m);
   }
@@ -6205,6 +7367,10 @@ function updateCompoPlateauFields(m){
     villeField.style.display='block';
     villeSep.style.display='block';
     villeField.value=m.plateauVille||'';
+  } else if(m && isTournoiType(m.comp)){
+    villeField.style.display='block';
+    villeSep.style.display='block';
+    villeField.value=m.tournoiVille||'';
   } else {
     villeField.style.display='none';
     villeSep.style.display='none';
@@ -6781,6 +7947,7 @@ function loadDureeMatchInput(){
 function saveSaisonSetting(){
   const s=document.getElementById('setting-saison').value.trim();
   localStorage.setItem('foot8_saison_courante',s);
+  syncSaisonResultats();
   showSaveIndicator();
 }
 function checkResetInput(){
@@ -7271,6 +8438,7 @@ function switchEquipe(id){
   evenements = JSON.parse(localStorage.getItem(eqKey('evenements')) || '[]');
   exercicesPerso = JSON.parse(localStorage.getItem(eqKey('exercices_perso')) || '[]');
   seances = JSON.parse(localStorage.getItem(eqKey('seances')) || '[]');
+    educateurs = JSON.parse(localStorage.getItem(eqKey('educateurs')) || '[]');
   currentSchema = localStorage.getItem(eqKey('schema')) || '1-2-3-1';
   migrateFractionalPlayerIds();
   normalizeFeuilles();
@@ -7309,7 +8477,7 @@ function renameEquipe(){
 //  GESTION MULTICATÉGORIE
 // ══════════════════════════════════════════════
 const CATEGORIES_DISPONIBLES = ['U6','U7','U8','U9','U10','U11','U12','U13','U14','U15','U16','U17','U18','U19','Seniors','Loisir','Autre'];
-const CATEGORIE_STORAGE_SUFFIXES = ['joueurs','stats','matchs','feuilles','compo','remplacants','entrainements','evenements','exercices_perso','seances','schema'];
+const CATEGORIE_STORAGE_SUFFIXES = ['joueurs','stats','matchs','feuilles','compo','remplacants','entrainements','evenements','exercices_perso','seances','educateurs','schema'];
 
 function currentEquipeCategorieBadge(){
   const eq = equipes.find(e=>e.id===currentEquipeId);
@@ -7429,7 +8597,34 @@ function getAlertsJoueurs(){
   }).filter(a=>a.manquants.length>0||a.warnings.length>0);
 }
 
+// ── Anniversaires à venir (30 prochains jours) ──
+function renderAnniversairesBanner(){
+  const banner=document.getElementById('anniversaires-banner');
+  if(!banner) return;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const items=joueurs.filter(j=>j.naissance).map(j=>{
+    const dob=new Date(j.naissance+'T00:00:00');
+    let next=new Date(today.getFullYear(),dob.getMonth(),dob.getDate());
+    if(next<today) next=new Date(today.getFullYear()+1,dob.getMonth(),dob.getDate());
+    const joursRestants=Math.round((next-today)/86400000);
+    const ageAuJour=next.getFullYear()-dob.getFullYear();
+    return {j,next,joursRestants,ageAuJour};
+  }).filter(x=>x.joursRestants<=30).sort((a,b)=>a.joursRestants-b.joursRestants);
+  if(!items.length){ banner.innerHTML=''; return; }
+  const rows=items.map(x=>{
+    const txt=x.joursRestants===0?"🎉 Aujourd'hui !":x.joursRestants===1?'Demain':`Dans ${x.joursRestants} j.`;
+    return `<div class="alert-item">
+      <span class="alert-item-name">${x.j.nom} ${x.j.prenom||''} <span style="font-size:10px;color:var(--texte-muted)">n°${x.j.numero}</span></span>
+      <span class="alert-item-fields">${x.next.toLocaleDateString('fr-FR',{day:'2-digit',month:'long'})} · ${x.ageAuJour} ans · <strong style="color:#f0abfc">${txt}</strong></span>
+    </div>`;
+  }).join('');
+  banner.innerHTML=`<div class="alert-banner" style="background:rgba(240,171,252,.06);border-color:rgba(240,171,252,.25)">
+    <div class="alert-banner-title">🎂 ${items.length} anniversaire${items.length>1?'s':''} dans les 30 prochains jours</div>
+    ${rows}
+  </div>`;
+}
 function renderAlertsBadge(){
+  renderAnniversairesBanner();
   const alerts=getAlertsJoueurs();
   const tab=document.getElementById('tab-licences');
   if(!tab)return;
