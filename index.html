@@ -358,7 +358,11 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 #page-stats{flex-direction:column;padding:24px;gap:20px;}
 .stats-top{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;}
 .stats-top .kpi-card{flex:0 0 180px;}
-.kpi-card{background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:4px;}
+.kpi-card{background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:4px;position:relative;}
+.kpi-tip{display:none;position:absolute;left:0;top:calc(100% + 8px);min-width:210px;max-width:300px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.7;box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:80;text-align:left;white-space:normal;}
+.kpi-tip-title{font-weight:700;color:var(--texte);margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
+.kpi-card:hover .kpi-tip{display:block;}
+.kpi-card:has(.kpi-tip):hover{cursor:help;border-color:var(--gris-border);}
 .kpi-label{font-size:12px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.05em;}
 .kpi-val{font-size:28px;font-weight:700;color:var(--jaune);}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
@@ -1050,6 +1054,13 @@ tbody td{padding:11px 14px;vertical-align:middle;}
 .mo-score.flash-green{animation:scoreFlashGreen .6s ease;}
 .mo-score.flash-red{animation:scoreFlashRed .6s ease;}
 .joueur-check-row.expulse{background:rgba(224,48,48,.08)!important;border-left:3px solid #e03030;}
+.joueur-check-row.non-retenu{opacity:.55;}
+.joueur-check-row.non-retenu .jcr-nom{text-decoration:line-through;text-decoration-color:rgba(248,113,113,.5);}
+.badge-non-retenu{display:inline-block;font-size:10px;font-weight:700;background:rgba(224,48,48,.18);color:#f87171;border-radius:6px;padding:1px 7px;margin-left:6px;text-decoration:none;}
+.btn-toggle-retenu{flex-shrink:0;font-size:11px;font-weight:600;border-radius:7px;padding:4px 9px;cursor:pointer;border:1px solid rgba(74,222,128,.35);background:rgba(74,222,128,.12);color:#4ade80;transition:all .12s;}
+.btn-toggle-retenu:hover{background:rgba(74,222,128,.22);}
+.btn-toggle-retenu.is-off{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.14);color:#f87171;}
+.btn-toggle-retenu.is-off:hover{background:rgba(248,113,113,.24);}
 .expulse-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(224,48,48,.2);color:#f87171;border:1px solid rgba(224,48,48,.4);border-radius:8px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:6px;}
 .mo-chrono-display.chrono-warning{color:var(--jaune)!important;background:rgba(245,197,24,.12)!important;border-color:rgba(245,197,24,.55)!important;box-shadow:0 0 28px rgba(245,197,24,.3)!important;}
 .mo-chrono-display.chrono-danger{color:#f87171!important;background:rgba(224,48,48,.14)!important;border-color:rgba(248,113,113,.6)!important;box-shadow:0 0 28px rgba(248,113,113,.35)!important;animation:chronoPulseDanger 1s ease-in-out infinite;}
@@ -1937,6 +1948,20 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
       </div>
     </div>
 
+    <!-- Distance parcourue -->
+    <div class="settings-section">
+      <div class="settings-section-title">🚗 Distance parcourue</div>
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:6px">
+        <label class="settings-label">Clé API OpenRouteService (optionnel)</label>
+        <div style="display:flex;gap:6px;">
+          <input type="text" class="settings-input" id="setting-ors-key" placeholder="Colle ici ta clé ORS" style="flex:1;" oninput="saveOrsKey()">
+          <button class="btn btn-secondary" onclick="testerOrsKey()">✅ Tester</button>
+        </div>
+        <div class="settings-sublabel" id="setting-ors-status">Sans clé : distance estimée à vol d'oiseau. Avec une clé ORS (gratuite sur openrouteservice.org), distance routière réelle. <a href="https://openrouteservice.org/dev/#/signup" target="_blank" style="color:var(--bleu)">Créer un compte gratuit</a></div>
+        <div class="settings-sublabel" id="setting-distance-status-count"></div>
+      </div>
+    </div>
+
     <!-- Identité du club -->
     <div class="settings-section">
       <div class="settings-section-title">🏟️ Identité</div>
@@ -2173,6 +2198,13 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
         <table class="stats-table">
           <thead><tr><th>#</th><th>Joueur</th><th>🔥</th><th>Buts+Passes</th><th>Matchs</th></tr></thead>
           <tbody id="stats-decisifs"></tbody>
+        </table>
+      </div>
+      <div class="stats-card">
+        <div class="stats-card-header">🚗 Trajets (par plateau/déplacement)</div>
+        <table class="stats-table">
+          <thead><tr><th>Date</th><th>Ville</th><th>Adversaire(s)</th><th>Distance A/R</th></tr></thead>
+          <tbody id="stats-trajets"></tbody>
         </table>
       </div>
     </div>
@@ -4032,16 +4064,58 @@ function renderStatsPage(){
   const msFiltres=matchs.filter(m=>!m.annule&&!matchEstAVenir(m)&&(!filterSaison||m.saison===filterSaison)&&(!filterComp||m.comp===filterComp));
   const totalButsEncaisses=msFiltres.reduce((s,m)=>s+(m.butsEux||0),0);
 
+  // Événements domicile/extérieur (un plateau ou un tournoi ne compte que pour 1, même
+  // si plusieurs adversaires y ont été affrontés).
+  const evenementsParLieu=getNbEvenementsParLieu(msFiltres);
+
+  // Distance cumulée (matchs à l'extérieur uniquement) — routière (ORS) si clé configurée, sinon à vol d'oiseau
+  const clubVilleOk=!isNaN(parseFloat(localStorage.getItem('foot8_club_lat')));
+  const msExterieur=getTripsExterieurs(msFiltres);
+  const infosConnues=msExterieur.map(m=>getDistanceInfoMatch(m));
+  const distanceTotale=infosConnues.reduce((s,i)=>s+(i?i.km:0),0);
+  const nbEnAttente=infosConnues.filter(i=>i===null).length;
+  const nbVolOiseau=infosConnues.filter(i=>i&&i.methode==='vol_oiseau').length;
+  const suffixe=nbVolOiseau?`<span style="font-size:11px;color:var(--texte-muted)"> (dont ${nbVolOiseau} estimé${nbVolOiseau>1?'s':''} à vol d'oiseau)</span>`:'';
+  const distanceHTML=!clubVilleOk
+    ? `<div class="kpi-card"><div class="kpi-label">🚗 Distance parcourue (A/R)</div><div class="kpi-val" style="font-size:13px;color:var(--texte-muted)">Renseigner la ville du club</div></div>`
+    : `<div class="kpi-card"><div class="kpi-label">🚗 Distance parcourue (A/R)</div><div class="kpi-val">${Math.round(distanceTotale)} km${nbEnAttente?`<span style="font-size:11px;color:var(--texte-muted)"> (+${nbEnAttente} en calcul…)</span>`:suffixe}</div></div>`;
+  if(nbEnAttente) ensureVillesGeocodees(()=>renderStatsPage());
+
   // KPI
+  const renderTop3=(list,unit,emoji)=>{
+    if(!list.length) return '—';
+    const medailles=['🥇','🥈','🥉'];
+    return list.map((a,i)=>`<div>${medailles[i]} ${a.j.nom} <span style="color:var(--texte-muted)">(${a[unit]}${emoji})</span></div>`).join('');
+  };
+  // Tooltip au survol : classement complet (pas seulement le top 3).
+  const renderTip=(titre,list,unit,emoji)=>{
+    if(!list.length) return '';
+    const rows=list.map((a,i)=>`<div>${i+1}. ${a.j.nom} — ${a[unit]}${emoji}</div>`).join('');
+    return `<div class="kpi-tip"><div class="kpi-tip-title">${titre}</div>${rows}</div>`;
+  };
+  const buteursTries=arr.filter(a=>a.buts>0).sort((a,b)=>b.buts-a.buts||b.passes-a.passes);
+  const passeursTries=arr.filter(a=>a.passes>0).sort((a,b)=>b.passes-a.passes||b.buts-a.buts);
+  const mvpTries=arr.filter(a=>a.mvp>0).sort((a,b)=>b.mvp-a.mvp);
+  const decisifsTries=arr.filter(a=>a.decisif>0).sort((a,b)=>b.decisif-a.decisif);
+  const gardiensTries=arr.filter(a=>a.encaisses>0).sort((a,b)=>b.encaisses-a.encaisses);
+  const top3Buteurs=buteursTries.slice(0,3);
+  const top3Passeurs=passeursTries.slice(0,3);
+  const top3Mvp=mvpTries.slice(0,3);
+  const top3Decisifs=decisifsTries.slice(0,3);
   document.getElementById('stats-kpi').innerHTML=`
     <div class="kpi-card"><div class="kpi-label">Matchs joués</div><div class="kpi-val">${totalMatchsSaison}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Buts marqués</div><div class="kpi-val">⚽ ${totalButs}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Buts encaissés</div><div class="kpi-val" style="color:var(--rouge)">⛔ ${totalButsEncaisses}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Passes décisives</div><div class="kpi-val">🎯 ${totalPasses}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Meilleur buteur</div><div class="kpi-val" style="font-size:16px">${(()=>{const t=arr.filter(a=>a.buts>0).sort((a,b)=>b.buts-a.buts||b.passes-a.passes)[0];return t?t.j.nom+' ('+t.buts+')':'—';})()}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Joueurs scoreurs</div><div class="kpi-val">${arr.filter(a=>a.buts>0).length}<span style="font-size:14px;color:var(--texte-muted)"> / ${joueurs.length}</span></div></div>
-    <div class="kpi-card"><div class="kpi-label">🏅 Homme du match</div><div class="kpi-val" style="font-size:16px">${(()=>{const t=arr.filter(a=>a.mvp>0).sort((a,b)=>b.mvp-a.mvp)[0];return t?t.j.nom+' ('+t.mvp+')':'—';})()}</div></div>
-    <div class="kpi-card"><div class="kpi-label">🔥 Plus décisif</div><div class="kpi-val" style="font-size:16px">${(()=>{const t=arr.filter(a=>a.decisif>0).sort((a,b)=>b.decisif-a.decisif)[0];return t?t.j.nom+' ('+t.decisif+')':'—';})()}</div></div>`;
+    <div class="kpi-card"><div class="kpi-label">Buts marqués</div><div class="kpi-val">⚽ ${totalButs}</div>${renderTip('Qui a marqué',buteursTries,'buts','⚽')}</div>
+    <div class="kpi-card"><div class="kpi-label">Buts encaissés</div><div class="kpi-val" style="color:var(--rouge)">⛔ ${totalButsEncaisses}</div>${renderTip('Par gardien',gardiensTries,'encaisses','⛔')}</div>
+    <div class="kpi-card"><div class="kpi-label">Passes décisives</div><div class="kpi-val">🎯 ${totalPasses}</div>${renderTip('Qui a passé',passeursTries,'passes','🎯')}</div>
+    <div class="kpi-card"><div class="kpi-label">⚽ Top 3 buteurs</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3(top3Buteurs,'buts','⚽')}</div>${renderTip('Classement complet',buteursTries,'buts','⚽')}</div>
+    <div class="kpi-card"><div class="kpi-label">🎯 Top 3 passeurs</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3(top3Passeurs,'passes','🎯')}</div>${renderTip('Classement complet',passeursTries,'passes','🎯')}</div>
+    <div class="kpi-card"><div class="kpi-label">Joueurs scoreurs</div><div class="kpi-val">${arr.filter(a=>a.buts>0).length}<span style="font-size:14px;color:var(--texte-muted)"> / ${joueurs.length}</span></div>${renderTip('Qui a marqué',buteursTries,'buts','⚽')}</div>
+    <div class="kpi-card"><div class="kpi-label">🏅 Top 3 homme du match</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3(top3Mvp,'mvp','🏅')}</div>${renderTip('Classement complet',mvpTries,'mvp','🏅')}</div>
+    <div class="kpi-card"><div class="kpi-label">🔥 Top 3 plus décisifs</div><div class="kpi-val" style="font-size:13px;line-height:1.6">${renderTop3(top3Decisifs,'decisif','🔥')}</div>${renderTip('Classement complet',decisifsTries,'decisif','🔥')}</div>
+    <div class="kpi-card" title="Un plateau ou un tournoi ne compte que pour 1, même avec plusieurs adversaires affrontés"><div class="kpi-label">🏠 Dom. / Ext. 🚗</div><div class="kpi-val" style="font-size:18px">${evenementsParLieu.domicile} <span style="color:var(--texte-muted);font-size:12px">dom.</span> — ${evenementsParLieu.exterieur} <span style="color:var(--texte-muted);font-size:12px">ext.</span></div></div>
+    ${distanceHTML}`;
+
+
 
   const saisonLabel=filterSaison||getSaisonCourante();
 
@@ -4118,6 +4192,17 @@ function renderStatsPage(){
       <td>${a.presences}</td>
     </tr>`).join('') : '<tr><td colspan="5" class="no-data">Aucune donnée pour l\'instant.</td></tr>';
 
+  // ── Trajets (par plateau/déplacement), triés par distance décroissante ──
+  const trajets=getTripsDetails(msFiltres).map(t=>({...t,info:getDistanceInfoMatch(t.repr)}));
+  const trajetsConnus=trajets.filter(t=>t.info&&t.info.km>0).sort((a,b)=>b.info.km-a.info.km);
+  document.getElementById('stats-trajets').innerHTML=trajetsConnus.length?trajetsConnus.map(t=>`
+    <tr>
+      <td>${new Date(t.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</td>
+      <td>${t.ville||'—'}</td>
+      <td style="color:var(--texte-muted);font-size:12px">${[...new Set(t.adversaires)].join(', ')}</td>
+      <td><strong title="Aller : ${t.info.kmAller} km · Retour : ${t.info.kmAller} km">${t.info.km} km</strong>${t.info.methode==='vol_oiseau'?' <span style="font-size:10px;color:var(--texte-muted)" title="Estimation à vol d\'oiseau">✈️</span>':''}</td>
+    </tr>`).join('') : '<tr><td colspan="4" class="no-data">Aucun déplacement à l\'extérieur pour l\'instant.</td></tr>';
+
   // ── Graphiques (section visuelle, sans doublons avec les tableaux ci-dessus) ──
   renderDashboard(filterSaison, filterComp);
 }
@@ -4130,20 +4215,44 @@ function isTournoiType(comp){ return comp==='Tournoi'; }
 // Un match "groupe plateau" = un match auto-créé (un par équipe adverse) lors de la saisie d'un plateau.
 function isPlateauGroupMatch(m){ return !!(m && isPlateauType(m.comp) && m.plateauGroupId); }
 function genPlateauGroupId(){ return 'pg_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
-function resultat(m){ return m.butsNous>m.butsEux?'V':m.butsNous===m.butsEux?'N':'D'; }
+function resultat(m){ const s=scoreEffectif(m); return s.butsNous>s.butsEux?'V':s.butsNous===s.butsEux?'N':'D'; }
 
+// Score "effectif" d'un match : si une feuille existe avec des événements saisis,
+// on prend le score recalculé en direct depuis la feuille (toujours à jour),
+// plutôt que le score stocké sur le match qui peut être obsolète (non resynchronisé
+// après une modification ultérieure de la feuille, ex. mode "Auto").
+function scoreEffectif(m){
+  const f=feuilles[m.id];
+  if(f && (Object.keys(f.buts||{}).length||Object.keys(f.penalties||{}).length||Object.keys(f.bcs||{}).length||Object.keys(f.encaisses||{}).length)){
+    return calcScoreFromFeuille(f);
+  }
+  return {butsNous:m.butsNous||0, butsEux:m.butsEux||0};
+}
+
+// Normalise un nom d'adversaire pour comparaison : insensible à la casse, aux accents,
+// aux espaces multiples/en trop et à la ponctuation courante (apostrophes, points, tirets),
+// afin que "Beuzeville 1", "BEUZEVILLE  1", "Beuzeville-1" ou "Bèuzevillé 1" soient reconnus
+// comme le même adversaire.
+function normAdversaire(s){
+  return (s||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // retire les accents
+    .toLowerCase()
+    .replace(/[.''`\-_]/g,' ')  // ponctuation courante -> espace
+    .replace(/\s+/g,' ')        // espaces multiples -> un seul
+    .trim();
+}
 // ── Historique face-à-face contre un adversaire donné ──
 function getHistoriqueAdversaire(adversaire,excludeId=null){
-  const nom=(adversaire||'').trim().toLowerCase();
+  const nom=normAdversaire(adversaire);
   if(!nom) return null;
-  const prec=matchs.filter(m=>m.id!==excludeId&&!m.annule&&!matchEstAVenir(m)&&(m.adversaire||'').trim().toLowerCase()===nom)
+  const prec=matchs.filter(m=>m.id!==excludeId&&!m.annule&&!matchEstAVenir(m)&&normAdversaire(m.adversaire)===nom)
     .sort((a,b)=>b.date.localeCompare(a.date));
   if(!prec.length) return null;
   const V=prec.filter(m=>resultat(m)==='V').length;
   const N=prec.filter(m=>resultat(m)==='N').length;
   const D=prec.filter(m=>resultat(m)==='D').length;
-  const bp=prec.reduce((s,m)=>s+(m.butsNous||0),0);
-  const bc=prec.reduce((s,m)=>s+(m.butsEux||0),0);
+  const bp=prec.reduce((s,m)=>s+scoreEffectif(m).butsNous,0);
+  const bc=prec.reduce((s,m)=>s+scoreEffectif(m).butsEux,0);
   return {nb:prec.length,V,N,D,bp,bc,dernier:prec[0]};
 }
 function updateHistoriqueAdversaireFM(){
@@ -5355,7 +5464,7 @@ function deletePlateauGroup(groupId){
 //  FEUILLE DE MATCH
 // ══════════════════════════════════════════════
 function getFeuille(mid){
-  if(!feuilles[mid]) feuilles[mid]={presents:[],buts:{},passes:{},jaunes:{},rouges:{},notes:{},remplacements:[],encaisses:{},bcs:{},penalties:{},events:[],pretes:{}};
+  if(!feuilles[mid]) feuilles[mid]={presents:[],buts:{},passes:{},jaunes:{},rouges:{},notes:{},remplacements:[],encaisses:{},bcs:{},penalties:{},events:[],pretes:{},nonRetenus:[]};
   if(!feuilles[mid].notes) feuilles[mid].notes={};
   if(!feuilles[mid].remplacements) feuilles[mid].remplacements=[];
   if(!feuilles[mid].encaisses) feuilles[mid].encaisses={};
@@ -5363,7 +5472,42 @@ function getFeuille(mid){
   if(!feuilles[mid].penalties) feuilles[mid].penalties={};
   if(!feuilles[mid].events) feuilles[mid].events=[];
   if(!feuilles[mid].pretes) feuilles[mid].pretes={};
+  if(!feuilles[mid].nonRetenus) feuilles[mid].nonRetenus=[];
   return feuilles[mid];
+}
+
+// Un joueur "présent" est-il retenu (= convoqué) pour ce match ?
+function estRetenu(f,jid){
+  return !(f.nonRetenus||[]).some(p=>+p===+jid);
+}
+
+// Liste des IDs réellement convoqués = présents ET retenus (exclut les "non retenus")
+function getConvoques(f){
+  if(!f||!f.presents) return [];
+  return f.presents.filter(id=>estRetenu(f,id));
+}
+
+// Bascule le statut "non retenu" d'un présent (présent mais pas sélectionné pour ce match)
+function toggleRetenu(mid,jid){
+  const f=getFeuille(mid);
+  if(!f.nonRetenus) f.nonRetenus=[];
+  const idx=f.nonRetenus.findIndex(p=>+p===+jid);
+  const devientNonRetenu=idx<0;
+  if(idx>=0) f.nonRetenus.splice(idx,1);
+  else f.nonRetenus.push(+jid);
+
+  // Si le joueur devient non retenu et que ce match est celui actif pour la Compo,
+  // on le retire aussi de la compo/banc déjà construits pour rester cohérent.
+  const activeMid=parseInt(localStorage.getItem('foot8_active_feuille_match')||'0');
+  if(devientNonRetenu && activeMid===mid){
+    Object.keys(compo).forEach(k=>{ if(+compo[k]===+jid) delete compo[k]; });
+    remplacants=remplacants.filter(r=>+r!==+jid);
+  }
+
+  save(); loadFeuille();
+  if(devientNonRetenu && activeMid===mid && typeof renderSpots==='function'){
+    renderSpots(); renderRemplacants(); renderSidebar();
+  }
 }
 
 // Calcule le score depuis les événements de la feuille
@@ -5571,6 +5715,239 @@ async function fetchWeatherDaily(){
   }
 }
 
+// ══════════════════════════════════════════════
+//  DISTANCE PARCOURUE (géocodage Open-Meteo — gratuit, sans clé API)
+//  Distance "à vol d'oiseau" (Haversine) entre la ville du club et
+//  la ville d'accueil de chaque plateau/tournoi à l'extérieur.
+//  Comptée en aller-retour (×2) pour refléter le kilométrage réellement parcouru.
+// ══════════════════════════════════════════════
+function normVilleKey(s){
+  return (s||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[.''`\-_]/g,' ').replace(/\s+/g,' ').trim();
+}
+function haversineKm(lat1,lng1,lat2,lng2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+function getVillesCoordsCache(){ return JSON.parse(localStorage.getItem('foot8_villes_coords')||'{}'); }
+function setVilleCoordsCache(key,coords){
+  const c=getVillesCoordsCache(); c[key]=coords;
+  localStorage.setItem('foot8_villes_coords',JSON.stringify(c));
+}
+// Géocode une ville via Open-Meteo (même service que la météo) et met en cache le résultat.
+async function geocodeEtCacheVille(ville){
+  const key=normVilleKey(ville);
+  if(!key) return null;
+  const cache=getVillesCoordsCache();
+  if(cache[key]) return cache[key];
+  try{
+    const resp=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(ville)}&count=1&language=fr&format=json`);
+    const data=await resp.json();
+    if(!data.results||!data.results.length) return null;
+    const r=data.results[0];
+    const coords={lat:r.latitude,lng:r.longitude};
+    setVilleCoordsCache(key,coords);
+    return coords;
+  }catch(err){ return null; }
+}
+// Ville d'accueil d'un match (plateau ou tournoi à l'extérieur).
+function getVilleDuMatch(m){
+  return (isPlateauType(m.comp)?m.plateauVille:(isTournoiType(m.comp)?m.tournoiVille:null))||'';
+}
+// Clé de trajet : un plateau (plusieurs adversaires le même jour, même plateauGroupId)
+// = un seul trajet aller-retour. Pour les autres matchs à l'extérieur, on regroupe
+// par date+ville (au cas où plusieurs matchs auraient lieu le même jour au même endroit).
+function getTripKey(m){
+  if(m.plateauGroupId) return 'pg:'+m.plateauGroupId;
+  return 'd:'+m.date+'|'+normVilleKey(getVilleDuMatch(m));
+}
+// Renvoie un match "représentant" par trajet distinct parmi les matchs à l'extérieur donnés,
+// pour ne compter la distance qu'une seule fois par plateau/jour au lieu d'une fois par adversaire affronté.
+function getTripsExterieurs(liste){
+  const vus=new Map();
+  liste.filter(m=>m.lieu==='E').forEach(m=>{
+    const key=getTripKey(m);
+    if(!vus.has(key)) vus.set(key,m);
+  });
+  return [...vus.values()];
+}
+// Comme getTripsExterieurs, mais garde la liste complète des adversaires affrontés
+// lors de ce trajet (utile pour l'affichage détaillé, ex. tableau des trajets).
+function getTripsDetails(liste){
+  const groupes=new Map();
+  liste.filter(m=>m.lieu==='E').forEach(m=>{
+    const key=getTripKey(m);
+    if(!groupes.has(key)) groupes.set(key,{key,date:m.date,ville:getVilleDuMatch(m),repr:m,adversaires:[]});
+    groupes.get(key).adversaires.push(m.adversaire);
+  });
+  return [...groupes.values()];
+}
+
+// Clé d'événement, domicile ET extérieur confondus : un plateau (même plateauGroupId)
+// ou un tournoi (même jour + ville) ne comptent que pour UN seul événement, même si
+// plusieurs adversaires y ont été affrontés. Un match simple compte pour lui-même
+// (clé par id, pour ne jamais fusionner à tort deux matchs distincts du même jour).
+function getEvenementKey(m){
+  if(m.plateauGroupId) return 'pg:'+m.plateauGroupId;
+  if(isTournoiType(m.comp)&&m.tournoiVille) return 'trn:'+m.date+'|'+normVilleKey(m.tournoiVille);
+  return 'id:'+m.id;
+}
+// Nombre d'événements (plateau/tournoi = 1 événement) à domicile et à l'extérieur,
+// parmi les matchs donnés.
+function getNbEvenementsParLieu(liste){
+  const vus=new Map();
+  liste.forEach(m=>{
+    const key=getEvenementKey(m);
+    if(!vus.has(key)) vus.set(key,m);
+  });
+  const evts=[...vus.values()];
+  return {
+    domicile: evts.filter(m=>m.lieu==='D').length,
+    exterieur: evts.filter(m=>m.lieu==='E').length
+  };
+}
+
+// ── Distance routière réelle via OpenRouteService (clé gratuite, optionnelle) ──
+function getOrsKey(){ return (localStorage.getItem('foot8_ors_key')||'').trim(); }
+function saveOrsKey(){
+  const v=(document.getElementById('setting-ors-key')?.value||'').trim();
+  if(v) localStorage.setItem('foot8_ors_key',v); else localStorage.removeItem('foot8_ors_key');
+  const statusEl=document.getElementById('setting-ors-status');
+  if(statusEl && !v) statusEl.textContent="Sans clé : distance estimée à vol d'oiseau. Avec une clé ORS (gratuite sur openrouteservice.org), distance routière réelle.";
+}
+async function testerOrsKey(){
+  const statusEl=document.getElementById('setting-ors-status');
+  const key=getOrsKey();
+  if(!key){ if(statusEl) statusEl.textContent='❌ Colle d\'abord ta clé ci-dessus.'; return; }
+  if(statusEl) statusEl.textContent='🔍 Test en cours…';
+  // Petit test réel : Paris → Rouen
+  const km=await fetchRouteKm(48.8566,2.3522,49.4431,1.0993);
+  if(statusEl) statusEl.textContent = km!==null ? `✅ Clé valide (test : ${Math.round(km)} km).` : "❌ Clé invalide ou service indisponible. Vérifie sur openrouteservice.org.";
+  if(km!==null) recalculerDistancesRoutieres(true);
+}
+function getVillesDistanceRouteCache(){ return JSON.parse(localStorage.getItem('foot8_villes_distance_route')||'{}'); }
+function setVilleDistanceRouteCache(key,km){
+  const c=getVillesDistanceRouteCache(); c[key]=km;
+  localStorage.setItem('foot8_villes_distance_route',JSON.stringify(c));
+}
+// Indicateur global (page réglages) : combien de villes connues sont encore
+// estimées à vol d'oiseau vs combien ont une distance routière réelle (ORS).
+function updateDistanceStatusCount(){
+  const el=document.getElementById('setting-distance-status-count');
+  if(!el) return;
+  const coords=getVillesCoordsCache();
+  const routes=getVillesDistanceRouteCache();
+  const total=Object.keys(coords).length;
+  if(!total){ el.textContent=''; return; }
+  const routier=Object.keys(coords).filter(k=>routes[k]!==undefined).length;
+  const volOiseau=total-routier;
+  el.textContent = volOiseau>0
+    ? `📍 ${total} ville${total>1?'s':''} connue${total>1?'s':''} — ${routier} en distance routière, ${volOiseau} encore à vol d'oiseau ✈️`
+    : `📍 ${total} ville${total>1?'s':''} connue${total>1?'s':''} — toutes en distance routière ✅`;
+}
+async function fetchRouteKm(lat1,lng1,lat2,lng2){
+  const key=getOrsKey();
+  if(!key) return null;
+  try{
+    const url=`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${encodeURIComponent(key)}&start=${lng1},${lat1}&end=${lng2},${lat2}`;
+    const resp=await fetch(url);
+    if(!resp.ok) return null;
+    const data=await resp.json();
+    const meters=data?.features?.[0]?.properties?.summary?.distance;
+    // Non arrondi ici : l'arrondi n'est fait qu'une fois, après doublement aller-retour,
+    // dans getDistanceInfoMatch (évite l'écart cumulatif d'un double arrondi).
+    return typeof meters==='number' ? meters/1000 : null;
+  }catch(err){ return null; }
+}
+// Recalcule la distance routière pour les villes déjà géocodées.
+// force=false (par défaut) : ne calcule que les villes pas encore en cache (utilisé par le
+// géocodage automatique en arrière-plan, pour ne pas re-solliciter l'API ORS inutilement).
+// force=true : recalcule aussi les villes déjà en cache — utilisé juste après avoir testé
+// une clé ORS, pour que les distances déjà connues (même via vol d'oiseau) passent en routier.
+async function recalculerDistancesRoutieres(force){
+  const clubLat=parseFloat(localStorage.getItem('foot8_club_lat'));
+  const clubLng=parseFloat(localStorage.getItem('foot8_club_lng'));
+  if(isNaN(clubLat)||isNaN(clubLng)) return;
+  const coords=getVillesCoordsCache();
+  const routes=getVillesDistanceRouteCache();
+  for(const [key,c] of Object.entries(coords)){
+    if(!force && routes[key]!==undefined) continue;
+    const km=await fetchRouteKm(clubLat,clubLng,c.lat,c.lng);
+    if(km!==null) setVilleDistanceRouteCache(key,km);
+    await new Promise(r=>setTimeout(r,1100));
+  }
+  if(typeof renderStatsPage==='function' && document.getElementById('stats-kpi')) renderStatsPage();
+  if(typeof loadFeuille==='function' && document.getElementById('feuille-match-select')?.value) loadFeuille();
+  updateDistanceStatusCount();
+}
+
+// Distance entre le club et la ville d'accueil de ce match.
+// Renvoie {km, kmAller, methode:'route'|'vol_oiseau'} ou null si pas encore déterminable.
+// km = aller-retour (×2, arrondi une seule fois pour éviter le cumul d'un double arrondi).
+// kmAller = distance simple (aller), fournie pour l'affichage détaillé (tooltips).
+// Priorité à la distance routière (ORS) si disponible, sinon vol d'oiseau (Haversine).
+// Les matchs à domicile comptent pour 0 km.
+function getDistanceInfoMatch(m){
+  if(m.lieu!=='E') return {km:0,kmAller:0,methode:'route'};
+  const clubLat=parseFloat(localStorage.getItem('foot8_club_lat'));
+  const clubLng=parseFloat(localStorage.getItem('foot8_club_lng'));
+  if(isNaN(clubLat)||isNaN(clubLng)) return null;
+  const ville=getVilleDuMatch(m);
+  if(!ville) return null;
+  const key=normVilleKey(ville);
+  const routeKm=getVillesDistanceRouteCache()[key];
+  if(routeKm!==undefined) return {km:Math.round(routeKm*2),kmAller:Math.round(routeKm),methode:'route'};
+  const c=getVillesCoordsCache()[key];
+  if(!c) return null;
+  const oneWay=haversineKm(clubLat,clubLng,c.lat,c.lng);
+  return {km:Math.round(oneWay*2),kmAller:Math.round(oneWay),methode:'vol_oiseau'};
+}
+// Compat : ancien nom, renvoie juste le nombre de km.
+function getDistanceKmMatch(m){ const i=getDistanceInfoMatch(m); return i?i.km:null; }
+
+// Géocode en arrière-plan toutes les villes d'accueil pas encore en cache
+// (1 requête/seconde pour respecter le service gratuit), puis calcule la distance
+// routière via ORS si une clé est configurée, sinon laisse le fallback vol d'oiseau.
+let _geocodageEnCours=false;
+async function ensureVillesGeocodees(callback){
+  if(_geocodageEnCours) return;
+  const villes=new Set();
+  matchs.forEach(m=>{
+    if(m.annule||matchEstAVenir(m)||m.lieu!=='E') return;
+    const v=getVilleDuMatch(m);
+    if(v) villes.add(v);
+  });
+  const coordsCache=getVillesCoordsCache();
+  const routeCache=getVillesDistanceRouteCache();
+  const orsKey=getOrsKey();
+  const clubLat=parseFloat(localStorage.getItem('foot8_club_lat'));
+  const clubLng=parseFloat(localStorage.getItem('foot8_club_lng'));
+  const aFaire=[...villes].filter(v=>{
+    const key=normVilleKey(v);
+    if(!coordsCache[key]) return true;
+    if(orsKey && routeCache[key]===undefined && !isNaN(clubLat) && !isNaN(clubLng)) return true;
+    return false;
+  });
+  if(!aFaire.length) return;
+  _geocodageEnCours=true;
+  for(const v of aFaire){
+    const key=normVilleKey(v);
+    let c=coordsCache[key];
+    if(!c){ c=await geocodeEtCacheVille(v); await new Promise(r=>setTimeout(r,1100)); }
+    if(c && orsKey && routeCache[key]===undefined && !isNaN(clubLat) && !isNaN(clubLng)){
+      const km=await fetchRouteKm(clubLat,clubLng,c.lat,c.lng);
+      if(km!==null) setVilleDistanceRouteCache(key,km);
+      await new Promise(r=>setTimeout(r,1100));
+    }
+  }
+  _geocodageEnCours=false;
+  updateDistanceStatusCount();
+  if(callback) callback();
+}
+
 function weatherInfo(code){
   const table = {
     0:{emoji:'☀️',label:'Ensoleillé'},
@@ -5626,7 +6003,7 @@ function goToCompoFromFeuille(){
   const mid=parseInt(document.getElementById('feuille-match-select').value);
   if(!mid){alert('Sélectionnez d\'abord un match.');return;}
   const f=feuilles[mid];
-  if(!f||!f.presents||!f.presents.length){alert('Aucun joueur présent dans cette feuille.\nCochez les présents d\'abord.');return;}
+  if(!f||!getConvoques(f).length){alert('Aucun joueur convoqué dans cette feuille.\nCochez les présents (et gardez-les "Convoqué") d\'abord.');return;}
   setActiveFeuille(mid);
   
   // Charger les métadonnées du match
@@ -5665,6 +6042,8 @@ function loadFeuille(){
 
   const rowsHTML=actifs.map(j=>{
     const present=f.presents.includes(j.id);
+    const retenu=estRetenu(f,j.id);
+    const jouera=present&&retenu;
     const jidS=String(j.id);
     const buts=+(f.buts[jidS]||f.buts[j.id]||0);
     const passes=+(f.passes[jidS]||f.passes[j.id]||0);
@@ -5690,11 +6069,12 @@ function loadFeuille(){
         return `<button type="button" class="ev-minute-tag" onclick="editMinute(${mid},${idx})" title="Modifier la minute">${e.minute}'</button>`;
       }).join('');
 
-    return `<div class="joueur-check-row${jaunes>=2?' expulse':''}">
+    return `<div class="joueur-check-row${jaunes>=2?' expulse':''}${present&&!retenu?' non-retenu':''}">
       <input type="checkbox" class="jcr-check" ${present?'checked':''} onchange="togglePresence(${mid},${j.id},this.checked)">
       <span class="jcr-num">${j.numero}</span>
-      <span class="jcr-nom" style="min-width:90px">${j.nom} <span style="font-weight:400">${j.prenom}</span><br><span style="font-size:10px;color:var(--texte-muted)">${PFR[j.poste]||''}</span>${jaunes>=2?'<span class="expulse-badge">🟥 Expulsé</span>':''}${j._prete?` <span style="font-size:10px;background:#38bdf822;color:#38bdf8;border-radius:6px;padding:1px 6px">🔄 ${j._equipeNom}<button type="button" onclick="retirerJoueurPrete(${mid},${j.id})" title="Retirer ce joueur prêté" style="border:none;background:none;color:#38bdf8;cursor:pointer;margin-left:4px;font-size:11px">✕</button></span>`:''}</span>
-      <div class="jcr-events" ${present?'':'style="opacity:.25;pointer-events:none"'}>
+      <span class="jcr-nom" style="min-width:90px">${j.nom} <span style="font-weight:400">${j.prenom}</span><br><span style="font-size:10px;color:var(--texte-muted)">${PFR[j.poste]||''}</span>${jaunes>=2?'<span class="expulse-badge">🟥 Expulsé</span>':''}${present&&!retenu?'<span class="badge-non-retenu">🚫 Non retenu</span>':''}${j._prete?` <span style="font-size:10px;background:#38bdf822;color:#38bdf8;border-radius:6px;padding:1px 6px">🔄 ${j._equipeNom}<button type="button" onclick="retirerJoueurPrete(${mid},${j.id})" title="Retirer ce joueur prêté" style="border:none;background:none;color:#38bdf8;cursor:pointer;margin-left:4px;font-size:11px">✕</button></span>`:''}</span>
+      ${present?`<button type="button" class="btn-toggle-retenu no-print ${retenu?'':'is-off'}" onclick="toggleRetenu(${mid},${j.id})" title="${retenu?'Marquer comme présent mais non retenu pour ce match':'Remettre parmi les joueurs convoqués'}">${retenu?'✓ Convoqué':'↩ Reconvoquer'}</button>`:''}
+      <div class="jcr-events" ${jouera?'':'style="opacity:.25;pointer-events:none"'}>
         <div style="display:flex;flex-direction:column;gap:2px">
           <div class="ev-group">
             <button class="ev-plus event-btn-goal" onclick="addEvent(${mid},${j.id},'buts')">⚽+</button>
@@ -5752,13 +6132,16 @@ function loadFeuille(){
           ${encaisses>0?`<div class="ev-minutes">${evMins('encaisses')}</div>`:''}
         </div>`:''}
       </div>
-      ${present?`<div style="display:flex;flex-direction:column;gap:2px">
+      ${present?`<div style="display:flex;flex-direction:column;gap:2px;${jouera?'':'opacity:.25;pointer-events:none'}">
         <div>${dots}<span style="font-size:11px;font-weight:700;color:${note?'var(--jaune)':'var(--texte-muted)'};margin-left:4px">${note||'—'}</span></div>
       </div>`:''}
     </div>`;
   }).join('');
 
   const nbPresents=f.presents.length;
+  const nonRetenusJoueurs=f.presents.filter(id=>!estRetenu(f,id)).map(id=>getJoueur(+id)).filter(Boolean).sort((a,b)=>a.numero-b.numero);
+  const nbNonRetenus=nonRetenusJoueurs.length;
+  const nbConvoques=nbPresents-nbNonRetenus;
   const scoreAuto=calcScoreFromFeuille(f);
   const butsNousAuto=scoreAuto.butsNous;
   const butsEuxAuto=scoreAuto.butsEux;
@@ -5775,7 +6158,9 @@ function loadFeuille(){
   const decisif=getDecisifFeuille(f,actifs);
   const cleanSheet=getCleanSheetFeuille(f,actifs,butsEuxAuto);
   const historiqueAdv=getHistoriqueAdversaire(m.adversaire,m.id);
-  const highlightsHTML=(mvp||decisif||cleanSheet||historiqueAdv)?`
+  const distanceInfo=getDistanceInfoMatch(m);
+  if(distanceInfo===null && m.lieu==='E') ensureVillesGeocodees(()=>{ if(typeof loadFeuille==='function') loadFeuille(); });
+  const highlightsHTML=(mvp||decisif||cleanSheet||historiqueAdv||(m.lieu==='E'&&distanceInfo!==null))?`
     <div style="display:flex;gap:10px;flex-wrap:wrap;width:100%;margin-top:12px">
       ${mvp?`<div style="background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px">
         <span style="font-size:18px">🏅</span>
@@ -5792,6 +6177,10 @@ function loadFeuille(){
       ${historiqueAdv?`<div style="background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px">
         <span style="font-size:18px">🤝</span>
         <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Historique vs ${m.adversaire}</div><div style="font-weight:700;font-size:13px"><span style="color:#4ade80">${historiqueAdv.V}V</span> <span style="color:var(--jaune)">${historiqueAdv.N}N</span> <span style="color:#f87171">${historiqueAdv.D}D</span> <span style="color:var(--texte-muted);font-weight:400">(${historiqueAdv.bp}-${historiqueAdv.bc})</span></div></div>
+      </div>`:''}
+      ${(m.lieu==='E'&&distanceInfo!==null)?`<div style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.35);border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:9px">
+        <span style="font-size:18px">🚗</span>
+        <div><div style="font-size:10px;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.03em">Distance A/R${distanceInfo.methode==='vol_oiseau'?' (à vol d\'oiseau, estimée)':' (routière)'}</div><div style="font-weight:700;font-size:13px" title="Aller : ${distanceInfo.kmAller} km · Retour : ${distanceInfo.kmAller} km">${distanceInfo.km} km</div></div>
       </div>`:''}
     </div>`:'';
 
@@ -5830,7 +6219,7 @@ function loadFeuille(){
         <span class="score-auto-badge">⚡ Auto</span>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-left:auto;">
-        <div class="kpi-card" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Présents</div><div class="kpi-val" style="font-size:20px">${nbPresents}</div></div>
+        <div class="kpi-card" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Convoqués</div><div class="kpi-val" style="font-size:20px">${nbConvoques}${nbNonRetenus?`<span style="font-size:11px;font-weight:600;color:var(--texte-muted)"> / ${nbPresents} prés.</span>`:''}</div></div>
         <div class="kpi-card" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Buts</div><div class="kpi-val" style="font-size:20px;color:#4ade80">${butsNousAuto}${totalPen>0?`<span style="font-size:11px;color:var(--texte-muted);margin-left:3px">(${totalPen}p)</span>`:''}</div></div>
         ${totalBcs?`<div class="kpi-card" style="min-width:64px;padding:10px 12px"><div class="kpi-label">BCS</div><div class="kpi-val" style="font-size:20px;color:#d8b4fe">${totalBcs}</div></div>`:''}
         <div class="kpi-card" style="min-width:72px;padding:10px 12px"><div class="kpi-label">Passes D.</div><div class="kpi-val" style="font-size:20px;color:var(--bleu)">${totalPasses}</div></div>
@@ -5840,6 +6229,14 @@ function loadFeuille(){
       </div>
       ${highlightsHTML}
     </div>
+    ${nbNonRetenus?`
+    <div class="no-print" style="background:rgba(224,48,48,.07);border:1px solid rgba(224,48,48,.25);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span style="font-size:18px">🚫</span>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:12px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px">Présents non convoqués (${nbNonRetenus})</div>
+        <div style="font-size:13px;color:var(--texte);line-height:1.7">${nonRetenusJoueurs.map(j=>`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:7px;padding:2px 8px;margin:2px 4px 2px 0">${j.numero}. ${j.nom} ${j.prenom}<button type="button" onclick="toggleRetenu(${mid},${j.id})" title="Reconvoquer" style="border:none;background:none;color:#4ade80;cursor:pointer;font-size:12px;padding:0">↩</button></span>`).join('')}</div>
+      </div>
+    </div>`:''}
     ${isPlateauType(m.comp)?`
     <div style="background:rgba(45,168,88,.06);border:1px solid rgba(45,168,88,.2);border-radius:10px;padding:14px;margin-bottom:16px;">
       <div style="font-size:12px;font-weight:600;color:var(--texte-muted);margin-bottom:8px;text-transform:uppercase">⚽ ${m.comp}: ${m.plateauVille}</div>
@@ -5875,6 +6272,11 @@ function loadFeuille(){
         <div class="feuille-section">
           <div class="feuille-section-title">⏱️ Chronologie</div>
           ${renderTimeline(mid,f)}
+        </div>
+        <div class="feuille-section">
+          <div class="feuille-section-title">🚫 Présents non convoqués${nbNonRetenus?` (${nbNonRetenus})`:''}</div>
+          ${nbNonRetenus?`<div style="padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px">${nonRetenusJoueurs.map(j=>`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:7px;padding:3px 9px;font-size:12.5px">${j.numero}. ${j.nom} ${j.prenom}<button type="button" class="no-print" onclick="toggleRetenu(${mid},${j.id})" title="Reconvoquer" style="border:none;background:none;color:#4ade80;cursor:pointer;font-size:12px;padding:0">↩</button></span>`).join('')}</div>`
+            :'<div style="padding:14px;color:var(--texte-muted);font-size:13px">Aucun présent écarté pour ce match.</div>'}
         </div>
       </div>
     </div>`;
@@ -6039,7 +6441,7 @@ function togglePlateauLink(mid){
 function togglePresence(mid,jid,checked){
   const f=getFeuille(mid);
   if(checked){ if(!f.presents.includes(jid)) f.presents.push(jid); }
-  else { f.presents=f.presents.filter(id=>id!==jid); delete f.buts[jid]; delete f.passes[jid]; delete f.jaunes[jid]; delete f.rouges[jid]; delete f.notes[jid]; }
+  else { f.presents=f.presents.filter(id=>id!==jid); delete f.buts[jid]; delete f.passes[jid]; delete f.jaunes[jid]; delete f.rouges[jid]; delete f.notes[jid]; if(f.nonRetenus) f.nonRetenus=f.nonRetenus.filter(p=>+p!==+jid); }
   const r=propagerPresence(mid,jid,checked);
   save(); recalcStatsFromFeuilles(); loadFeuille();
   if(r.gardes.length){
@@ -6082,7 +6484,8 @@ function repliquerTournoi(){
   const mid=parseInt(document.getElementById('feuille-match-select').value);
   if(!mid){ alert('Sélectionnez d\'abord un match.'); return; }
   const f=getFeuille(mid);
-  if(!f.presents||!f.presents.length){ alert('Aucun joueur présent dans cette feuille.\nCochez d\'abord les convoqués, puis utilisez ce bouton.'); return; }
+  const convoquesTournoi=getConvoques(f);
+  if(!convoquesTournoi.length){ alert('Aucun joueur convoqué dans cette feuille.\nCochez d\'abord les présents (et gardez-les "Convoqué"), puis utilisez ce bouton.'); return; }
   const m=matchs.find(x=>x.id===mid);
   if(!m){ return; }
   // Trouver tous les matchs du même tournoi = même compétition + même saison + même date (journée)
@@ -6101,12 +6504,12 @@ function repliquerTournoi(){
     return;
   }
   const liste=memesTournoi.map(x=>`  • ${new Date(x.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})} vs ${x.adversaire}`).join('\n');
-  if(!confirm(`Copier les ${f.presents.length} convoqués de ce match vers :\n${liste}\n\nLes joueurs déjà présents dans ces feuilles seront conservés.`)) return;
+  if(!confirm(`Copier les ${convoquesTournoi.length} convoqués de ce match vers :\n${liste}\n\nLes joueurs déjà présents dans ces feuilles seront conservés.`)) return;
   let nb=0;
   memesTournoi.forEach(x=>{
     const fx=getFeuille(x.id);
     let ajout=0;
-    f.presents.forEach(jid=>{
+    convoquesTournoi.forEach(jid=>{
       if(!fx.presents.some(p=>+p===+jid)){ fx.presents.push(+jid); ajout++; }
       if(f.pretes&&f.pretes[jid]&&!fx.pretes[jid]) fx.pretes[jid]={...f.pretes[jid]};
     });
@@ -6205,8 +6608,8 @@ function imprimerFeuille(){
   const lieuTxt={D:'Domicile',E:'Extérieur',N:'Neutre'}[m.lieu]||'';
   const PFR={G:'Gard.',DC:'Déf.C',DL:'Déf.G',DR:'Déf.D',MC:'Mil.C',MO:'Mil.O',ML:'Mil.G',MR:'Mil.D',AT:'Att.',BU:'But.','?':'—'};
 
-  // Joueurs convoqués uniquement (cochés présents), triés par numéro
-  const convoqués=f.presents.map(id=>getJoueur(+id)).filter(Boolean).sort((a,b)=>a.numero-b.numero);
+  // Joueurs convoqués uniquement (présents ET retenus), triés par numéro
+  const convoqués=getConvoques(f).map(id=>getJoueur(+id)).filter(Boolean).sort((a,b)=>a.numero-b.numero);
   if(!convoqués.length){ alert('Aucun joueur convoqué pour ce match.\nCochez d\'abord les présents dans la feuille.'); return; }
 
   const dateStr=m.date?new Date(m.date).toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'—';
@@ -6475,7 +6878,7 @@ function openConvocation(){
   const mid=parseInt(document.getElementById('feuille-match-select').value);
   if(!mid){ alert('Sélectionnez d\'abord un match.'); return; }
   const f=getFeuille(mid);
-  if(!f.presents||!f.presents.length){ alert('Aucun joueur présent.\nCochez d\'abord les convoqués.'); return; }
+  if(!getConvoques(f).length){ alert('Aucun joueur convoqué.\nCochez des présents (et laissez-les "Convoqué") dans la feuille.'); return; }
   document.getElementById('modal-convoc-bg').classList.add('open');
   generateConvocation();
 }
@@ -6502,7 +6905,8 @@ function generateConvocation(){
   // Calcul heure de rdv = heure du match - 1h (par défaut, modifiable)
   // Heure de match : on n'a pas de champ heure stocké, donc on utilise uniquement le champ saisi
 
-  const joueursListe=f.presents
+  const convoquesMsg=getConvoques(f);
+  const joueursListe=convoquesMsg
     .map(jid=>getJoueur(+jid))
     .filter(Boolean)
     .sort((a,b)=>a.numero-b.numero)
@@ -6524,7 +6928,7 @@ function generateConvocation(){
     if(equipesListe) msg+=`🆚 Autres équipes présentes au plateau :\n${equipesListe}\n`;
   }
   if(isTournoiType(m.comp)&&m.tournoiVille) msg+=`📌 Lieu du tournoi : ${m.tournoiVille}\n`;
-  msg+=`\n👥 Convoqués (${f.presents.length}) :\n${joueursListe}\n`;
+  msg+=`\n👥 Convoqués (${convoquesMsg.length}) :\n${joueursListe}\n`;
   if(withEquip) msg+=`\n🎽 Pensez à votre équipement complet (gourde, maillot, short, crampons, protège-tibias).\n`;
   msg+=`\n ⚽  Merci de préciser vos besoins en co-voiturage afin de nous organiser  ⚽`;
 
@@ -7044,7 +7448,9 @@ function getPresentsFeuille(){
   if(!mid) return null;
   const f=feuilles[mid];
   if(!f||!f.presents||!f.presents.length) return null;
-  return new Set(f.presents);
+  const convoques=getConvoques(f);
+  if(!convoques.length) return null;
+  return new Set(convoques);
 }
 
 // Enregistre le match actif pour la feuille (appelé depuis loadFeuille)
@@ -7391,6 +7797,108 @@ function updatePrintHeader(){
 window.addEventListener('beforeprint',()=>{ updatePrintHeader(); });
 
 // ══════════════════════════════════════════════
+//  COUP DE SIFFLET (synthétisé, sans fichier audio externe)
+// ══════════════════════════════════════════════
+let sifletAudioCtx=null;
+let sifletMasterBus=null;
+function getSifletCtx(){
+  if(!sifletAudioCtx){
+    try{ sifletAudioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; }
+  }
+  if(sifletAudioCtx.state==='suspended') sifletAudioCtx.resume();
+  return sifletAudioCtx;
+}
+// Bus de sortie commun avec compresseur, pour un son plus net et sans écrêtage
+// quand plusieurs coups de sifflet se chevauchent légèrement.
+function getSifletBus(ctx){
+  if(!sifletMasterBus||sifletMasterBus.ctx!==ctx){
+    const comp=ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-18,ctx.currentTime);
+    comp.knee.setValueAtTime(12,ctx.currentTime);
+    comp.ratio.setValueAtTime(6,ctx.currentTime);
+    comp.attack.setValueAtTime(0.002,ctx.currentTime);
+    comp.release.setValueAtTime(0.12,ctx.currentTime);
+    comp.connect(ctx.destination);
+    sifletMasterBus={ctx,node:comp};
+  }
+  return sifletMasterBus.node;
+}
+// Petit souffle d'attaque en bruit filtré (donne le "chuintement" caractéristique
+// du début d'un coup de sifflet à bille, avant que le sifflement pur ne s'installe).
+function creerSouffle(ctx,bus,startTime,duration){
+  const bufferSize=Math.max(1,Math.floor(ctx.sampleRate*duration));
+  const buffer=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i]=Math.random()*2-1;
+  const noise=ctx.createBufferSource();
+  noise.buffer=buffer;
+  const bp=ctx.createBiquadFilter();
+  bp.type='bandpass';
+  bp.frequency.setValueAtTime(3200,startTime);
+  bp.Q.setValueAtTime(1.1,startTime);
+  const g=ctx.createGain();
+  g.gain.setValueAtTime(0.0001,startTime);
+  g.gain.exponentialRampToValueAtTime(0.22,startTime+0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001,startTime+duration);
+  noise.connect(bp); bp.connect(g); g.connect(bus);
+  noise.start(startTime); noise.stop(startTime+duration);
+}
+// Un coup de sifflet complet, programmé à un instant précis (startTime) sur la
+// timeline du contexte audio — timbre plus riche (triangle+dent de scie filtrées),
+// trémolo rapide façon "bille" qui roule, attaque nette et souffle initial.
+function creerCoupDeSifflet(ctx,startTime,duration){
+  duration=duration||0.4;
+  const bus=getSifletBus(ctx);
+  creerSouffle(ctx,bus,startTime,Math.min(0.05,duration*0.2));
+
+  const osc1=ctx.createOscillator();
+  const osc2=ctx.createOscillator();
+  osc1.type='triangle'; osc2.type='sawtooth';
+  osc1.frequency.setValueAtTime(3050,startTime);
+  osc2.frequency.setValueAtTime(3065,startTime); // léger désaccord = timbre plus épais
+
+  // Trémolo "bille qui roule" : modulation rapide et prononcée de la fréquence
+  const lfo=ctx.createOscillator();
+  const lfoGain=ctx.createGain();
+  lfo.type='sine';
+  lfo.frequency.setValueAtTime(24,startTime);
+  lfoGain.gain.setValueAtTime(420,startTime);
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc1.frequency);
+  lfoGain.connect(osc2.frequency);
+
+  // Filtre passe-bande pour adoucir les harmoniques dures des ondes carrées/scie
+  const bp=ctx.createBiquadFilter();
+  bp.type='bandpass';
+  bp.frequency.setValueAtTime(3100,startTime);
+  bp.Q.setValueAtTime(2.4,startTime);
+
+  const gain=ctx.createGain();
+  gain.gain.setValueAtTime(0.0001,startTime);
+  gain.gain.exponentialRampToValueAtTime(0.5,startTime+0.012);     // attaque nette
+  gain.gain.setValueAtTime(0.5,startTime+duration-0.09);
+  gain.gain.exponentialRampToValueAtTime(0.0001,startTime+duration); // relâche rapide
+
+  osc1.connect(bp); osc2.connect(bp); bp.connect(gain); gain.connect(bus);
+  osc1.start(startTime); osc2.start(startTime); lfo.start(startTime);
+  osc1.stop(startTime+duration); osc2.stop(startTime+duration); lfo.stop(startTime+duration);
+}
+// Coup de sifflet isolé, joué immédiatement (ex: lancement du chrono)
+function jouerSifflet(){
+  const ctx=getSifletCtx();
+  if(!ctx) return;
+  creerCoupDeSifflet(ctx,ctx.currentTime,0.38);
+}
+// n coups de sifflet nets et bien rythmés, programmés sur la même timeline audio
+// (plus fiable qu'avec setTimeout, notamment si l'onglet perd le focus).
+function jouerSifflets(n){
+  const ctx=getSifletCtx();
+  if(!ctx) return;
+  const espace=0.46, duree=0.4;
+  for(let i=0;i<n;i++) creerCoupDeSifflet(ctx,ctx.currentTime+i*espace,duree);
+}
+
+// ══════════════════════════════════════════════
 //  CHRONOMÈTRE PERSISTANT
 // ══════════════════════════════════════════════
 let chronoTimer=null;
@@ -7453,12 +7961,13 @@ function chronoTick(){
   if(st.running && min===duree && sec===0){
     showNotif('🏁 Fin du match !','green');
     navigator.vibrate?.([300,100,300,100,300]);
+    jouerSifflets(3);
   }
 }
 function chronoToggle(){
   const st=chronoLoad();
   if(st.running){ st.offset+=Date.now()-st.startTs; st.running=false; }
-  else { st.startTs=Date.now(); st.running=true; }
+  else { st.startTs=Date.now(); st.running=true; jouerSifflet(); }
   chronoSave(st); chronoTick();
 }
 function chronoMiTemps(){
@@ -7857,6 +8366,49 @@ function renderDashboard(filterSaison, filterComp=''){
       </div>`;
   })();
 
+  // ── Distance : km parcourus par mois + villes les plus éloignées ──
+  const tripsMs=getTripsExterieurs(ms);
+  const tripsInfos=tripsMs.map(m=>({m,info:getDistanceInfoMatch(m)})).filter(t=>t.info&&t.info.km>0);
+  const kmMoisHTML=(()=>{
+    if(!tripsInfos.length) return '<div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Aucun déplacement</div>';
+    const parMois={};
+    tripsInfos.forEach(t=>{ const k=t.m.date.slice(0,7); parMois[k]=(parMois[k]||0)+t.info.km; });
+    const moisTries=Object.keys(parMois).sort();
+    const PL=32,PR=12,PT=18,PB=30;
+    const CW=Math.max(160,moisTries.length*44),CH=110;
+    const W=PL+CW+PR, H=PT+CH+PB;
+    const maxKm=Math.max(1,...moisTries.map(k=>parMois[k]));
+    const yOf=v=>PT+CH-(v/maxKm)*CH;
+    const slot=CW/moisTries.length;
+    const barW=Math.max(10,Math.min(34,slot*0.55));
+    const bg=`<rect x="${PL}" y="${PT}" width="${CW}" height="${CH}" fill="rgba(255,255,255,.02)" rx="4"/>`;
+    const bars=moisTries.map((k,i)=>{
+      const cx=PL+(i+0.5)*slot;
+      const val=parMois[k];
+      const y=yOf(val);
+      const h=Math.max(1,(PT+CH)-y);
+      const label=new Date(k+'-01').toLocaleDateString('fr-FR',{month:'short',year:'2-digit'});
+      return `<rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${h}" rx="3" fill="#fb923c" opacity=".85"><title>${label} — ${Math.round(val)} km (A/R) · dont ~${Math.round(val/2)} km aller + ~${Math.round(val/2)} km retour</title></rect>
+        <text x="${cx}" y="${y-4}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--texte)" font-family="Segoe UI,sans-serif">${Math.round(val)}</text>
+        <text x="${cx}" y="${PT+CH+12}" text-anchor="middle" font-size="9" fill="var(--texte-muted)" font-family="Segoe UI,sans-serif">${label}</text>`;
+    }).join('');
+    return `<div style="overflow-x:auto;overflow-y:hidden">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:${Math.min(W,520)}px;display:block">${bg}${bars}</svg>
+    </div>`;
+  })();
+  const topVillesHTML=(()=>{
+    if(!tripsInfos.length) return '<div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Aucun déplacement</div>';
+    const parVille={};
+    tripsInfos.forEach(t=>{
+      const ville=getVilleDuMatch(t.m)||'—';
+      const key=normVilleKey(ville);
+      if(!parVille[key]||t.info.km>parVille[key].km) parVille[key]={ville,km:t.info.km,kmAller:t.info.kmAller,methode:t.info.methode};
+    });
+    const top=Object.values(parVille).sort((a,b)=>b.km-a.km).slice(0,5);
+    const maxKm=Math.max(1,...top.map(v=>v.km));
+    return top.map(v=>`<div class="dash-bar-row"><div class="dash-bar-label">${v.ville}</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(v.km/maxKm*100).toFixed(0)}%;background:#fb923c"></div></div><div class="dash-bar-val" title="Aller : ${v.kmAller} km · Retour : ${v.kmAller} km">${v.km} km${v.methode==='vol_oiseau'?' ✈️':''}</div></div>`).join('');
+  })();
+
   grid.innerHTML=`
     <div class="dash-card"><div class="dash-card-title">🏆 Bilan V/N/D</div>${donutHTML}</div>
     <div class="dash-card"><div class="dash-card-title">📈 Courbe de forme</div>${formeHTML}</div>
@@ -7871,7 +8423,9 @@ function renderDashboard(filterSaison, filterComp=''){
     <div class="dash-card"><div class="dash-card-title">🔥 Série en cours</div>${streakHTML}</div>
     <div class="dash-card"><div class="dash-card-title">🔵 Buts marqués par match</div>${evoHTML}</div>
     <div class="dash-card"><div class="dash-card-title">🟠 Buts encaissés par match</div>${evoEncHTML}</div>
-    <div class="dash-card"><div class="dash-card-title">⚖️ Différentiel de buts par match</div>${evoDiffHTML}</div>`;
+    <div class="dash-card"><div class="dash-card-title">⚖️ Différentiel de buts par match</div>${evoDiffHTML}</div>
+    <div class="dash-card"><div class="dash-card-title">🚗 Km parcourus par mois (A/R)</div>${kmMoisHTML}</div>
+    <div class="dash-card"><div class="dash-card-title">🏁 Villes les plus éloignées (A/R)</div>${topVillesHTML}</div>`;
 }
 
 
@@ -7891,6 +8445,9 @@ function openSettings(){
       statusEl.textContent = lat ? '📍 Localisation enregistrée — météo activée sur le prochain match' : 'Renseignez votre ville pour afficher la météo sur le prochain match.';
     }
   }
+  const orsEl = document.getElementById('setting-ors-key');
+  if(orsEl) orsEl.value = localStorage.getItem('foot8_ors_key') || '';
+  updateDistanceStatusCount();
   const duree=getDureeMatch();
   const dEl=document.getElementById('setting-duree-match');
   if(dEl) dEl.value=duree;
@@ -8760,6 +9317,7 @@ function moTick(){
   if(st.running && min===duree && sec===0){
     showNotif('🏁 Fin du match !','green');
     navigator.vibrate?.([300,100,300,100,300]);
+    jouerSifflets(3);
   }
   moUpdateScore();
 }
@@ -8782,7 +9340,7 @@ function moRender(){
   const mid=matchOverlayMid;
   const PFR={G:'Gard.',DC:'Déf.C',DL:'Déf.G',DR:'Déf.D',MC:'Mil.C',MO:'Mil.O',ML:'Mil.G',MR:'Mil.D',AT:'Att.',BU:'But.','?':'—'};
 
-  const rows=f.presents.map(jid=>{
+  const rows=getConvoques(f).map(jid=>{
     const j=getJoueur(+jid); if(!j)return '';
     const jidS=String(jid);
     const isGK=j.poste==='G';
