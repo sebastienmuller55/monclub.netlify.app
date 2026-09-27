@@ -3651,8 +3651,14 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.85';
+const APP_VERSION='1.86';
 const CHANGELOG=[
+  {
+    version:'1.86', date:'27/09/2026',
+    changes:[
+      "Onglet 🧺 Maillots : un tournoi (plusieurs matchs joués le même jour au même lieu de tournoi, contre des adversaires différents) ne compte désormais qu'un seul lavage à répartir, exactement comme pour un plateau — au lieu d'un lavage par match affronté."
+    ]
+  },
   {
     version:'1.85', date:'27/09/2026',
     changes:[
@@ -5359,9 +5365,10 @@ function getJoueursActifsPourLaveur(){
   return [...joueurs].filter(j=>j.statut==='Actif').sort((a,b)=>a.nom.localeCompare(b.nom,'fr')||(a.prenom||'').localeCompare(b.prenom||'','fr'));
 }
 // Regroupe les matchs par "événement de lavage" : un plateau (plusieurs matchs partageant
-// le même plateauGroupId), ou plusieurs matchs joués le même jour contre le même adversaire
-// dans la même compétition (ex : plusieurs mi-temps/rencontres d'un même amical), ne comptent
-// que pour UN seul jeu de maillots à laver.
+// le même plateauGroupId), un tournoi (plusieurs matchs du même jour au même lieu de tournoi),
+// ou plusieurs matchs joués le même jour contre le même adversaire dans la même compétition
+// (ex : plusieurs mi-temps/rencontres d'un même amical), ne comptent que pour UN seul jeu de
+// maillots à laver.
 function getMaillotEntries(){
   const list=[...matchs].filter(m=>!m.annule).sort((a,b)=>b.date.localeCompare(a.date));
   const vus=new Set();
@@ -5377,6 +5384,19 @@ function getMaillotEntries(){
         date:m.date,
         comp:m.comp,
         label:`⚽ ${m.comp}${m.plateauVille?' — '+m.plateauVille:''}`+(membres.length>1?` <span style="color:var(--texte-muted);font-size:11px">(${membres.length} équipes : ${membres.map(x=>x.adversaire).join(', ')})</span>`:(membres[0]?` <span style="color:var(--texte-muted);font-size:11px">vs ${membres[0].adversaire}</span>`:'')),
+        laveur:(membres.find(x=>x.laveur&&x.laveur.trim())||{}).laveur||''
+      });
+    } else if(isTournoiType(m.comp)&&m.tournoiVille){
+      const tk='trn_'+m.date+'|'+normVilleKey(m.tournoiVille);
+      if(vus.has(tk)) return;
+      vus.add(tk);
+      const membres=matchs.filter(x=>!x.annule&&isTournoiType(x.comp)&&x.date===m.date&&x.tournoiVille&&normVilleKey(x.tournoiVille)===normVilleKey(m.tournoiVille));
+      entries.push({
+        key:tk,
+        matchIds:membres.map(x=>x.id),
+        date:m.date,
+        comp:m.comp,
+        label:`🏆 ${m.comp} — ${m.tournoiVille}`+(membres.length>1?` <span style="color:var(--texte-muted);font-size:11px">(${membres.length} matchs : ${membres.map(x=>x.adversaire).join(', ')})</span>`:(membres[0]?` <span style="color:var(--texte-muted);font-size:11px">vs ${membres[0].adversaire}</span>`:'')),
         laveur:(membres.find(x=>x.laveur&&x.laveur.trim())||{}).laveur||''
       });
     } else {
