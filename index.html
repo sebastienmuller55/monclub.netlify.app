@@ -5750,7 +5750,7 @@ function getDecisifFeuille(f,actifs){
 }
 function getCleanSheetFeuille(f,actifs,butsEuxAuto){
   if(butsEuxAuto>0) return null;
-  const gardiens=actifs.filter(j=>j.poste==='G'&&(f.presents||[]).includes(j.id));
+  const gardiens=actifs.filter(j=>j.poste==='G'&&(f.presents||[]).includes(j.id)&&estRetenu(f,j.id));
   return gardiens.length?gardiens:null;
 }
 
@@ -6256,10 +6256,13 @@ function loadFeuille(){
   const actifs=[...joueurs,...pretesArr].filter(j=>j.statut==='Actif'||f.presents.includes(j.id)).sort((a,b)=>a.numero-b.numero);
   const PFR={G:'Gard.',DC:'Déf.C',DL:'Déf.G',DR:'Déf.D',MC:'Mil.C',MO:'Mil.O',ML:'Mil.G',MR:'Mil.D',AT:'Att.',BU:'But.','?':'—'};
 
-  // Masquer les non-convoqués : on n'affiche en lignes complètes que les joueurs cochés présents.
-  // Les autres restent accessibles via une petite liste repliable, pour pouvoir en ajouter un vite.
+  // Masquer les non-convoqués : on n'affiche en lignes complètes que les joueurs présents ET retenus.
+  // Les autres (jamais cochés présents, ou présents mais non retenus) restent accessibles via une
+  // petite liste repliable, pour pouvoir en ajouter un ou en reconvoquer un vite.
   const absentsActifs=actifs.filter(j=>!f.presents.includes(j.id));
-  const joueursAffiches=feuilleMasquerAbsents ? actifs.filter(j=>f.presents.includes(j.id)) : actifs;
+  const nonRetenusActifs=actifs.filter(j=>f.presents.includes(j.id)&&!estRetenu(f,j.id));
+  const masquesActifs=[...absentsActifs,...nonRetenusActifs].sort((a,b)=>a.numero-b.numero);
+  const joueursAffiches=feuilleMasquerAbsents ? actifs.filter(j=>f.presents.includes(j.id)&&estRetenu(f,j.id)) : actifs;
 
   const rowsHTML=joueursAffiches.map(j=>{
     const present=f.presents.includes(j.id);
@@ -6481,7 +6484,7 @@ function loadFeuille(){
       </div>
       ${highlightsHTML}
     </div>
-    ${nbNonRetenus?`
+    ${nbNonRetenus && !feuilleMasquerAbsents?`
     <div class="no-print" style="background:rgba(224,48,48,.07);border:1px solid rgba(224,48,48,.25);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <span style="font-size:18px">🚫</span>
       <div style="flex:1;min-width:200px">
@@ -6513,15 +6516,21 @@ function loadFeuille(){
           </label>
         </div>
         ${rowsHTML || `<div class="no-data" style="padding:20px">${feuilleMasquerAbsents?'Aucun joueur convoqué pour l\'instant. Dépliez la liste ci-dessous pour cocher les présents.':'Aucun joueur.'}</div>`}
-        ${feuilleMasquerAbsents && absentsActifs.length ? `
+        ${feuilleMasquerAbsents && masquesActifs.length ? `
         <div class="feuille-absents-toggle no-print" onclick="toggleAbsentsOuvert()">
-          <span>${feuilleAbsentsOuvert?'▲':'▼'}</span> ${absentsActifs.length} joueur${absentsActifs.length>1?'s':''} non convoqué${absentsActifs.length>1?'s':''} masqué${absentsActifs.length>1?'s':''} — cliquer pour ${feuilleAbsentsOuvert?'masquer':'afficher et cocher un oubli'}
+          <span>${feuilleAbsentsOuvert?'▲':'▼'}</span> ${masquesActifs.length} joueur${masquesActifs.length>1?'s':''} non convoqué${masquesActifs.length>1?'s':''} masqué${masquesActifs.length>1?'s':''} — cliquer pour ${feuilleAbsentsOuvert?'masquer':'afficher et cocher/reconvoquer un oubli'}
         </div>
         ${feuilleAbsentsOuvert?`<div class="feuille-absents-liste">${absentsActifs.map(j=>`
           <div class="joueur-check-row" style="opacity:.65">
             <input type="checkbox" class="jcr-check" onchange="togglePresence(${mid},${j.id},this.checked)">
             <span class="jcr-num">${j.numero}</span>
             <span class="jcr-nom">${j.nom} <span style="font-weight:400">${j.prenom}</span><br><span style="font-size:10px;color:var(--texte-muted)">${PFR[j.poste]||''}</span></span>
+          </div>`).join('')}${nonRetenusActifs.map(j=>`
+          <div class="joueur-check-row" style="opacity:.65">
+            <input type="checkbox" class="jcr-check" checked onchange="togglePresence(${mid},${j.id},this.checked)">
+            <span class="jcr-num">${j.numero}</span>
+            <span class="jcr-nom">${j.nom} <span style="font-weight:400">${j.prenom}</span><br><span style="font-size:10px;color:var(--texte-muted)">${PFR[j.poste]||''}</span><span class="badge-non-retenu">🚫 Non retenu</span></span>
+            <button type="button" class="btn-toggle-retenu no-print" onclick="toggleRetenu(${mid},${j.id})" title="Remettre parmi les joueurs convoqués">↩ Reconvoquer</button>
           </div>`).join('')}</div>`:''}
         `:''}
       </div>
@@ -6540,11 +6549,11 @@ function loadFeuille(){
           <div class="feuille-section-title">⏱️ Chronologie</div>
           ${renderTimeline(mid,f)}
         </div>
-        <div class="feuille-section">
+        ${!feuilleMasquerAbsents?`<div class="feuille-section">
           <div class="feuille-section-title">🚫 Présents non convoqués${nbNonRetenus?` (${nbNonRetenus})`:''}</div>
           ${nbNonRetenus?`<div style="padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px">${nonRetenusJoueurs.map(j=>`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:7px;padding:3px 9px;font-size:12.5px">${j.numero}. ${j.nom} ${j.prenom}<button type="button" class="no-print" onclick="toggleRetenu(${mid},${j.id})" title="Reconvoquer" style="border:none;background:none;color:#4ade80;cursor:pointer;font-size:12px;padding:0">↩</button></span>`).join('')}</div>`
             :'<div style="padding:14px;color:var(--texte-muted);font-size:13px">Aucun présent écarté pour ce match.</div>'}
-        </div>
+        </div>`:''}
       </div>
     </div>`;
 }
@@ -6605,8 +6614,9 @@ function saveMinute(mid,eventIdx){
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('minute-popup')?.remove(); });
 
 function renderFeuilleRecap(mid,f){
-  if(!f.presents||!f.presents.length) return '<div style="padding:20px;color:var(--texte-muted);font-size:13px">Aucun joueur présent.</div>';
-  return f.presents.map(jid=>{
+  const convoquesIds=(f.presents||[]).filter(jid=>estRetenu(f,jid));
+  if(!convoquesIds.length) return '<div style="padding:20px;color:var(--texte-muted);font-size:13px">Aucun joueur convoqué.</div>';
+  return convoquesIds.map(jid=>{
     const j=getJoueur(+jid); if(!j)return '';
     const jidS=String(jid);
     const b=+(f.buts?.[jidS]||0), p=+(f.passes?.[jidS]||0);
