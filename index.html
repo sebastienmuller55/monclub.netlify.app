@@ -3651,8 +3651,15 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.84';
+const APP_VERSION='1.85';
 const CHANGELOG=[
+  {
+    version:'1.85', date:'27/09/2026',
+    changes:[
+      "Correctif feuille de match : le Récapitulatif et le calcul du Clean sheet comptaient à tort les joueurs présents mais marqués « non retenu » (non convoqués pour ce match). Le Récapitulatif n'affiche désormais que les joueurs réellement convoqués, et un gardien non retenu (ex. présent sur le banc mais écarté) ne peut plus se voir attribuer un clean sheet.",
+      "Onglet Feuille : la case « 🙈 Masquer les non convoqués » masque désormais aussi les joueurs présents mais non retenus (en plus des joueurs jamais cochés présents), y compris le bandeau d'alerte et la section dédiée. Ils restent accessibles en un clic via la ligne repliable en bas de liste, avec un bouton « ↩ Reconvoquer » direct."
+    ]
+  },
   {
     version:'1.84', date:'27/09/2026',
     changes:[
