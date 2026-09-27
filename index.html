@@ -3651,8 +3651,15 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.86';
+const APP_VERSION='1.87';
 const CHANGELOG=[
+  {
+    version:'1.87', date:'27/09/2026',
+    changes:[
+      "Correctif majeur — Stats & Dashboard : le filtre par compétition (Championnat, Amical, Tournoi, Plateau…) ne s'appliquait pas aux KPI (buts, passes décisives, cartons, clean sheets, homme du match, joueur décisif) ni au graphique radar d'un joueur : ces chiffres restaient calculés toutes compétitions confondues quel que soit le filtre choisi. Ils sont désormais recalculés directement depuis les feuilles de match filtrées, et reflètent bien uniquement la compétition sélectionnée (ex : ne choisir que « Tournoi » n'affiche plus que les buts/passes/cartons marqués en tournoi).",
+      "Au passage, ce recalcul exclut aussi les joueurs présents mais marqués « non retenu » du clean sheet, de l'homme du match et du titre de joueur décisif dans les stats saison/Dashboard, en cohérence avec le correctif déjà appliqué à la feuille de match individuelle."
+    ]
+  },
   {
     version:'1.86', date:'27/09/2026',
     changes:[
@@ -4215,31 +4222,63 @@ function renderDerniersTempsForts(filterSaison){
       </div>
     </div>`;
 }
+// Agrège les stats (buts, passes, cartons, clean sheets, homme du match, décisif) par joueur,
+// calculées directement depuis les feuilles des matchs fournis. Contrairement à la table `stats`
+// (qui ne conserve que des totaux par saison, toutes compétitions confondues), ceci permet un
+// filtrage fiable par compétition (Championnat, Amical, Tournoi, Plateau…) sur la page Dashboard.
+// Un joueur présent mais marqué "non retenu" (non convoqué) n'est jamais crédité d'un clean sheet,
+// d'un homme du match ni d'un titre de plus décisif pour ce match.
+function aggregerStatsJoueurs(msFiltres){
+  const agg={};
+  joueurs.forEach(j=>{ agg[j.id]={j,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,mvp:0,decisif:0,presences:0}; });
+  msFiltres.forEach(m=>{
+    const f=feuilles[m.id]; if(!f||!f.presents||!f.presents.length)return;
+    f.presents.forEach(jid=>{
+      const jidN=+jid, jidS=String(jid);
+      const a=agg[jidN]; if(!a)return;
+      a.matchs++;
+      const b=+(f.buts?.[jidS]||f.buts?.[jidN]||0);
+      const pen=+(f.penalties?.[jidS]||f.penalties?.[jidN]||0);
+      a.buts+=b+pen;
+      a.passes+=+(f.passes?.[jidS]||f.passes?.[jidN]||0);
+      a.jaunes+=+(f.jaunes?.[jidS]||f.jaunes?.[jidN]||0);
+      a.rouges+=+(f.rouges?.[jidS]||f.rouges?.[jidN]||0);
+      if(a.j.poste==='G'&&estRetenu(f,jidN)){
+        const encFeuille=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
+        const bcsAdv=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0);
+        a.encaisses+=encFeuille+bcsAdv;
+        if((encFeuille+bcsAdv)===0) a.cs++;
+      }
+    });
+    let mvpBestVal=0, decBestVal=0;
+    const noteByJid={},totByJid={};
+    f.presents.filter(jid=>estRetenu(f,jid)).forEach(jid=>{
+      const jidN=+jid, jidS=String(jid);
+      const note=+(f.notes?.[jidS]||f.notes?.[jidN]||0);
+      noteByJid[jidN]=note; if(note>mvpBestVal) mvpBestVal=note;
+      const b=+(f.buts?.[jidS]||f.buts?.[jidN]||0)+(+(f.penalties?.[jidS]||f.penalties?.[jidN]||0));
+      const p=+(f.passes?.[jidS]||f.passes?.[jidN]||0);
+      const tot=b+p; totByJid[jidN]=tot; if(tot>decBestVal) decBestVal=tot;
+    });
+    if(mvpBestVal>0) Object.entries(noteByJid).forEach(([jid,note])=>{ if(note===mvpBestVal&&agg[jid]) agg[jid].mvp++; });
+    if(decBestVal>0) Object.entries(totByJid).forEach(([jid,tot])=>{ if(tot===decBestVal&&agg[jid]) agg[jid].decisif++; });
+  });
+  return agg;
+}
 function renderStatsPage(){
   const filterSaison=document.getElementById('stats-saison-filter').value;
   const filterComp=document.getElementById('stats-comp-filter')?.value||'';
   const totalMatchsSaison=getTotalMatchsSaison(filterSaison,filterComp);
   renderCleanSheetKPI(filterSaison,filterComp);
   renderDerniersTempsForts(filterSaison);
+  const msFiltres=matchs.filter(m=>!m.annule&&!matchEstAVenir(m)&&(!filterSaison||m.saison===filterSaison)&&(!filterComp||m.comp===filterComp));
 
-  // Agréger stats par joueur
-  const agg={};
-  joueurs.forEach(j=>{
-    agg[j.id]={j,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,mvp:0,decisif:0,presences:getPresences(j.id,filterSaison,filterComp)};
-  });
-  Object.values(stats).forEach(st=>{
-    if(filterSaison&&st.saison!==filterSaison)return;
-    if(!agg[st.joueurId])return;
-    const a=agg[st.joueurId];
-    a.matchs+=st.matchs||0; a.buts+=st.buts||0; a.passes+=st.passes||0;
-    a.jaunes+=st.jaunes||0; a.rouges+=st.rouges||0;
-    a.cs+=st.cs||0; a.encaisses+=st.encaisses||0;
-    a.mvp+=st.mvp||0; a.decisif+=st.decisif||0;
-  });
+  // Agréger stats par joueur (calculé depuis les feuilles des matchs filtrés, pas depuis le cache `stats`)
+  const agg=aggregerStatsJoueurs(msFiltres);
+  joueurs.forEach(j=>{ agg[j.id].presences=getPresences(j.id,filterSaison,filterComp); });
   const arr=Object.values(agg);
   const totalButs=arr.reduce((s,a)=>s+a.buts,0);
   const totalPasses=arr.reduce((s,a)=>s+a.passes,0);
-  const msFiltres=matchs.filter(m=>!m.annule&&!matchEstAVenir(m)&&(!filterSaison||m.saison===filterSaison)&&(!filterComp||m.comp===filterComp));
   const totalButsEncaisses=msFiltres.reduce((s,m)=>s+(m.butsEux||0),0);
 
   // Événements domicile/extérieur (un plateau ou un tournoi ne compte que pour 1, même
@@ -8473,12 +8512,11 @@ function renderDashboard(filterSaison, filterComp=''){
     })();
 
   const agg={};
-  joueurs.forEach(j=>{ agg[j.id]={j,buts:0,passes:0,presences:getPresences(j.id,fs),noteSum:0,noteNb:0}; });
-  Object.values(stats).forEach(st=>{
-    if(fs&&st.saison!==fs)return;
-    if(!agg[st.joueurId])return;
-    agg[st.joueurId].buts+=st.buts||0;
-    agg[st.joueurId].passes+=st.passes||0;
+  joueurs.forEach(j=>{ agg[j.id]={j,buts:0,passes:0,presences:getPresences(j.id,fs,fc),noteSum:0,noteNb:0}; });
+  const statsParJoueur=aggregerStatsJoueurs(ms);
+  joueurs.forEach(j=>{
+    agg[j.id].buts+=statsParJoueur[j.id]?.buts||0;
+    agg[j.id].passes+=statsParJoueur[j.id]?.passes||0;
   });
   ms.forEach(m=>{
     const f=feuilles[m.id]; if(!f||!f.notes)return;
@@ -8507,7 +8545,7 @@ function renderDashboard(filterSaison, filterComp=''){
     const maxB=Math.max(1,...arr.map(a=>a.buts));
     const maxP=Math.max(1,...arr.map(a=>a.passes));
     const vals=[ra.presences/Math.max(1,ms.length),ra.buts/maxB,ra.passes/maxP,moy/10,
-      1-Math.min(1,Object.values(stats).filter(st=>st.joueurId===ra.j.id).reduce((s,st)=>s+(st.rouges||0),0)/3)
+      1-Math.min(1,(statsParJoueur[ra.j.id]?.rouges||0)/3)
     ].map(v=>Math.min(1,Math.max(0,v)));
     const labels=['Présence','Buts','Passes','Note','Discipline'];
     const cx=110,cy=105,R=72,n=5;
