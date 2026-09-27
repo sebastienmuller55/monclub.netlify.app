@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Tracking Player App">
+<meta name="apple-mobile-web-app-title" content="Player Tracking App">
 <!-- Firebase (Authentification + Firestore) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -1473,6 +1473,10 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
   #page-dashboard{padding:12px;gap:12px;}
   .dash-card{padding:14px;}
 }
+@media(max-width:640px){
+  .stats-toolbar select{flex:1;min-width:130px;}
+  .stats-toolbar-reset button{width:100%;justify-content:center;}
+}
 
 /* ── Modales ── */
 @media(max-width:768px){
@@ -2165,7 +2169,7 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
 <!-- ══════════════════ PAGE STATS & DASHBOARD ══════════════════ -->
 <div id="page-stats" class="page">
   <!-- ── Toolbar ── -->
-  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:20px 24px 0;">
+  <div class="stats-toolbar" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:20px 24px 0;">
     <h2 style="font-size:16px;font-weight:600;">📊 Stats & Dashboard</h2>
     <select id="stats-saison-filter" onchange="renderStatsPage()" style="background:var(--gris-card);border:1px solid var(--gris-border);border-radius:8px;color:var(--texte);padding:6px 12px;font-size:13px;outline:none;">
       <option value="">Toutes saisons</option>
@@ -2179,7 +2183,9 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
       <option value="Plateau">Plateau</option>
       <option value="Futsal">Futsal</option>
     </select>
-    <button class="btn btn-secondary" onclick="openResetStatsModal()" style="margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--rouge);border-color:rgba(224,48,48,.3);">
+  </div>
+  <div class="stats-toolbar-reset" style="display:flex;justify-content:flex-end;padding:10px 24px 0;">
+    <button class="btn btn-secondary" onclick="openResetStatsModal()" style="display:flex;align-items:center;gap:6px;color:var(--rouge);border-color:rgba(224,48,48,.3);">
       🔄 Réinitialiser les stats
     </button>
   </div>
@@ -3631,8 +3637,14 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.81';
+const APP_VERSION='1.82';
 const CHANGELOG=[
+  {
+    version:'1.82', date:'27/09/2026',
+    changes:[
+      "Correctif de sécurité : un nouveau membre qui rejoignait le club via le code d'invitation obtenait par défaut les droits Admin (accès en écriture complet) au lieu du rôle 👁️ Visiteur (lecture seule) attendu pour un profil non encore validé. Désormais, tout membre rejoignant un club via un code d'invitation est ajouté avec le rôle Visiteur ; un administrateur du club doit ensuite explicitement le promouvoir Admin depuis la modale « Membres du club » si nécessaire."
+    ]
+  },
   {
     version:'1.81', date:'26/09/2026',
     changes:[
@@ -3640,7 +3652,8 @@ const CHANGELOG=[
       "Le bloc « Clean sheets » affiche une info-bulle détaillée au survol de chaque indicateur (liste nominative des matchs concernés — date, adversaire, score — pour le total, la série en cours et la meilleure série).",
       "Onglet Feuille : la ligne de KPI (Convoqués, Rotation, Buts, Buteurs, Passes D., Note moy., cartons) est désormais placée sur sa propre ligne sous le score, séparée par un fin trait, au lieu d'être poussée tout à droite sur la même ligne que le score. Cela supprime le grand vide qui apparaissait entre le score et les KPI sur les écrans larges, et donne un rendu plus régulier sur tablette et mobile.",
       "Onglet Feuille : le score en direct, la ligne de KPI et la ligne des temps forts (Homme du match, Plus décisif, Historique, Distance) sont désormais centrés horizontalement, et le score est affiché plus grand pour mieux ressortir.",
-      "Correctif responsive mobile : la carte « Prochain match » du tableau de bord (météo + compte à rebours + boutons 📝/📋) pouvait dépasser la largeur de l'écran sur téléphone et provoquer un décalage horizontal de toute la page. Cette rangée passe désormais à la ligne proprement, et une sécurité globale (overflow-x masqué) évite qu'un futur dépassement ne fasse défiler la page horizontalement."
+      "Correctif responsive mobile : la carte « Prochain match » du tableau de bord (météo + compte à rebours + boutons 📝/📋) pouvait dépasser la largeur de l'écran sur téléphone et provoquer un décalage horizontal de toute la page. Cette rangée passe désormais à la ligne proprement, et une sécurité globale (overflow-x masqué) évite qu'un futur dépassement ne fasse défiler la page horizontalement.",
+      "Stats & Dashboard : le bouton « Réinitialiser les stats » n'est plus poussé à l'extrême droite de la même ligne que les filtres (saison/compétition), ce qui créait un alignement bancal selon la largeur d'écran. Il occupe désormais sa propre ligne, alignée à droite (pleine largeur sur mobile), et les filtres passent en largeur flexible sur petit écran."
     ]
   },
   {
@@ -11386,7 +11399,8 @@ if ('serviceWorker' in navigator) {
           }
           const clubId = codeDoc.data().clubId;
           return db.collection('clubs').doc(clubId).update({
-            members: firebase.firestore.FieldValue.arrayUnion(cred.user.uid)
+            members: firebase.firestore.FieldValue.arrayUnion(cred.user.uid),
+            ['roles.'+cred.user.uid]: 'visiteur'
           }).then(()=> db.collection('users').doc(cred.user.uid).set({
             email: email, clubId: clubId
           })).then(()=> {
