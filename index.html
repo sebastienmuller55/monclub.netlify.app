@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Gestion Equipe">
+<meta name="apple-mobile-web-app-title" content="Tracking Player App">
 <!-- Firebase (Authentification + Firestore) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -294,6 +294,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gris-bg);color:var(--texte);min-height:100vh;display:flex;flex-direction:column;}
+html,body{overflow-x:hidden;max-width:100vw;}
 header{background:var(--gris-panel);border-bottom:1px solid var(--gris-border);padding:14px 24px;display:flex;align-items:center;gap:16px;}
 header h1{font-size:20px;font-weight:600;}
 .tabs{display:flex;gap:4px;padding:12px 24px 0;background:var(--gris-panel);border-bottom:1px solid var(--gris-border);}
@@ -3638,7 +3639,8 @@ const CHANGELOG=[
       "Stats & Dashboard : nouveau bloc « 🧤 Clean sheets » sur toute la largeur, placé juste au-dessus de « Derniers temps forts ». Il met en avant le nombre total de clean sheets (matchs sans but encaissé, avec le %), la série en cours et la meilleure série jamais réalisée. Le bloc respecte les filtres de saison/compétition et disparaît si aucun match n'est encore joué.",
       "Le bloc « Clean sheets » affiche une info-bulle détaillée au survol de chaque indicateur (liste nominative des matchs concernés — date, adversaire, score — pour le total, la série en cours et la meilleure série).",
       "Onglet Feuille : la ligne de KPI (Convoqués, Rotation, Buts, Buteurs, Passes D., Note moy., cartons) est désormais placée sur sa propre ligne sous le score, séparée par un fin trait, au lieu d'être poussée tout à droite sur la même ligne que le score. Cela supprime le grand vide qui apparaissait entre le score et les KPI sur les écrans larges, et donne un rendu plus régulier sur tablette et mobile.",
-      "Onglet Feuille : le score en direct, la ligne de KPI et la ligne des temps forts (Homme du match, Plus décisif, Historique, Distance) sont désormais centrés horizontalement, et le score est affiché plus grand pour mieux ressortir."
+      "Onglet Feuille : le score en direct, la ligne de KPI et la ligne des temps forts (Homme du match, Plus décisif, Historique, Distance) sont désormais centrés horizontalement, et le score est affiché plus grand pour mieux ressortir.",
+      "Correctif responsive mobile : la carte « Prochain match » du tableau de bord (météo + compte à rebours + boutons 📝/📋) pouvait dépasser la largeur de l'écran sur téléphone et provoquer un décalage horizontal de toute la page. Cette rangée passe désormais à la ligne proprement, et une sécurité globale (overflow-x masqué) évite qu'un futur dépassement ne fasse défiler la page horizontalement."
     ]
   },
   {
@@ -5795,10 +5797,10 @@ function renderNextMatchCard(){
         <div style="font-size:17px;font-weight:700;color:var(--texte)">${advTxt}</div>
         <div style="font-size:13px;color:var(--texte-muted);margin-top:2px">${dateCap} · ${lieuTxt} · ${m.comp}${nbPresents?` · 👥 ${nbPresents} convoqué${nbPresents>1?'s':''}`:''}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:14px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap">
         <div id="next-match-weather"></div>
         ${countdownTxt?`<div style="font-size:18px;font-weight:900;color:#4ade80;white-space:nowrap">${countdownTxt}</div>`:''}
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-secondary" onclick="ouvrirFeuille(${m.id})" title="Feuille de match">📝</button>
           <button class="btn btn-secondary" onclick="goToConvocationDepuisAccueil(${m.id})" title="Convocation">📋</button>
         </div>
