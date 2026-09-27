@@ -1906,6 +1906,7 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
   <button class="btn-settings" id="btn-settings-gear" onclick="openSettings()" title="Paramètres">⚙️</button>
   <button id="club-share-btn" onclick="openClubShareInfo()" title="Code d'invitation du club" style="background:rgba(125,211,252,.12);border:1px solid rgba(125,211,252,.3);color:#7dd3fc;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">🔗</button>
   <button onclick="openClubMembers()" title="Membres du club" style="background:rgba(45,168,88,.12);border:1px solid rgba(45,168,88,.3);color:#4ade80;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">👥</button>
+  <button onclick="openActivityLog()" title="Journal d'activité" style="background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.3);color:#f5c518;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">🕘</button>
   <button onclick="doLogout()" title="Se déconnecter" style="background:rgba(224,48,48,.12);border:1px solid rgba(224,48,48,.3);color:#ff8a8a;border-radius:8px;padding:5px 9px;cursor:pointer;font-size:13px;">⎋</button>
 </header>
 
@@ -1931,6 +1932,18 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
       <div style="color:#8888aa;font-size:13px;text-align:center;padding:20px 0;">Chargement…</div>
     </div>
     <button onclick="closeClubMembers()" style="width:100%;background:#1e1e2e;border:1px solid #3a3a55;color:#8888aa;border-radius:8px;padding:9px;font-size:13px;cursor:pointer;">Fermer</button>
+  </div>
+</div>
+
+<!-- Modal journal d'activité -->
+<div id="activity-log-bg" onclick="closeActivityLog()" style="display:none;position:fixed;inset:0;z-index:19000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
+  <div onclick="event.stopPropagation()" style="width:100%;max-width:440px;max-height:80vh;display:flex;flex-direction:column;background:#252538;border:1px solid #3a3a55;border-radius:16px;padding:22px;margin:16px;">
+    <h2 style="color:#e8e8f0;font-size:16px;margin:0 0 6px;">🕘 Journal d'activité</h2>
+    <div style="color:#8888aa;font-size:12.5px;margin-bottom:14px;">Dernières actions sensibles effectuées sur les données du club (100 plus récentes).</div>
+    <div id="activity-log-list" style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+      <div style="color:#8888aa;font-size:13px;text-align:center;padding:20px 0;">Chargement…</div>
+    </div>
+    <button onclick="closeActivityLog()" style="width:100%;background:#1e1e2e;border:1px solid #3a3a55;color:#8888aa;border-radius:8px;padding:9px;font-size:13px;cursor:pointer;">Fermer</button>
   </div>
 </div>
 
@@ -2043,7 +2056,7 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
           📥 Importer des données (JSON)
           <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
         </label>
-        <div class="settings-sublabel">L'export JSON contient joueurs, matchs, feuilles, stats et compo. Utile pour changer d'appareil.</div>
+        <div class="settings-sublabel">L'export JSON contient désormais l'intégralité des données de ce club : toutes les catégories/équipes, joueurs, matchs, feuilles, statistiques, séances, éducateurs et réglages. Idéal pour changer d'appareil ou avoir une sauvegarde indépendante du cloud.</div>
         <div id="setting-last-backup" style="font-size:12px;color:var(--texte-muted);margin-top:2px;"></div>
       </div>
       <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--gris-border)">
@@ -3601,6 +3614,7 @@ function deleteJoueur(id){
   Object.keys(compo).forEach(k=>{if(compo[k]===id)delete compo[k];});
   remplacants=remplacants.filter(r=>r!==id);
   save(); renderTable(); renderAlertsBadge();
+  if(typeof window.logActivity==='function') window.logActivity(`Joueur supprimé : ${j.nom} ${j.prenom} (n°${j.numero})`,'🗑️');
 }
 
 // ══════════════════════════════════════════════
@@ -3637,8 +3651,15 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.83';
+const APP_VERSION='1.84';
 const CHANGELOG=[
+  {
+    version:'1.84', date:'27/09/2026',
+    changes:[
+      "Nouveau : 🕘 Journal d'activité. Un nouveau bouton dans l'en-tête ouvre l'historique des actions sensibles effectuées sur les données du club (qui, quand, quoi) : changement de rôle d'un membre, suppression d'un joueur/match/plateau, réinitialisation des statistiques ou de toutes les données, restauration d'une sauvegarde JSON. Nécessite l'ajout d'une nouvelle règle Firestore pour la sous-collection « activityLog » (voir avec le développeur pour la mise à jour des règles de sécurité).",
+      "Export/sauvegarde JSON : l'export était incomplet (il ne couvrait que l'équipe actuellement sélectionnée, et oubliait les séances d'entraînement, exercices personnalisés et éducateurs). Il couvre désormais l'intégralité des données du club — toutes les catégories/équipes, réglages compris — pour une vraie sauvegarde restaurable telle quelle. Les anciens fichiers d'export restent importables (compatibilité ascendante)."
+    ]
+  },
   {
     version:'1.83', date:'27/09/2026',
     changes:[
@@ -5608,6 +5629,7 @@ function deleteMatch(id){
   delete feuilles[id];
   save(); renderResultats(); renderNextMatchCard();
   if(document.getElementById('page-calendrier')?.classList.contains('active')) renderCalendrier();
+  if(typeof window.logActivity==='function') window.logActivity(`Match supprimé : vs ${m.adversaire} (${d}, ${m.butsNous}-${m.butsEux})`,'🗑️');
 }
 
 function deletePlateauGroup(groupId){
@@ -5621,6 +5643,7 @@ function deletePlateauGroup(groupId){
   matchs=matchs.filter(x=>x.plateauGroupId!==groupId);
   save(); renderResultats(); renderNextMatchCard();
   if(document.getElementById('page-calendrier')?.classList.contains('active')) renderCalendrier();
+  if(typeof window.logActivity==='function') window.logActivity(`Plateau supprimé : ${ref.comp} du ${d} à ${ref.plateauVille||''} (${membres.length} matchs : ${noms})`,'🗑️');
 }
 
 // ══════════════════════════════════════════════
@@ -8773,6 +8796,7 @@ function executeReset(){
   // Purge complète : toutes les équipes, tous les réglages du club (nom, logo,
   // thème, saison, etc.) — pas seulement les données de l'équipe active —
   // pour que l'application reparte réellement vide, comme annoncé.
+  if(typeof window.logActivity==='function') window.logActivity('⚠️ Réinitialisation COMPLÈTE de toutes les données du club (toutes équipes, réglages)','🗑️');
   const prefixes=['foot8_','chrono_','dash_'];
   const toRemove=[];
   for(let i=0;i<localStorage.length;i++){
@@ -8780,7 +8804,9 @@ function executeReset(){
     if(prefixes.some(p=>k.startsWith(p))) toRemove.push(k);
   }
   toRemove.forEach(k=>localStorage.removeItem(k));
-  location.reload();
+  // Petit délai pour laisser une chance à l'écriture du journal d'activité de partir
+  // avant que le rechargement de page n'interrompe les requêtes réseau en cours.
+  setTimeout(()=>location.reload(), 300);
 }
 
 // ══ RESET STATS ══
@@ -8874,6 +8900,7 @@ function executeResetStats(){
   const scopeLabel=scopeAll?'toutes les saisons':'saison '+targetSaison;
   const partsLabel=[doStats&&'stats',doFeuilles&&'feuilles',doMatchs&&'matchs'].filter(Boolean).join(', ');
   showNotif('✅ Reset effectué — '+partsLabel+' ('+scopeLabel+')','green');
+  if(typeof window.logActivity==='function') window.logActivity(`Réinitialisation stats — ${partsLabel} (${scopeLabel})`,'🔄');
 
   // Rafraîchir la page stats
   populateSaisonFilter();
@@ -8889,22 +8916,32 @@ function showSaveIndicator(){
   clearTimeout(saveIndicatorTimer);
   saveIndicatorTimer=setTimeout(()=>el.classList.remove('show'),1800);
 }
+// Export complet : à la différence d'un export "équipe courante" (joueurs, matchs...),
+// on exporte ici l'intégralité de ce qui est stocké localement pour CE club — toutes les
+// catégories/équipes, séances, éducateurs, réglages, etc. — pour une vraie sauvegarde
+// complète, restaurable telle quelle sur un autre appareil.
 function exportJSON(){
+  const storage={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k.startsWith('foot8_')||k.startsWith('chrono_')||k.startsWith('dash_')) storage[k]=localStorage.getItem(k);
+  }
   const data={
-    joueurs, matchs, stats, feuilles, compo, remplacants, entrainements, evenements,
-    schema:currentSchema, format:currentFormat,
+    __monclub_backup__:true,
+    version:2,
     clubName:localStorage.getItem('foot8_club_name')||'',
-    saison:localStorage.getItem('foot8_saison_courante')||'',
-    exportDate:new Date().toISOString()
+    exportDate:new Date().toISOString(),
+    storage
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   const club=(localStorage.getItem('foot8_club_name')||'foot8').replace(/[^a-zA-Z0-9]/g,'_').slice(0,20);
-  a.download=`${club}_${new Date().toISOString().slice(0,10)}.json`;
+  a.download=`${club}_complet_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   localStorage.setItem('foot8_last_backup_date', new Date().toISOString());
   showSaveIndicator();
+  if(typeof window.logActivity==='function') window.logActivity('Export JSON complet des données du club effectué','💾');
 }
 function importJSON(event){
   const file=event.target.files[0]; if(!file)return;
@@ -8912,6 +8949,30 @@ function importJSON(event){
   reader.onload=e=>{
     try{
       const data=JSON.parse(e.target.result);
+
+      // ── Nouveau format (v2) : sauvegarde complète, toutes équipes/réglages ──
+      if(data.__monclub_backup__ && data.storage && typeof data.storage==='object'){
+        const nbKeys=Object.keys(data.storage).length;
+        if(!nbKeys) throw new Error('Fichier de sauvegarde vide');
+        if(!confirm(`Restaurer la sauvegarde complète de "${data.clubName||'ce fichier'}" (export du ${data.exportDate?new Date(data.exportDate).toLocaleDateString('fr-FR'):'—'}) ?\n\nCela remplacera TOUTES les données actuelles de ce club sur cet appareil (toutes les équipes/catégories).`)) return;
+        if(typeof window.logActivity==='function') window.logActivity(`Restauration d'une sauvegarde complète (export du ${data.exportDate?new Date(data.exportDate).toLocaleDateString('fr-FR'):'—'})`,'📥');
+        // On efface d'abord ce qui existe (mêmes préfixes que l'export) pour ne pas
+        // laisser de données orphelines d'une équipe/catégorie absente du fichier importé.
+        const prefixes=['foot8_','chrono_','dash_'];
+        const toRemove=[];
+        for(let i=0;i<localStorage.length;i++){
+          const k=localStorage.key(i);
+          if(prefixes.some(p=>k.startsWith(p))) toRemove.push(k);
+        }
+        toRemove.forEach(k=>localStorage.removeItem(k));
+        Object.keys(data.storage).forEach(k=>localStorage.setItem(k,data.storage[k]));
+        alert('✅ Sauvegarde restaurée avec succès ! L\'application va se recharger.');
+        setTimeout(()=>location.reload(), 300);
+        return;
+      }
+
+      // ── Ancien format (v1) : export "équipe courante" uniquement, conservé pour
+      // rester compatible avec d'anciens fichiers déjà exportés par des utilisateurs. ──
       if(!data.joueurs||!Array.isArray(data.joueurs)) throw new Error('Format invalide');
       if(!confirm(`Importer les données de "${data.clubName||'ce fichier'}" ?\nCela remplacera toutes vos données actuelles.`)) return;
       joueurs=data.joueurs||[];
@@ -8934,6 +8995,7 @@ function importJSON(event){
       document.getElementById('club-name-display').textContent=data.clubName||'Gestionnaire Équipe — Foot à 8';
       closeSettings();
       showSaveIndicator();
+      if(typeof window.logActivity==='function') window.logActivity("Restauration d'un ancien fichier d'export (équipe courante uniquement)",'📥');
       alert('✅ Données importées avec succès !');
     }catch(err){
       alert('❌ Fichier invalide : '+err.message);
@@ -11558,11 +11620,68 @@ if ('serviceWorker' in navigator) {
         const u = membersData.find(m=>m.uid===uid);
         if(u) u.role = newRole;
         renderClubMembers();
+        const cible = (u && u.email) || uid;
+        window.logActivity(`Rôle modifié pour ${cible} → ${newRole==='visiteur'?'👁️ Visiteur':'Admin'}`, '🔐');
       })
       .catch(err=>{
         console.error('Erreur changement de rôle :', err);
         alert("Impossible de changer le rôle de ce membre. Vérifiez les règles Firestore.");
       });
+  };
+
+  // ---------- Journal d'activité (audit log) ----------
+  // Historique en écriture seule (Firestore ne permet ni update ni delete sur ces
+  // entrées) des actions sensibles/destructives effectuées par les membres du club.
+  // Toutes les actions ne sont pas tracées (l'app synchronise l'état complet en un
+  // seul bloc, pas action par action) : on se concentre sur celles qui comptent
+  // vraiment pour un admin qui veut comprendre "qui a fait quoi".
+  window.logActivity = function(label, icon){
+    if(!currentClubId || !currentUid) return;
+    const email = (auth.currentUser && auth.currentUser.email) || null;
+    db.collection('clubs').doc(currentClubId).collection('activityLog').add({
+      ts: firebase.firestore.FieldValue.serverTimestamp(),
+      uid: currentUid,
+      email: email,
+      icon: icon || '📝',
+      label: label
+    }).catch(err=> console.error("Erreur journal d'activité :", err));
+  };
+
+  window.openActivityLog = function(){
+    document.getElementById('activity-log-bg').style.display = 'flex';
+    const listEl = document.getElementById('activity-log-list');
+    listEl.innerHTML = '<div style="color:#8888aa;font-size:13px;text-align:center;padding:20px 0;">Chargement…</div>';
+    if(!currentClubId) return;
+    db.collection('clubs').doc(currentClubId).collection('activityLog')
+      .orderBy('ts','desc').limit(100).get().then(snap=>{
+        if(snap.empty){
+          listEl.innerHTML = '<div style="color:#8888aa;font-size:13px;text-align:center;padding:20px 0;">Aucune activité enregistrée pour le moment.</div>';
+          return;
+        }
+        listEl.innerHTML = snap.docs.map(doc=>{
+          const d = doc.data();
+          const when = d.ts ? d.ts.toDate() : null;
+          const dateLabel = when
+            ? when.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})+' à '+when.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+            : "à l'instant";
+          const who = d.email || 'Compte inconnu';
+          return `<div style="background:#1e1e2e;border:1px solid #3a3a55;border-radius:10px;padding:9px 12px;">
+            <div style="display:flex;align-items:flex-start;gap:8px;">
+              <span style="font-size:16px;flex-shrink:0;">${d.icon||'📝'}</span>
+              <div style="min-width:0;">
+                <div style="color:#e8e8f0;font-size:12.5px;line-height:1.4;">${(d.label||'').replace(/</g,'&lt;')}</div>
+                <div style="color:#8888aa;font-size:11px;margin-top:2px;">${who.replace(/</g,'&lt;')} · ${dateLabel}</div>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      }).catch(err=>{
+        console.error('Erreur chargement journal :', err);
+        listEl.innerHTML = '<div style="color:#ff8a8a;font-size:13px;text-align:center;padding:20px 0;">Impossible de charger le journal.<br>Vérifiez les règles Firestore (sous-collection activityLog).</div>';
+      });
+  };
+  window.closeActivityLog = function(){
+    document.getElementById('activity-log-bg').style.display = 'none';
   };
 
   window.openClubMembers = function(){
