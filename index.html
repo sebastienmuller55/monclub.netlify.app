@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Player Tracking App">
+<meta name="apple-mobile-web-app-title" content="Tracking Player App">
 <!-- Firebase (Authentification + Firestore) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
@@ -966,7 +966,7 @@ body.viewer-mode .jcr-check{cursor:not-allowed;opacity:.6;}
 #page-dashboard{flex-direction:column;padding:24px;gap:20px;overflow-y:auto;}
 .dash-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;}
-.dash-card{background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:14px;padding:20px;}
+.dash-card{background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:14px;padding:20px;overflow:hidden;}
 .dash-card-title{font-size:12px;font-weight:700;color:var(--texte-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .dash-saison-filter{background:var(--gris-card);border:1px solid var(--gris-border);border-radius:8px;color:var(--texte);padding:6px 12px;font-size:13px;outline:none;}
 .dash-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
@@ -3637,8 +3637,14 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.82';
+const APP_VERSION='1.83';
 const CHANGELOG=[
+  {
+    version:'1.83', date:'27/09/2026',
+    changes:[
+      "Correctif responsive : sur l'onglet Dashboard, le graphique « Courbe de forme » pouvait déborder du cadre de sa carte (voire jusqu'au bord de l'écran) sur téléphone à cause du dernier libellé d'adversaire incliné, qui n'était pas rogné aux limites du graphique. Le SVG est désormais correctement rogné à sa zone de dessin, avec une marge de droite légèrement augmentée pour laisser la place au dernier libellé. Une sécurité générale (recadrage) a aussi été ajoutée sur toutes les cartes du Dashboard pour éviter qu'un futur graphique ne déborde de la même façon."
+    ]
+  },
   {
     version:'1.82', date:'27/09/2026',
     changes:[
@@ -8373,7 +8379,7 @@ function renderDashboard(filterSaison, filterComp=''){
     ?'<div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Pas assez de matchs</div>'
     :(()=>{
       // Dimensions avec marges pour labels inclinés
-      const PL=36,PR=12,PT=14,PB=58;
+      const PL=36,PR=28,PT=14,PB=58;
       const CW=300,CH=90;
       const W=PL+CW+PR, H=PT+CH+PB;
       const cols={'V':'#4ade80','N':'#f5c518','D':'#e03030'};
@@ -8398,7 +8404,7 @@ function renderDashboard(filterSaison, filterComp=''){
         const nom=p.m.adversaire.length>9?p.m.adversaire.slice(0,8)+'…':p.m.adversaire;
         return `<text x="${p.x}" y="${labelY}" text-anchor="end" font-size="8.5" fill="var(--texte-muted)" font-family="Segoe UI,sans-serif" transform="rotate(-40,${p.x},${labelY})"><title>${p.m.adversaire}</title>${nom}</text>`;
       }).join('');
-      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">
+      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:hidden">
         ${bg}${grid}
         <polyline points="${pts.map(p=>`${p.x},${p.y}`).join(' ')}" fill="none" stroke="rgba(45,168,88,.4)" stroke-width="2" stroke-dasharray="5,3"/>
         ${pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="5" fill="${cols[p.r]}" stroke="rgba(0,0,0,.4)" stroke-width="1.5"><title>${p.m.adversaire} — ${p.m.butsNous}-${p.m.butsEux}</title></circle>`).join('')}
