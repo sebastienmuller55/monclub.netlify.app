@@ -3651,8 +3651,14 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.89';
+const APP_VERSION='1.90';
 const CHANGELOG=[
+  {
+    version:'1.90', date:'30/09/2026',
+    changes:[
+      "Correctif — Onglet Compo : l'adversaire (ainsi que la date et le lieu) ne se remettait pas à jour automatiquement en ouvrant l'onglet Compo après avoir changé de match dans la feuille de match — les champs gardaient l'adversaire du match précédemment affiché, y compris sur l'impression. La compo détecte désormais le changement de match actif et resynchronise correctement l'adversaire, la date et le lieu avant l'affichage/impression."
+    ]
+  },
   {
     version:'1.89', date:'30/09/2026',
     changes:[
@@ -8114,22 +8120,37 @@ function loadCompoMeta(){
   document.getElementById('cib-lieu').value = localStorage.getItem('foot8_cib_lieu')||'';
   document.getElementById('cib-adv').value  = localStorage.getItem('foot8_cib_adv')||'';
   document.getElementById('cib-ville').value = localStorage.getItem('foot8_cib_ville')||'';
-  // Sync auto depuis la feuille de match active si les champs sont vides
+  // Sync auto depuis la feuille de match active : si les champs sont vides,
+  // OU si le match actif a changé depuis la dernière synchro (on ne doit pas
+  // garder l'adversaire d'un ancien match affiché/imprimé pour un nouveau match).
   const mid=parseInt(localStorage.getItem('foot8_active_feuille_match')||'0');
   const m=mid?matchs.find(x=>x.id===mid):null;
+  const lastSyncedMid=parseInt(localStorage.getItem('foot8_cib_synced_mid')||'0');
+  const matchChanged=mid!==lastSyncedMid;
   if(m){
-    if(!document.getElementById('cib-date').value && m.date)
+    if((matchChanged||!document.getElementById('cib-date').value) && m.date)
       document.getElementById('cib-date').value=m.date;
-    if(!document.getElementById('cib-lieu').value && m.lieu)
+    if((matchChanged||!document.getElementById('cib-lieu').value) && m.lieu)
       document.getElementById('cib-lieu').value=m.lieu;
-    if(!document.getElementById('cib-adv').value && m.adversaire)
+    if((matchChanged||!document.getElementById('cib-adv').value) && m.adversaire)
       document.getElementById('cib-adv').value=m.adversaire;
-    if(!document.getElementById('cib-ville').value && isPlateauType(m.comp) && m.plateauVille)
+    if((matchChanged||!document.getElementById('cib-ville').value) && isPlateauType(m.comp) && m.plateauVille)
       document.getElementById('cib-ville').value=m.plateauVille;
-    if(!document.getElementById('cib-ville').value && isTournoiType(m.comp) && m.tournoiVille)
+    if((matchChanged||!document.getElementById('cib-ville').value) && isTournoiType(m.comp) && m.tournoiVille)
       document.getElementById('cib-ville').value=m.tournoiVille;
     // Afficher/cacher le champ ville selon le type de match
     updateCompoPlateauFields(m);
+    // Mémoriser ce match comme dernier synchronisé et persister les valeurs
+    // affichées, pour que l'auto-remplissage ne soit pas perdu au prochain chargement.
+    localStorage.setItem('foot8_cib_synced_mid', String(mid));
+    localStorage.setItem('foot8_cib_date',  document.getElementById('cib-date').value||'');
+    localStorage.setItem('foot8_cib_lieu',  document.getElementById('cib-lieu').value||'');
+    localStorage.setItem('foot8_cib_adv',   document.getElementById('cib-adv').value||'');
+    localStorage.setItem('foot8_cib_ville', document.getElementById('cib-ville').value||'');
+  } else if(matchChanged){
+    // Plus aucun match actif (feuille désélectionnée) : on efface la mémorisation
+    // pour qu'une prochaine sélection de match resynchronise correctement.
+    localStorage.setItem('foot8_cib_synced_mid', String(mid));
   }
   updatePrintHeader();
 }
