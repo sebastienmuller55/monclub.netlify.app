@@ -3651,8 +3651,26 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.90';
+const APP_VERSION='1.93';
 const CHANGELOG=[
+  {
+    version:'1.93', date:'30/09/2026',
+    changes:[
+      "Onglet Feuille : nouveau champ « 🔎 Recherche rapide » toujours visible en haut de la liste des joueurs. On tape un nom, un prénom ou un numéro (sans tenir compte des accents ni de la casse, plusieurs mots acceptés) : les joueurs correspondants de tout l'effectif apparaissent, même ceux masqués comme non convoqués, avec une case pour les noter présents en un clic (ou Entrée pour cocher le premier résultat). Le champ se vide et reste actif après chaque pointage pour enchaîner."
+    ]
+  },
+  {
+    version:'1.92', date:'30/09/2026',
+    changes:[
+      "Onglet Feuille : ajout d'un champ de recherche (par nom, prénom, numéro ou poste) dans la liste repliable des joueurs non convoqués, pour cocher les présents sans avoir à faire défiler tout l'effectif. La recherche filtre la liste instantanément, sans recharger la feuille (donc sans perte de focus à chaque frappe), et reste active si vous cochez plusieurs joueurs à la suite."
+    ]
+  },
+  {
+    version:'1.91', date:'30/09/2026',
+    changes:[
+      "Correctif — Stats & Dashboard : la distance parcourue (KPI, graphique « Km parcourus par mois », « Villes les plus éloignées » et tableau des trajets) excluait à tort les matchs à venir, comme pour les stats de résultats (buts, victoires…). Or les matchs étant en général saisis à l'avance, le trajet est connu dès la saisie sans attendre que le match soit joué. Ces blocs incluent désormais aussi les déplacements à venir, ce qui évite par exemple qu'un seul mois (le mois en cours) n'apparaisse dans le graphique alors que des déplacements sont déjà programmés pour les mois suivants."
+    ]
+  },
   {
     version:'1.90', date:'30/09/2026',
     changes:[
@@ -4304,8 +4322,12 @@ function renderStatsPage(){
   const evenementsParLieu=getNbEvenementsParLieu(msFiltres);
 
   // Distance cumulée (matchs à l'extérieur uniquement) — routière (ORS) si clé configurée, sinon à vol d'oiseau
+  // Les matchs sont en général saisis à l'avance : le trajet (ville adverse) est connu dès la
+  // saisie, sans attendre que le match soit joué. On inclut donc aussi les matchs à venir ici,
+  // contrairement aux autres stats (buts, résultats…) qui elles nécessitent que le match ait eu lieu.
   const clubVilleOk=!isNaN(parseFloat(localStorage.getItem('foot8_club_lat')));
-  const msExterieur=getTripsExterieurs(msFiltres);
+  const msDistance=matchs.filter(m=>!m.annule&&(!filterSaison||m.saison===filterSaison)&&(!filterComp||m.comp===filterComp));
+  const msExterieur=getTripsExterieurs(msDistance);
   const infosConnues=msExterieur.map(m=>getDistanceInfoMatch(m));
   const distanceTotale=infosConnues.reduce((s,i)=>s+(i?i.km:0),0);
   const nbEnAttente=infosConnues.filter(i=>i===null).length;
@@ -4442,7 +4464,9 @@ function renderStatsPage(){
     </tr>`).join('') : '<tr><td colspan="5" class="no-data">Aucune donnée pour l\'instant.</td></tr>';
 
   // ── Trajets (par plateau/déplacement), triés par distance décroissante ──
-  const trajets=getTripsDetails(msFiltres).map(t=>({...t,info:getDistanceInfoMatch(t.repr)}));
+  // Inclut aussi les déplacements à venir (cf. msDistance ci-dessus) pour rester cohérent
+  // avec le KPI et le graphique mensuel.
+  const trajets=getTripsDetails(msDistance).map(t=>({...t,info:getDistanceInfoMatch(t.repr)}));
   const trajetsConnus=trajets.filter(t=>t.info&&t.info.km>0).sort((a,b)=>b.info.km-a.info.km);
   document.getElementById('stats-trajets').innerHTML=trajetsConnus.length?trajetsConnus.map(t=>`
     <tr>
@@ -4828,6 +4852,10 @@ let editingEntrainementId=null;
 // Feuille de match : masquer les joueurs non convoqués (non cochés présents) pour alléger la liste
 let feuilleMasquerAbsents = localStorage.getItem('foot8_feuille_masquer_absents') !== '0'; // masqué par défaut
 let feuilleAbsentsOuvert = false; // liste repliable des non-convoqués, temporairement dépliée
+let feuilleQuickSearch = ''; // recherche rapide (haut de la liste) pour noter des joueurs présents
+let feuilleQuickRefocus = false;
+let _feuilleActifs = [];
+let feuilleAbsentsSearch = ''; // texte de recherche courant dans la liste des non-convoqués (persiste entre les rafraîchissements)
 
 const ENTRAINEMENT_TYPES=['Technique','Tactique','Physique','Opposition / Jeu','Récupération','Gardiens','Vidéo / Théorie','Match amical','Reprise'];
 
@@ -6343,6 +6371,7 @@ function loadFeuille(){
   // Masquer les non-convoqués : on n'affiche en lignes complètes que les joueurs présents ET retenus.
   // Les autres (jamais cochés présents, ou présents mais non retenus) restent accessibles via une
   // petite liste repliable, pour pouvoir en ajouter un ou en reconvoquer un vite.
+  _feuilleActifs=actifs;
   const absentsActifs=actifs.filter(j=>!f.presents.includes(j.id));
   const nonRetenusActifs=actifs.filter(j=>f.presents.includes(j.id)&&!estRetenu(f,j.id));
   const masquesActifs=[...absentsActifs,...nonRetenusActifs].sort((a,b)=>a.numero-b.numero);
@@ -6599,23 +6628,33 @@ function loadFeuille(){
             🙈 Masquer les non convoqués
           </label>
         </div>
+        <div class="no-print feuille-quick" style="padding:10px 14px;border-bottom:1px solid var(--gris-border)">
+          <input type="text" id="feuille-quick-search" placeholder="🔎 Recherche rapide : nom, prénom ou n° pour noter présent…" autocomplete="off" value="" oninput="filterFeuilleQuick(this.value,${mid})" onkeydown="feuilleQuickKey(event,${mid})" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--gris-border);background:var(--gris-card);color:var(--texte);font-size:14px">
+          <div id="feuille-quick-results"></div>
+        </div>
         ${rowsHTML || `<div class="no-data" style="padding:20px">${feuilleMasquerAbsents?'Aucun joueur convoqué pour l\'instant. Dépliez la liste ci-dessous pour cocher les présents.':'Aucun joueur.'}</div>`}
         ${feuilleMasquerAbsents && masquesActifs.length ? `
         <div class="feuille-absents-toggle no-print" onclick="toggleAbsentsOuvert()">
           <span>${feuilleAbsentsOuvert?'▲':'▼'}</span> ${masquesActifs.length} joueur${masquesActifs.length>1?'s':''} non convoqué${masquesActifs.length>1?'s':''} masqué${masquesActifs.length>1?'s':''} — cliquer pour ${feuilleAbsentsOuvert?'masquer':'afficher et cocher/reconvoquer un oubli'}
         </div>
-        ${feuilleAbsentsOuvert?`<div class="feuille-absents-liste">${absentsActifs.map(j=>`
-          <div class="joueur-check-row" style="opacity:.65">
+        ${feuilleAbsentsOuvert?`
+        <div class="no-print" style="padding:8px 14px">
+          <input type="text" id="feuille-absents-search" placeholder="🔍 Rechercher un joueur…" value="${feuilleAbsentsSearch.replace(/"/g,'&quot;')}" oninput="filterFeuilleAbsents(this.value)" style="width:100%;box-sizing:border-box;padding:7px 10px;border-radius:8px;border:1px solid var(--gris-border);background:var(--gris-card);color:var(--texte);font-size:13px;outline:none">
+        </div>
+        <div class="feuille-absents-liste" id="feuille-absents-liste">${absentsActifs.map(j=>`
+          <div class="joueur-check-row" style="opacity:.65" data-search="${(j.nom+' '+j.prenom+' '+j.numero+' '+(PFR[j.poste]||'')).toLowerCase()}">
             <input type="checkbox" class="jcr-check" onchange="togglePresence(${mid},${j.id},this.checked)">
             <span class="jcr-num">${j.numero}</span>
             <span class="jcr-nom">${j.nom} <span style="font-weight:400">${j.prenom}</span><br><span style="font-size:10px;color:var(--texte-muted)">${PFR[j.poste]||''}</span></span>
           </div>`).join('')}${nonRetenusActifs.map(j=>`
-          <div class="joueur-check-row" style="opacity:.65">
+          <div class="joueur-check-row" style="opacity:.65" data-search="${(j.nom+' '+j.prenom+' '+j.numero+' '+(PFR[j.poste]||'')).toLowerCase()}">
             <input type="checkbox" class="jcr-check" checked onchange="togglePresence(${mid},${j.id},this.checked)">
             <span class="jcr-num">${j.numero}</span>
             <span class="jcr-nom">${j.nom} <span style="font-weight:400">${j.prenom}</span><br><span style="font-size:10px;color:var(--texte-muted)">${PFR[j.poste]||''}</span><span class="badge-non-retenu">🚫 Non retenu</span></span>
             <button type="button" class="btn-toggle-retenu no-print" onclick="toggleRetenu(${mid},${j.id})" title="Remettre parmi les joueurs convoqués">↩ Reconvoquer</button>
-          </div>`).join('')}</div>`:''}
+          </div>`).join('')}</div>
+        <div class="no-data" id="feuille-absents-empty" style="display:none;padding:14px;font-size:12.5px">Aucun joueur ne correspond à la recherche.</div>
+        `:''}
         `:''}
       </div>
       <div style="display:flex;flex-direction:column;gap:16px">
@@ -6640,6 +6679,16 @@ function loadFeuille(){
         </div>`:''}
       </div>
     </div>`;
+  // Réapplique un filtre de recherche déjà saisi (la liste vient d'être reconstruite,
+  // ex. après avoir coché un joueur), sans quoi il redeviendrait invisible à l'écran.
+  if(feuilleAbsentsOuvert && feuilleAbsentsSearch) filterFeuilleAbsents(feuilleAbsentsSearch);
+  // Recherche rapide : restaure le texte, les résultats et le focus après le re-rendu
+  const qi=document.getElementById('feuille-quick-search');
+  if(qi){
+    qi.value=feuilleQuickSearch;
+    renderFeuilleQuick(mid);
+    if(feuilleQuickRefocus){ qi.focus(); qi.setSelectionRange(qi.value.length,qi.value.length); feuilleQuickRefocus=false; }
+  }
 }
 
 function renderTimeline(mid,f){
@@ -6799,17 +6848,77 @@ function togglePlateauLink(mid){
     : '🔓 Présents dissociés — chaque feuille est indépendante','green');
 }
 
+// ── Recherche rapide de joueurs (onglet Feuille) ──
+function normRecherche(t){ return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+function feuilleQuickMatches(){
+  const mots=normRecherche(feuilleQuickSearch).split(/\s+/).filter(Boolean);
+  if(!mots.length) return [];
+  return _feuilleActifs.filter(j=>{
+    const h=normRecherche(j.nom+' '+j.prenom+' '+j.numero);
+    return mots.every(w=>h.includes(w));
+  }).slice(0,8);
+}
+function renderFeuilleQuick(mid){
+  const box=document.getElementById('feuille-quick-results'); if(!box) return;
+  if(!normRecherche(feuilleQuickSearch)){ box.innerHTML=''; return; }
+  const f=getFeuille(mid);
+  const res=feuilleQuickMatches();
+  if(!res.length){ box.innerHTML='<div style="padding:10px 4px 2px;font-size:12.5px;color:var(--texte-muted)">Aucun joueur ne correspond.</div>'; return; }
+  box.innerHTML='<div style="margin-top:8px;border:1px solid var(--gris-border);border-radius:8px;overflow:hidden">'+res.map(j=>{
+    const present=f.presents.includes(j.id);
+    const nonRetenu=present&&!estRetenu(f,j.id);
+    return `<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--gris-border);${present&&!nonRetenu?'background:rgba(45,168,88,.10)':''}">
+      <input type="checkbox" class="jcr-check" ${present?'checked':''} onchange="quickTogglePresence(${mid},${j.id},this.checked)">
+      <span class="jcr-num">${j.numero}</span>
+      <span style="flex:1"><strong>${j.nom}</strong> ${j.prenom}${nonRetenu?' <span class="badge-non-retenu">Non retenu</span>':''}</span>
+      ${nonRetenu?`<button type="button" class="btn-toggle-retenu" onclick="event.preventDefault();toggleRetenu(${mid},${j.id})">↩ Reconvoquer</button>`:(present?'<span style="font-size:11px;color:var(--vert-clair)">✓ Présent</span>':'')}
+    </label>`;
+  }).join('')+'</div>';
+}
+function filterFeuilleQuick(q,mid){ feuilleQuickSearch=q||''; renderFeuilleQuick(mid); }
+function quickTogglePresence(mid,jid,checked){
+  if(checked) feuilleQuickSearch='';   // vide le champ pour enchaîner sur le joueur suivant
+  feuilleQuickRefocus=true;
+  togglePresence(mid,jid,checked);
+}
+function feuilleQuickKey(e,mid){
+  if(e.key==='Escape'){ feuilleQuickSearch=''; e.target.value=''; renderFeuilleQuick(mid); return; }
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const f=getFeuille(mid);
+    const cible=feuilleQuickMatches().find(j=>!f.presents.includes(j.id));
+    if(cible) quickTogglePresence(mid,cible.id,true);
+  }
+}
+
 // Bascule l'affichage "masquer les non convoqués" dans la feuille (préférence mémorisée)
 function toggleMasquerAbsents(checked){
   feuilleMasquerAbsents=checked;
   localStorage.setItem('foot8_feuille_masquer_absents', checked?'1':'0');
-  if(!checked) feuilleAbsentsOuvert=false;
+  if(!checked){ feuilleAbsentsOuvert=false; feuilleAbsentsSearch=''; }
   loadFeuille();
 }
 // Déplie/replie la petite liste des non-convoqués (pour en ajouter un rapidement)
 function toggleAbsentsOuvert(){
   feuilleAbsentsOuvert=!feuilleAbsentsOuvert;
+  if(!feuilleAbsentsOuvert) feuilleAbsentsSearch='';
   loadFeuille();
+}
+// Filtre en direct la liste des non-convoqués par nom/prénom/numéro/poste, sans recharger
+// toute la feuille (pour ne pas perdre le focus du champ de recherche à chaque frappe).
+function filterFeuilleAbsents(query){
+  feuilleAbsentsSearch=query||'';
+  const list=document.getElementById('feuille-absents-liste');
+  if(!list) return;
+  const q=feuilleAbsentsSearch.toLowerCase().trim();
+  let anyVisible=false;
+  list.querySelectorAll('.joueur-check-row').forEach(row=>{
+    const ok=!q||(row.dataset.search||'').includes(q);
+    row.style.display=ok?'flex':'none';
+    if(ok) anyVisible=true;
+  });
+  const emptyMsg=document.getElementById('feuille-absents-empty');
+  if(emptyMsg) emptyMsg.style.display=anyVisible?'none':'block';
 }
 
 function togglePresence(mid,jid,checked){
@@ -8478,6 +8587,10 @@ function renderDashboard(filterSaison, filterComp=''){
   const fs=filterSaison!==undefined?filterSaison:(document.getElementById('stats-saison-filter')?.value||'');
   const fc=filterComp!==undefined?filterComp:(document.getElementById('stats-comp-filter')?.value||'');
   const ms=matchs.filter(m=>!m.annule&&!matchEstAVenir(m)&&(!fs||m.saison===fs)&&(!fc||m.comp===fc));
+  // Les matchs étant en général saisis à l'avance, le trajet (ville adverse) est connu dès la
+  // saisie : pour la distance, on inclut aussi les matchs à venir (contrairement à `ms` ci-dessus,
+  // réservé aux stats qui nécessitent que le match ait été joué : résultats, buts…).
+  const msDistance=matchs.filter(m=>!m.annule&&(!fs||m.saison===fs)&&(!fc||m.comp===fc));
   const grid=document.getElementById('dash-grid');
   if(!grid) return;
 
@@ -8755,7 +8868,7 @@ function renderDashboard(filterSaison, filterComp=''){
   })();
 
   // ── Distance : km parcourus par mois + villes les plus éloignées ──
-  const tripsMs=getTripsExterieurs(ms);
+  const tripsMs=getTripsExterieurs(msDistance);
   const tripsInfos=tripsMs.map(m=>({m,info:getDistanceInfoMatch(m)})).filter(t=>t.info&&t.info.km>0);
   const kmMoisHTML=(()=>{
     if(!tripsInfos.length) return '<div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Aucun déplacement</div>';
