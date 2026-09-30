@@ -3651,8 +3651,20 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.87';
+const APP_VERSION='1.89';
 const CHANGELOG=[
+  {
+    version:'1.89', date:'30/09/2026',
+    changes:[
+      "Correctif — Feuille de match (impression et affichage) : le temps de jeu calculé pour chaque joueur ignorait la « Durée d'un match » définie dans les Paramètres et utilisait toujours 80 minutes par défaut, quelle que soit la valeur réellement configurée (ex : 20 min). Le temps de jeu affiché sur l'impression, dans la feuille de match et dans le récapitulatif reflète désormais correctement la durée paramétrée."
+    ]
+  },
+  {
+    version:'1.88', date:'27/09/2026',
+    changes:[
+      "🎯 Préparation séances : la bibliothèque d'exercices s'enrichit de 22 nouveaux exercices (82 → 104), répartis sur les 11 thèmes existants (2 par thème) — Échauffement, Technique, Passe, Conduite, Finition, Opposition, Jeu réduit, Gardien, Tactique, Physique et Cohésion — chacun avec matériel, objectif, déroulé détaillé, variantes et schéma illustré."
+    ]
+  },
   {
     version:'1.87', date:'27/09/2026',
     changes:[
@@ -5772,7 +5784,7 @@ function calcScoreFromFeuille(f){
   return {butsNous, butsEux};
 }
 
-function getTempsJeu(f,jid,duree=80){
+function getTempsJeu(f,jid,duree=getDureeMatch()){
   if(!f.presents||!f.presents.some(p=>+p===+jid)) return 0;
   let debut=0, fin=duree;
   for(const r of (f.remplacements||[])){
@@ -10622,7 +10634,151 @@ const EXERCICES_LIB = [
  materiel:'plots, bandeaux (optionnel)', objectif:"Confiance envers les coéquipiers, communication verbale précise, esprit d'entraide",
  description:"Par binômes, un joueur ferme les yeux (ou porte un bandeau) pendant que son partenaire le guide uniquement à la voix à travers un parcours de plots, sans jamais le toucher.\nLe guide doit donner des indications claires et rassurantes (avance, tourne à droite, stop) pour que son partenaire évolue en confiance.\nInverser les rôles après un premier passage pour que chacun vive les deux positions.\nVariante : chronométrer les parcours réussis sans contact avec un plot pour ajouter un léger enjeu collectif.",
  svg: wrapSvg(`${svgCone(90,70)}${svgCone(150,110)}${svgCone(210,70)}${svgCone(150,150)}
-   ${svgPlayer(50,150,'A','#3080e0')}${svgPlayer(50,120,'B','#f5c518')}${svgArrow(65,140,230,90)}`)}
+   ${svgPlayer(50,150,'A','#3080e0')}${svgPlayer(50,120,'B','#f5c518')}${svgArrow(65,140,230,90)}`)},
+
+{id:'ex83', nom:"Ballon musical (activation)", theme:'Échauffement', duree:8,
+ materiel:'ballons, enceinte ou sifflet', objectif:"Activation ludique, réactivité auditive, mise en train collective",
+ description:"Les joueurs se déplacent en trottinant dans un espace délimité, chacun avec un ballon au pied ou à la main.\nDès que la musique s'arrête (ou un coup de sifflet), chacun doit immédiatement s'arrêter en équilibre sur un pied, ballon sous contrôle.\nRelancer plusieurs fois en variant les déplacements entre les arrêts : marche, trot, pas chassés, course arrière.\nVariante : le dernier à s'arrêter fait un petit défi (5 jongles, etc.) sans esprit de sanction.",
+ svg: wrapSvg(`${svgPlayer(80,60,'')}${svgPlayer(180,50,'')}${svgPlayer(230,120,'')}${svgPlayer(100,150,'')}${svgPlayer(190,170,'')}
+   ${svgBall(85,68)}${svgBall(185,58)}`)},
+
+{id:'ex84', nom:"Trotteur-sprinteur (échauffement progressif)", theme:'Échauffement', duree:8,
+ materiel:'plots pour délimiter', objectif:"Montée progressive en intensité, préparation cardio-vasculaire, écoute des consignes",
+ description:"Dans un rectangle de 20x15m, les joueurs se déplacent librement.\nL'éducateur annonce une allure (marche, trot, course modérée, sprint court) que tout le groupe doit adopter immédiatement.\nAlterner les allures toutes les 15-20 secondes en augmentant progressivement l'intensité globale au fil de la séquence.\nVariante : ajouter des changements de direction (droite/gauche/demi-tour) annoncés en même temps que l'allure.",
+ svg: wrapSvg(`${svgZone(40,30,220,140,'rgba(48,128,224,.08)')}
+   ${svgPlayer(80,70,'')}${svgPlayer(150,60,'')}${svgPlayer(200,100,'')}${svgPlayer(110,130,'')}${svgPlayer(180,150,'')}`)},
+
+{id:'ex85', nom:"Contrôle de la cuisse amorti", theme:'Technique', duree:10,
+ materiel:'1 ballon par binôme', objectif:"Amorti du ballon à la cuisse, gestion de la trajectoire, remise propre",
+ description:"Par binômes espacés de 6 à 8m, un joueur envoie le ballon en cloche à la main vers la cuisse de son partenaire.\nCelui-ci doit amortir le ballon à la cuisse pour le faire retomber devant lui, puis le contrôler avant de le renvoyer à la main.\nAlterner cuisse droite et cuisse gauche, puis passer à des envois plus tendus pour progresser.\nVariante : après l'amorti, demander une passe immédiate au sol vers le partenaire plutôt qu'un retour à la main.",
+ svg: wrapSvg(`${svgPlayer(90,110,'1')}${svgPlayer(210,110,'2')}${svgBall(150,70)}
+   ${svgArrow(100,105,145,75)}${svgArrow(155,75,200,105,'#3080e0')}`)},
+
+{id:'ex86', nom:"Passe murale en duo (échauffement technique)", theme:'Technique', duree:10,
+ materiel:'1 ballon par binôme, un mur ou une surface plane si disponible', objectif:"Précision de passe rasante, premier contact orienté, rythme de jeu simple",
+ description:"Par binômes face à face à 6m, les joueurs s'échangent le ballon en une ou deux touches, en gardant la balle au sol.\nInsister sur la surface de contact (intérieur du pied) et sur le placement du pied d'appui orienté vers la cible.\nAugmenter progressivement la distance entre les deux joueurs pour exiger plus de précision.\nVariante : alterner pied fort et pied faible à chaque échange, ou introduire un appui remise après un déplacement latéral.",
+ svg: wrapSvg(`${svgPlayer(90,100,'1')}${svgPlayer(210,100,'2')}${svgBall(150,100)}
+   ${svgArrow(100,100,200,100)}`)},
+
+{id:'ex87', nom:"Triangle en mouvement (une-deux)", theme:'Passe', duree:15,
+ materiel:'3 plots, 1 ballon', objectif:"Combinaison une-deux, timing de la course, précision dans la course du partenaire",
+ description:"Trois joueurs se déplacent lentement en formant un triangle mobile sur environ 15m de côté.\nLe porteur du ballon donne à un partenaire puis part immédiatement en profondeur pour recevoir un une-deux en première intention.\nChanger régulièrement le porteur du ballon pour que chacun réalise la combinaison plusieurs fois.\nVariante : introduire un léger passif qui tente d'intercepter la remise pour ajouter une contrainte de vitesse d'exécution.",
+ svg: wrapSvg(`${svgPlayer(150,50,'A')}${svgPlayer(70,150,'B')}${svgPlayer(230,150,'C')}
+   ${svgArrow(150,60,90,140)}${svgArrow(90,150,140,70,'#3080e0')}${svgBall(120,100)}`)},
+
+{id:'ex88', nom:"Passes sous pression du temps", theme:'Passe', duree:12,
+ materiel:'8 plots, 1 ballon, chronomètre', objectif:"Vitesse de circulation du ballon, prise de décision rapide, réduction du temps de contrôle",
+ description:"Carré de 10x10m avec 4 à 5 joueurs qui se transmettent le ballon en une ou deux touches maximum.\nL'éducateur chronomètre une série de 30 secondes et compte le nombre de passes réussies sans perte de contrôle.\nRelancer plusieurs séries en essayant de battre le score précédent, sans jamais sanctionner l'erreur individuelle.\nVariante : réduire progressivement l'espace disponible pour augmenter la difficulté de contrôle sous pression.",
+ svg: wrapSvg(`${svgZone(70,50,160,100)}
+   ${svgPlayer(90,60,'1')}${svgPlayer(230,60,'2')}${svgPlayer(90,150,'3')}${svgPlayer(230,150,'4')}${svgPlayer(160,100,'5')}
+   ${svgBall(150,100)}`)},
+
+{id:'ex89', nom:"Conduite dos à l'adversaire + protection", theme:'Conduite', duree:12,
+ materiel:'plots, chasubles', objectif:"Protection du ballon avec le corps, orientation dos au défenseur, résistance au contact léger",
+ description:"Par binômes dans un espace de 5x5m, un joueur conduit son ballon en se plaçant systématiquement dos au défenseur pour le protéger avec le corps.\nLe défenseur applique une pression légère (sans charge brutale) pour obliger l'attaquant à changer d'appui et à couvrir le ballon.\nAlterner les rôles après 30 secondes. Insister sur les bras écartés pour l'équilibre et la lecture de la position adverse.\nVariante : ajouter un objectif de sortie de zone pour transformer l'exercice en petit défi offensif/défensif.",
+ svg: wrapSvg(`${svgZone(100,60,100,80)}
+   ${svgPlayer(150,100,'A','#3080e0')}${svgBall(150,108)}${svgPlayer(150,70,'D','#e03030')}`)},
+
+{id:'ex90', nom:"Slalom en marche arrière", theme:'Conduite', duree:10,
+ materiel:'6 plots', objectif:"Conduite en recul, contrôle du ballon sans visibilité directe, vigilance sur l'environnement",
+ description:"6 plots alignés espacés de 2m. Le joueur conduit son ballon en reculant entre les plots, en gardant un contact permanent avec le ballon.\nÀ l'arrivée, demi-tour rapide puis accélération en conduite avant sur les derniers mètres.\nInsister sur les petites touches de balle et sur les regards périodiques par-dessus l'épaule.\nVariante : ajouter un partenaire qui donne des indications vocales pour guider le joueur en marche arrière.",
+ svg: wrapSvg(`${svgCone(70,100)}${svgCone(110,100)}${svgCone(150,100)}${svgCone(190,100)}${svgCone(230,100)}
+   ${svgArrow(240,100,80,100,'#3080e0',false)}${svgPlayer(250,100,'1')}${svgBall(242,108)}`)},
+
+{id:'ex91', nom:"Frappes après contrôle de la poitrine", theme:'Finition', duree:15,
+ materiel:'1 but, ballons', objectif:"Amorti aérien propre, transition contrôle-frappe, prise de décision rapide devant le but",
+ description:"L'éducateur envoie une balle en cloche vers la poitrine du joueur situé à 16m du but.\nCelui-ci amortit le ballon pour le faire retomber devant lui, puis conclut d'une frappe avant que le ballon ne touche deux fois le sol.\nAlterner les zones d'envoi (gauche, centre, droite) pour varier l'angle de frappe.\nVariante : ajouter un gardien pour introduire une contrainte de placement de la frappe.",
+ svg: wrapSvg(`${svgGoal(150,20,50)}${svgPlayer(150,150,'A','#3080e0')}
+   ${svgArrow(150,170,150,60)}${svgBall(150,100)}`)},
+
+{id:'ex92', nom:"Doublette attaquant-défenseur + finition rapide", theme:'Finition', duree:15,
+ materiel:'1 but, plots, ballons', objectif:"Vitesse d'exécution, prise de décision sous pression défensive, efficacité devant le but",
+ description:"Un attaquant et un défenseur partent en même temps depuis deux plots situés à 20m du but, sur un signal de l'éducateur.\nL'attaquant doit récupérer un ballon posé à mi-chemin et conclure avant que le défenseur ne le rattrape ou ne gêne la frappe.\nAlterner les rôles à chaque passage pour équilibrer le travail offensif et défensif.\nVariante : faire démarrer le défenseur avec une petite avance ou un léger retard selon le niveau du groupe.",
+ svg: wrapSvg(`${svgGoal(150,20,50)}${svgCone(150,110)}${svgBall(150,110)}
+   ${svgPlayer(110,170,'A','#3080e0')}${svgPlayer(190,170,'D','#e03030')}
+   ${svgArrow(110,165,145,115)}${svgArrow(190,165,155,115,'#e03030')}`)},
+
+{id:'ex93', nom:"1 contre 1 avec double but", theme:'Opposition', duree:15,
+ materiel:'4 plots (2 petits buts), ballons', objectif:"Prise de décision offensive (choix du but), feinte de corps, replacement défensif rapide",
+ description:"Deux petits buts sont installés côte à côte à une extrémité d'un espace de 15x10m.\nL'attaquant part avec le ballon face au défenseur et peut choisir de marquer dans l'un ou l'autre des deux buts, ce qui oblige le défenseur à lire les appuis avant de s'engager.\nAlterner les rôles après chaque duel et varier le point de départ de l'attaquant.\nVariante : autoriser une seconde tentative immédiate si le premier duel échoue, pour travailler la répétition sous fatigue légère.",
+ svg: wrapSvg(`${svgGoal(110,30,40)}${svgGoal(190,30,40)}
+   ${svgPlayer(150,150,'A','#3080e0')}${svgBall(150,160)}${svgPlayer(150,100,'D','#e03030')}
+   ${svgArrow(150,140,120,50)}${svgArrow(150,140,180,50,'#3080e0',false)}`)},
+
+{id:'ex94', nom:"3 contre 3 + neutre offensif", theme:'Opposition', duree:18,
+ materiel:'chasubles, plots, 2 petits buts', objectif:"Supériorité numérique en attaque, prise d'initiative, soutien permanent du porteur",
+ description:"Terrain réduit avec 2 équipes de 3 joueurs et un joueur neutre qui joue systématiquement avec l'équipe en possession du ballon.\nL'objectif est d'exploiter la supériorité numérique pour créer des décalages et marquer dans le petit but adverse.\nEncourager les appels de balle en profondeur et les soutiens courts autour du porteur.\nVariante : limiter le neutre à un rôle de relais uniquement latéral pour orienter le jeu vers les couloirs.",
+ svg: wrapSvg(`${svgGoal(150,20,40)}${svgGoal(150,180,40)}
+   ${svgPlayer(110,60,'','#3080e0')}${svgPlayer(190,60,'','#3080e0')}${svgPlayer(150,90,'','#3080e0')}
+   ${svgPlayer(110,140,'','#e03030')}${svgPlayer(190,140,'','#e03030')}${svgPlayer(150,110,'','#e03030')}
+   ${svgPlayer(230,100,'N','#f5c518')}${svgBall(150,100)}`)},
+
+{id:'ex95', nom:"Jeu à la conservation, thème : appui-remise", theme:'Jeu réduit', duree:18,
+ materiel:'chasubles, plots, 1 ballon', objectif:"Utilisation de l'appui-remise pour changer le sens du jeu, mobilité sans ballon, conservation collective",
+ description:"Jeu libre à effectif réduit (4 contre 4 par exemple) sur un espace de 25x18m, sans but, avec pour seule règle la conservation du ballon.\nValoriser particulièrement (à la voix) toute séquence où un joueur reçoit dos au jeu et remet immédiatement à un partenaire mieux orienté.\nRelancer régulièrement l'attention du groupe sur ce point technique précis pendant le jeu.\nVariante : accorder un point bonus à l'équipe chaque fois qu'un appui-remise permet de changer le sens du jeu.",
+ svg: wrapSvg(`${svgZone(50,40,200,120)}
+   ${svgPlayer(90,60,'','#3080e0')}${svgPlayer(210,60,'','#3080e0')}${svgPlayer(90,140,'','#3080e0')}${svgPlayer(210,140,'','#3080e0')}
+   ${svgPlayer(150,60,'','#e03030')}${svgPlayer(150,140,'','#e03030')}${svgPlayer(120,100,'','#e03030')}${svgPlayer(180,100,'','#e03030')}
+   ${svgBall(150,100)}`)},
+
+{id:'ex96', nom:"Mini-tournoi 4 buts", theme:'Jeu réduit', duree:20,
+ materiel:'4 petits buts (ou plots), chasubles, ballons', objectif:"Occupation de l'espace en largeur, prise de décision sur le choix du but à attaquer, plaisir de jeu",
+ description:"Quatre petits buts sont disposés aux quatre coins d'un espace rectangulaire. Deux équipes s'affrontent et peuvent marquer dans n'importe lequel des deux buts qui leur sont attribués.\nCette multiplicité de cibles favorise l'écartement du jeu et empêche les défenses de se concentrer sur un seul axe.\nOrganiser plusieurs matchs courts (5 à 6 minutes) pour maintenir l'intensité et le plaisir de jeu.\nVariante : attribuer un but « bonus » valant 2 points pour orienter ponctuellement le jeu vers une zone précise.",
+ svg: wrapSvg(`${svgGoal(40,30,30)}${svgGoal(260,30,30)}${svgGoal(40,170,30)}${svgGoal(260,170,30)}
+   ${svgPlayer(110,80,'','#3080e0')}${svgPlayer(190,120,'','#3080e0')}${svgPlayer(110,120,'','#e03030')}${svgPlayer(190,80,'','#e03030')}
+   ${svgBall(150,100)}`)},
+
+{id:'ex97', nom:"Gardien : dégagements au pied longs", theme:'Gardien', duree:12,
+ materiel:'1 but, ballons, plots pour délimiter des zones cibles', objectif:"Qualité de frappe longue, précision de la relance, prise d'appui avant la frappe",
+ description:"Le gardien réceptionne un ballon (passe au sol de l'éducateur ou dégagement des mains) puis dégage au pied vers une zone cible délimitée par des plots à 25-30m.\nInsister sur la pose du pied d'appui, l'angle d'attaque du pied de frappe et le regard porté sur la cible avant de frapper.\nVarier les zones cibles pour travailler la précision à gauche, au centre et à droite.\nVariante : chronométrer l'enchaînement réception-dégagement pour habituer le gardien à la vitesse d'exécution en match.",
+ svg: wrapSvg(`${svgGoal(150,20,50)}${svgPlayer(150,35,'G','#f5c518')}${svgBall(150,45)}
+   ${svgZone(60,150,60,30)}${svgZone(150,160,60,30)}${svgZone(240,150,40,30)}
+   ${svgArrow(150,50,150,170)}`)},
+
+{id:'ex98', nom:"Gardien : 1 contre 1 face à l'attaquant lancé", theme:'Gardien', duree:12,
+ materiel:'1 but, ballons, plots', objectif:"Réduction de l'angle, timing de sortie, duel à une contre un",
+ description:"Un attaquant part en conduite de balle depuis 25m et fonce vers le but ; le gardien doit sortir au bon moment pour réduire l'angle et provoquer une erreur ou capter le ballon.\nInsister sur le timing de sortie (ni trop tôt, ni trop tard) et sur la position basse au moment du duel.\nAlterner les vitesses de départ de l'attaquant pour habituer le gardien à différents rythmes de jeu.\nVariante : autoriser l'attaquant à feinter le tir pour travailler la patience du gardien avant l'engagement final.",
+ svg: wrapSvg(`${svgGoal(150,20,50)}${svgPlayer(150,35,'G','#f5c518')}
+   ${svgCone(150,170)}${svgPlayer(150,160,'A','#3080e0')}${svgBall(150,150)}
+   ${svgArrow(150,150,150,55)}`)},
+
+{id:'ex99', nom:"Construction depuis l'arrière à 3", theme:'Tactique', duree:15,
+ materiel:'chasubles, plots pour délimiter les couloirs, ballons', objectif:"Sortie de balle propre, écartement des relanceurs, patience dans la construction",
+ description:"Trois joueurs se placent en ligne devant le gardien pour organiser la relance : un axial et deux latéraux écartés dans les couloirs.\nLe gardien relance à l'un des trois, qui doit chercher à faire progresser le ballon en évitant la précipitation, sous la pression légère de deux adversaires.\nInsister sur l'écartement suffisant entre les trois relanceurs pour ouvrir des angles de passe.\nVariante : introduire un pressing plus intense progressivement pour habituer le groupe à construire sous contrainte.",
+ svg: wrapSvg(`${svgGoal(150,20,40)}${svgPlayer(150,35,'G','#f5c518')}
+   ${svgPlayer(70,80,'1','#3080e0')}${svgPlayer(150,80,'2','#3080e0')}${svgPlayer(230,80,'3','#3080e0')}
+   ${svgPlayer(110,130,'P','#e03030')}${svgPlayer(190,130,'P','#e03030')}${svgBall(150,60)}`)},
+
+{id:'ex100', nom:"Bascule du jeu (changement de côté)", theme:'Tactique', duree:15,
+ materiel:'chasubles, plots pour matérialiser les couloirs, ballons', objectif:"Lecture du jeu faible, passe longue précise, déplacement collectif pour suivre le ballon",
+ description:"Sur un espace divisé en deux couloirs, une équipe fait circuler le ballon dans un couloir puis, dès qu'un espace apparaît de l'autre côté, réalise une passe longue pour basculer le jeu.\nL'ensemble de l'équipe doit alors se déplacer collectivement pour occuper le nouveau côté fort.\nValoriser particulièrement les changements de côté réussis qui déstabilisent l'organisation défensive adverse.\nVariante : imposer un nombre minimum de passes dans un couloir avant d'autoriser la bascule, pour travailler la patience collective.",
+ svg: wrapSvg(`${svgZone(20,30,120,140,'rgba(48,128,224,.08)')}${svgZone(160,30,120,140,'rgba(224,48,48,.06)')}
+   ${svgPlayer(70,60,'','#3080e0')}${svgPlayer(70,140,'','#3080e0')}${svgPlayer(230,100,'','#3080e0')}
+   ${svgArrow(70,60,220,95)}${svgBall(150,80)}`)},
+
+{id:'ex101', nom:"Circuit gainage ludique", theme:'Physique', duree:10,
+ materiel:'tapis ou herbe propre, plots pour délimiter les postes', objectif:"Renforcement de la sangle abdominale et lombaire, posture, plaisir par le jeu",
+ description:"Organiser 4 à 5 postes de gainage courts (planche, gainage latéral, superman, pont fessier) sous forme ludique, chaque poste durant 20 secondes avec 10 secondes de récupération.\nPrésenter les postes comme un petit défi individuel plutôt qu'un effort contraignant, en insistant sur la posture correcte plutôt que la performance.\nFaire tourner les joueurs par binômes pour maintenir l'attention et l'entraide.\nVariante : transformer le circuit en relais où chaque joueur valide son poste avant de laisser la place au suivant.",
+ svg: wrapSvg(`${svgCone(70,60)}${svgCone(150,60)}${svgCone(230,60)}${svgCone(110,150)}${svgCone(190,150)}
+   ${svgPlayer(70,90,'1')}${svgPlayer(150,90,'2')}${svgPlayer(230,90,'3')}`)},
+
+{id:'ex102', nom:"Sauts latéraux + réaction", theme:'Physique', duree:10,
+ materiel:'plots ou lattes, 1 ballon', objectif:"Puissance des membres inférieurs, réactivité, coordination œil-pied",
+ description:"Le joueur réalise une série de sauts latéraux pieds joints par-dessus une ligne de plots (5 à 6 allers-retours rapides), puis réagit immédiatement à un ballon lâché par l'éducateur pour le contrôler avant qu'il ne touche le sol deux fois.\nInsister sur la légèreté des appuis pendant les sauts et sur la réactivité visuelle au moment du lâcher de balle.\nRépéter par séries courtes avec récupération suffisante pour préserver la qualité d'exécution.\nVariante : varier le sens du saut lâché (droite ou gauche) pour ajouter une composante de prise de décision.",
+ svg: wrapSvg(`${svgCone(110,100)}${svgCone(140,100)}${svgCone(170,100)}${svgCone(190,100)}
+   ${svgPlayer(150,140,'1')}${svgBall(150,60)}${svgArrow(150,70,150,120)}`)},
+
+{id:'ex103', nom:"Cercle des compliments", theme:'Cohésion', duree:5,
+ materiel:'aucun', objectif:"Renforcement du lien d'équipe, valorisation positive entre coéquipiers, climat de confiance",
+ description:"En fin de séance, les joueurs se placent en cercle. Chacun, à tour de rôle, adresse un compliment sincère et concret à un coéquipier sur son comportement ou son effort pendant la séance (pas uniquement sur la performance technique).\nL'éducateur veille à ce qu'aucun joueur ne soit oublié sur l'ensemble de la saison.\nGarder un rythme dynamique pour que ce moment reste court et ne s'essouffle pas.\nVariante : désigner chaque semaine un joueur différent pour lancer le tour de compliments.",
+ svg: wrapSvg(`${svgPlayer(150,60,'')}${svgPlayer(220,100,'')}${svgPlayer(190,160,'')}${svgPlayer(110,160,'')}${svgPlayer(80,100,'')}
+   <circle cx="150" cy="110" r="55" fill="none" stroke="rgba(245,197,24,.4)" stroke-width="1.5" stroke-dasharray="3,3"/>`)},
+
+{id:'ex104', nom:"Défi à énigmes collectif", theme:'Cohésion', duree:10,
+ materiel:'plots, petits objets à cacher, papier/consignes', objectif:"Communication de groupe, entraide, résolution de problème collective",
+ description:"Répartir les joueurs en petits groupes qui doivent résoudre ensemble une série de petits défis physiques ou d'observation (retrouver des plots numérotés, reformer un parcours dans l'ordre, etc.), disposés sur le terrain.\nAucun groupe ne peut réussir sans que chaque joueur y participe activement, ce qui favorise la prise de parole de tous, y compris les plus réservés.\nDébriefer brièvement à la fin sur la manière dont le groupe s'est organisé.\nVariante : introduire une contrainte de temps global pour ajouter un enjeu collectif sans esprit de compétition excessive entre groupes.",
+ svg: wrapSvg(`${svgCone(70,60)}${svgCone(150,50)}${svgCone(230,80)}${svgCone(190,150)}${svgCone(100,160)}
+   ${svgPlayer(90,100,'')}${svgPlayer(130,110,'')}${svgPlayer(170,100,'')}`)}
 ];
 
 function allExercices(){ return EXERCICES_LIB.concat(exercicesPerso); }
