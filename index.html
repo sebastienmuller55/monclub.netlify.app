@@ -786,7 +786,7 @@ body.viewer-mode .jcr-check{cursor:not-allowed;opacity:.6;}
   .joueur-check-row{padding:5px 10px;}
   .event-btn{display:none;}
   body{background:white;color:black;}
-  header,.tabs,.compo-sidebar,.compo-header,.compo-info-bar,.sidebar-actions{display:none!important;}
+  header,.tabs,.tabs-wrap,.compo-sidebar,.compo-header,.compo-info-bar,.sidebar-actions{display:none!important;}
   .remplacants-section{display:block!important;background:#f5f5f5!important;border:1px solid #ccc!important;border-radius:8px!important;}
   .remplacant-chip{background:#eee!important;border-color:#bbb!important;}
   .rc-name{color:#000!important;}
@@ -1648,6 +1648,20 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
 .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .tabs::-webkit-scrollbar{display:none;}
 .tab{flex-shrink:0;white-space:nowrap;}
+/* Onglets : tout reste atteignable (flèches, molette, balayage) et on voit qu'il y a une suite */
+.tabs-wrap{position:relative;}
+.tabs::after{content:'';flex:0 0 24px;}
+.tabs-wrap.can-right:not(.can-left) .tabs{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 44px),transparent);}
+.tabs-wrap.can-left:not(.can-right) .tabs{-webkit-mask-image:linear-gradient(to left,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(to left,#000 calc(100% - 44px),transparent);}
+.tabs-wrap.can-left.can-right .tabs{-webkit-mask-image:linear-gradient(to right,transparent,#000 44px,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(to right,transparent,#000 44px,#000 calc(100% - 44px),transparent);}
+.tabs-arrow{display:none;position:absolute;top:calc(50% + 4px);transform:translateY(-50%);width:30px;height:30px;padding:0 0 3px;border-radius:50%;border:1px solid var(--gris-border);background:var(--gris-card);color:var(--texte);font-size:20px;line-height:1;cursor:pointer;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.35);font-family:inherit;align-items:center;justify-content:center;}
+.tabs-arrow:hover{filter:brightness(1.25);}
+.tabs-arrow.left{left:6px;}
+.tabs-arrow.right{right:6px;}
+.tabs-wrap.can-left .tabs-arrow.left,.tabs-wrap.can-right .tabs-arrow.right{display:flex;}
+@media(max-width:768px){ .tabs-arrow{display:none!important;} } /* tactile : on balaie, le fondu sur le bord indique la suite */
+@media(min-width:769px) and (max-width:1920px){ .tab{padding:8px 14px;} }
+@media(min-width:769px) and (max-width:1500px){ .tab{padding:8px 11px;font-size:13.5px;} }
 /* Cartes de stats : jamais de contenu coupé */
 .stats-card{overflow-x:auto;}
 .cib-input{min-width:0;}
@@ -2105,6 +2119,43 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
   <button class="tab" onclick="showTab('seances')">🎯 Préparation séances</button>
   <button class="tab" onclick="showTab('maillots')">🧺 Maillots</button>
 </div>
+<script>
+// Barre d'onglets défilante : flèches ‹ › (souris), molette verticale → horizontale, indicateurs de fondu sur les bords.
+(function(){
+  function init(){
+    const tabs=document.querySelector('.tabs');
+    if(!tabs||tabs.dataset.scroller) return;
+    tabs.dataset.scroller='1';
+    const wrap=document.createElement('div');
+    wrap.className='tabs-wrap';
+    tabs.parentNode.insertBefore(wrap,tabs);
+    wrap.appendChild(tabs);
+    const mk=(cls,txt,dir)=>{
+      const b=document.createElement('button');
+      b.type='button'; b.className='tabs-arrow '+cls; b.textContent=txt;
+      b.setAttribute('aria-label',dir<0?'Onglets précédents':'Onglets suivants');
+      b.onclick=()=>tabs.scrollBy({left:dir*Math.max(160,tabs.clientWidth*0.6),behavior:'smooth'});
+      wrap.appendChild(b);
+    };
+    mk('left','‹',-1); mk('right','›',1);
+    const upd=()=>{
+      const max=tabs.scrollWidth-tabs.clientWidth;
+      wrap.classList.toggle('can-left',tabs.scrollLeft>2);
+      wrap.classList.toggle('can-right',tabs.scrollLeft<max-2);
+    };
+    tabs.addEventListener('scroll',upd,{passive:true});
+    window.addEventListener('resize',upd);
+    tabs.addEventListener('wheel',e=>{
+      const max=tabs.scrollWidth-tabs.clientWidth;
+      if(max<=0||Math.abs(e.deltaY)<=Math.abs(e.deltaX)) return;
+      if((e.deltaY>0&&tabs.scrollLeft<max-1)||(e.deltaY<0&&tabs.scrollLeft>0)){ tabs.scrollLeft+=e.deltaY; e.preventDefault(); }
+    },{passive:false});
+    if(window.ResizeObserver) new ResizeObserver(upd).observe(tabs);
+    setTimeout(upd,0); setTimeout(upd,600);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
 
 <!-- ══════════════════ PAGE LICENCES ══════════════════ -->
 <div id="page-licences" class="page active">
@@ -2198,6 +2249,7 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
     </select>
   </div>
   <div class="stats-toolbar-reset" style="display:flex;justify-content:flex-end;padding:10px 24px 0;">
+    <button class="btn btn-secondary no-print" onclick="exportDashboardPDF()" title="Exporter les stats et le dashboard en PDF (A4, fond clair)" style="margin-right:8px;">📄 Export PDF</button>
     <button class="btn btn-secondary" onclick="openResetStatsModal()" style="display:flex;align-items:center;gap:6px;color:var(--rouge);border-color:rgba(224,48,48,.3);">
       🔄 Réinitialiser les stats
     </button>
@@ -2217,14 +2269,14 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
       <div class="stats-card">
         <div class="stats-card-header">⚽ Classement buteurs</div>
         <table class="stats-table">
-          <thead><tr><th>#</th><th>Joueur</th><th>Buts</th><th>Matchs</th><th>Moy.</th></tr></thead>
+          <thead><tr><th>#</th><th>Joueur</th><th>Buts</th><th>Matchs</th><th>Moy.</th><th title="Part des buts de l'équipe">%</th></tr></thead>
           <tbody id="stats-buteurs"></tbody>
         </table>
       </div>
       <div class="stats-card">
         <div class="stats-card-header">🎯 Classement passeurs</div>
         <table class="stats-table">
-          <thead><tr><th>#</th><th>Joueur</th><th>Passes D.</th><th>Matchs</th></tr></thead>
+          <thead><tr><th>#</th><th>Joueur</th><th>Passes D.</th><th>Matchs</th><th title="Part des passes décisives de l'équipe">%</th></tr></thead>
           <tbody id="stats-passeurs"></tbody>
         </table>
       </div>
@@ -2549,6 +2601,7 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
         <span style="font-size:11px;color:var(--texte-muted)">min</span>
       </div>
       <button class="btn-chrono" style="background:rgba(45,168,88,.2);color:#4ade80;border:1px solid rgba(45,168,88,.4)" onclick="finDeMatch()">🏁 Fin du match</button>
+      <button class="btn-chrono" id="btn-save-sync" style="margin-left:18px;background:rgba(96,165,250,.18);color:#60a5fa;border:1px solid rgba(96,165,250,.45)" onclick="enregistrerEtSynchroniser()" title="Enregistre la feuille et la synchronise immédiatement avec Firebase (tous les appareils du club)">💾 Enregistrer</button>
     </div>
   </div>
   <div id="feuille-content">
@@ -2869,11 +2922,12 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
       </div>
     </div>
     <div class="form-row" id="fm-adversaire-row">
-      <div class="form-group"><label>Adversaire *</label><input type="text" id="fm-adversaire" placeholder="FC Exemple" oninput="updateHistoriqueAdversaireFM()"></div>
+      <div class="form-group" id="fm-adversaire-group"><label>Adversaire *</label><input type="text" id="fm-adversaire" placeholder="FC Exemple" oninput="updateHistoriqueAdversaireFM()"></div>
       <div class="form-group"><label>Lieu</label>
-        <select id="fm-lieu"><option value="D">Domicile</option><option value="E">Extérieur</option><option value="N">Neutre</option></select>
+        <select id="fm-lieu" onchange="updateMatchTypeFields()"><option value="D">Domicile</option><option value="E">Extérieur</option><option value="N">Neutre</option></select>
       </div>
     </div>
+    <div class="form-group" id="fm-match-ville-group" style="display:none"><label>📍 Ville du match <span style="font-weight:400;color:var(--texte-muted)">(sert au calcul des km parcourus)</span></label><input type="text" id="fm-match-ville" placeholder="Ex: Rouen, Évreux…" style="width:100%"></div>
     <div id="fm-historique-adv" style="display:none;font-size:12px;color:var(--texte-muted);background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:8px;padding:8px 12px;margin:-8px 0 16px"></div>
     <!-- Champs spécifiques aux Plateaux -->
     <div id="plateau-fields" style="display:none;border:1px solid var(--gris-border);border-radius:8px;padding:12px;background:rgba(45,168,88,.06);margin-bottom:16px;">
@@ -3372,6 +3426,98 @@ function deleteEduc(id){
 //  la liste tienne sur une page A4 ; au-delà (~70 joueurs) elle
 //  passe sur plusieurs pages avec l'en-tête répété.
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+//  EXPORT PDF — STATS & DASHBOARD
+//  Imprime une copie « fond clair » de la page Stats (KPI, classements,
+//  graphiques) en A4 portrait, avec un en-tête (club, équipe, filtres, date).
+//  Dans la boîte d'impression : choisir « Enregistrer au format PDF ».
+// ══════════════════════════════════════════════
+function exportDashboardPDF(){
+  const page=document.getElementById('page-stats');
+  if(!page){ return; }
+  document.getElementById('print-dashboard-area')?.remove();
+
+  if(!document.getElementById('print-dashboard-css')){
+    const st=document.createElement('style');
+    st.id='print-dashboard-css';
+    st.textContent=`
+#print-dashboard-area{display:none;}
+@media print{
+  html,body.printing-dashboard{height:auto!important;min-height:0!important;overflow:visible!important;}
+  body.printing-dashboard{display:block!important;background:#fff!important;padding:0!important;}
+  body.printing-dashboard > *:not(#print-dashboard-area){display:none!important;}
+  body.printing-dashboard #print-dashboard-area{
+    display:block!important;
+    --gris-bg:#ffffff;--gris-panel:#ffffff;--gris-card:#f1f3f9;--gris-border:#d5d9e6;
+    --texte:#1a1a2e;--texte-muted:#5a5a7a;
+    background:#fff;color:#1a1a2e;font-family:'Segoe UI',Arial,Helvetica,sans-serif;
+  }
+  #print-dashboard-area *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  #print-dashboard-area .pd-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+    border-bottom:2px solid #1a7a3c;padding-bottom:8px;margin-bottom:8px;}
+  #print-dashboard-area .pd-club{font-size:13px;font-weight:700;color:#1a7a3c;}
+  #print-dashboard-area .pd-title{font-size:22px;font-weight:800;line-height:1.1;color:#111;}
+  #print-dashboard-area .pd-meta{font-size:11px;color:#555;text-align:right;line-height:1.5;}
+  #print-dashboard-area > div:not(.pd-head){padding-left:0!important;padding-right:0!important;}
+  #print-dashboard-area .dash-grid,#print-dashboard-area .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;}
+  #print-dashboard-area .dash-card,#print-dashboard-area .stats-card,#print-dashboard-area .kpi-card{
+    break-inside:avoid;page-break-inside:avoid;box-shadow:none!important;}
+  #print-dashboard-area .kpi-tip,#print-dashboard-area details,#print-dashboard-area button{display:none!important;}
+  #print-dashboard-area [style*="max-height"]{max-height:none!important;overflow:visible!important;}
+  #print-dashboard-area .pd-foot{margin-top:10px;text-align:right;font-size:10px;color:#999;}
+}`;
+    document.head.appendChild(st);
+  }
+
+  // ── En-tête ──
+  const esc=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const clubName=(document.getElementById('club-name-display')?.textContent||'').trim();
+  const eq=(typeof equipes!=='undefined')?equipes.find(e=>e.id===currentEquipeId):null;
+  const selTxt=id=>{ const el=document.getElementById(id); return el&&el.options[el.selectedIndex]?el.options[el.selectedIndex].text:''; };
+  const meta=[eq&&eq.nom, selTxt('stats-saison-filter')||'Toutes saisons', selTxt('stats-comp-filter')||'Toutes compétitions'].filter(Boolean).join(' · ');
+
+  const area=document.createElement('div');
+  area.id='print-dashboard-area';
+  area.innerHTML=`<div class="pd-head">
+      <div><div class="pd-club">${esc(clubName)}</div><div class="pd-title">📊 Stats &amp; Dashboard</div></div>
+      <div class="pd-meta">${esc(meta)}<br>Édité le ${new Date().toLocaleDateString('fr-FR')}</div>
+    </div>`;
+
+  // ── Copie du contenu de la page (sans la barre de filtres) ──
+  Array.from(page.children).forEach(ch=>{
+    if(ch.classList.contains('stats-toolbar')||ch.classList.contains('stats-toolbar-reset')) return;
+    const c=ch.cloneNode(true);
+    c.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+    if(c.hasAttribute('id')) c.removeAttribute('id');
+    // Les listes déroulantes (ex. joueur du radar) deviennent du texte simple
+    c.querySelectorAll('select').forEach(sel=>{
+      const sp=document.createElement('span');
+      sp.textContent=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'';
+      sp.style.cssText='font-weight:600;font-size:12px;text-transform:none;letter-spacing:0;';
+      sel.replaceWith(sp);
+    });
+    area.appendChild(c);
+  });
+  const foot=document.createElement('div');
+  foot.className='pd-foot';
+  foot.textContent='Player Tracking App'+(typeof APP_VERSION!=='undefined'?' v'+APP_VERSION:'');
+  area.appendChild(foot);
+  document.body.appendChild(area);
+
+  let pg=document.getElementById('print-dashboard-page');
+  if(!pg){ pg=document.createElement('style'); pg.id='print-dashboard-page'; document.head.appendChild(pg); }
+  pg.textContent='@page{size:A4 portrait;margin:10mm;}';
+
+  document.body.classList.add('printing-dashboard');
+  setTimeout(()=>window.print(),100);
+}
+window.addEventListener('afterprint',()=>{
+  if(!document.body.classList.contains('printing-dashboard')) return;
+  document.body.classList.remove('printing-dashboard');
+  document.getElementById('print-dashboard-area')?.remove();
+  document.getElementById('print-dashboard-page')?.remove();
+});
+
 function licEsc(v){ return String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 function exportLicencesPDF(){
@@ -3651,8 +3797,115 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.93';
+const APP_VERSION='1.110';
 const CHANGELOG=[
+  {
+    version:'1.110', date:'18/10/2026',
+    changes:[
+      "Correction — répétition des séances d'entraînement : une séance démarrant un mercredi et répétée plusieurs fois créait des séances le mardi (les dates étaient décalées d'un jour à cause d'une conversion en heure UTC). Les dates de la récurrence, de l'aperçu et des séances générées depuis un cycle de préparation sont maintenant calculées en heure locale.",
+      "Correction — « aujourd'hui » : entre minuit et 1 h–2 h du matin, la date du jour proposée par défaut (nouvelle séance, nouveau match, sauvegarde…) était celle de la veille ; elle suit maintenant l'heure locale."
+    ]
+  },
+  {
+    version:'1.109', date:'18/10/2026',
+    changes:[
+      "Joueurs du mois — ex æquo : en cas d'égalité parfaite sur le critère principal (score, buts, passes, clean sheets), les joueurs sont désormais affichés « ex æquo » au lieu d'être départagés en silence ; les rangs suivent la règle classique (1, 1, 3).",
+      "Joueurs du mois — palmarès : sous les quatre classements, une frise du joueur du mois de chaque mois (un clic ouvre le mois correspondant) et un compteur de titres par joueur. Le mois en cours s'affiche mais n'est pas compté dans les titres.",
+      "Joueurs du mois — carte à partager : le bouton « 🖼️ Carte à partager » génère une image (logo et nom du club, joueur du mois, meilleur buteur / passeur / gardien) à télécharger ou à partager directement depuis un téléphone."
+    ]
+  },
+  {
+    version:'1.108', date:'18/10/2026',
+    changes:[
+      "Nouveau — Dashboard : bloc « 🏆 Joueurs du mois » avec sélecteur de mois (les filtres saison / compétition du Dashboard s'appliquent). Quatre palmarès (top 3) : Joueur du mois, Meilleur buteur, Meilleur passeur et Meilleur gardien. Le joueur du mois est désigné par un score = 2 × note moyenne + 3 par but + 2 par passe décisive + 3 par homme du match + 3 par clean sheet (gardien) − 1 par carton jaune − 3 par carton rouge ; un joueur sans note reçoit la note moyenne de l'équipe. Seuls les joueurs convoqués comptent, avec un minimum de 2 matchs joués dans le mois (1 si le mois compte moins de 3 matchs)."
+    ]
+  },
+  {
+    version:'1.107', date:'18/10/2026',
+    changes:[
+      "Buts encaissés : quand un joueur de champ passe dans le but, ses buts encaissés sont maintenant pris en compte. Le bouton ⛔ est disponible pour tous les joueurs (feuille de match, mode match live et récapitulatif), et l'infobulle « Par gardien » du Dashboard inclut ces joueurs (mention « joueur de champ »). Si certains buts encaissés du total ne sont rattachés à personne (score saisi sans feuille détaillée), une ligne « Non attribués » complète la liste pour que le total corresponde."
+    ]
+  },
+  {
+    version:'1.106', date:'18/10/2026',
+    changes:[
+      "Clé OpenRouteService : le bouton « Tester » ne reste plus bloqué sur « Test en cours… » quand le service ne répond pas. Les appels sont désormais interrompus au bout de 15 secondes et un message explicite indique que le service est injoignable ou surchargé."
+    ]
+  },
+  {
+    version:'1.105', date:'10/10/2026',
+    changes:[
+      "Clé OpenRouteService : le bouton « Tester » indique maintenant la vraie cause d'un échec — clé refusée / expirée (401-403), limite d'utilisation atteinte (429), service injoignable ou bloqué par le navigateur — au lieu d'un message unique « clé invalide ».",
+      "Distances routières : les appels sont espacés de 1,7 s (la limite gratuite d'ORS est de 40 requêtes par minute) et s'arrêtent dès que la clé est refusée ou que le quota est atteint. Le recalcul « itinéraire le plus court » n'est marqué comme terminé que s'il est allé au bout ; sinon il est retenté plus tard (au plus une fois toutes les 10 minutes)."
+    ]
+  },
+  {
+    version:'1.104', date:'10/10/2026',
+    changes:[
+      "Distances routières : le calcul (OpenRouteService) utilise désormais l'itinéraire le plus COURT en kilomètres, et non plus l'itinéraire recommandé (souvent le plus rapide, qui peut passer par l'autoroute et rallonger la distance). Les distances déjà calculées sont recalculées automatiquement une seule fois, à la prochaine ouverture de la page Stats. Si l'appel « le plus court » est indisponible, l'appli retombe sur l'ancien mode."
+    ]
+  },
+  {
+    version:'1.103', date:'10/10/2026',
+    changes:[
+      "Correctif responsive — barre d'onglets : le dernier onglet (🧺 Maillots) était coupé à droite et inatteignable à la souris, la barre défilante n'ayant pas de barre de défilement visible. Les onglets sont maintenant plus compacts sur les écrans moyens et larges, des flèches ‹ › apparaissent quand il y a une suite (ordinateur / tablette), la molette de la souris fait défiler la barre horizontalement, un fondu sur le bord signale la suite (y compris au doigt sur smartphone) et un espace est ajouté après le dernier onglet."
+    ]
+  },
+  {
+    version:'1.102', date:'10/10/2026',
+    changes:[
+      "Dashboard — « Villes les plus éloignées » : le classement passe de 5 à un Top 10. Il couvre tous les types de déplacement (plateaux, tournois, matchs amicaux, championnat/coupe) et indique à côté des km le type de match (ex. « Amical », « Plateau »), la mention « à venir » quand le déplacement n'a pas encore eu lieu, et, au survol, le nombre de déplacements et le cumul de km pour la ville."
+    ]
+  },
+  {
+    version:'1.101', date:'10/10/2026',
+    changes:[
+      "KPI « Distance parcourue » : la mention « ⚠️ X déplacement(s) sans ville » est maintenant cliquable. S'il n'y a qu'un match concerné, elle ouvre directement sa fiche pour renseigner la ville ; s'il y en a plusieurs, elle fait défiler la page jusqu'au tableau « Trajets » où chaque ligne a un bouton « ✏️ Compléter »."
+    ]
+  },
+  {
+    version:'1.100', date:'10/10/2026',
+    changes:[
+      "Stats — tableau « Trajets » : les déplacements à l'extérieur dont la distance n'est pas calculable (ville non renseignée, par exemple un match amical, un tournoi ou un match de championnat/coupe) ne sont plus masqués. Ils apparaissent avec « ⚠️ Ville à renseigner » et un bouton « ✏️ Compléter » qui ouvre le match ; dès que la ville est saisie, la distance est calculée et cumulée dans le KPI."
+    ]
+  },
+  {
+    version:'1.99', date:'10/10/2026',
+    changes:[
+      "Distances / KPI « Distance parcourue » : le total est désormais calculé au jour le jour — seuls les déplacements dont la date est passée (ou du jour) sont cumulés. Les déplacements déjà programmés s'affichent à part (« + X km programmés »). Le graphique « Km parcourus par mois » distingue les km effectués (teinte pleine) des km programmés (teinte claire) et le tableau des trajets marque les déplacements « à venir ».",
+      "Distances : le KPI cumule désormais tous les types de déplacement — plateaux, tournois et matchs amicaux (ainsi que championnat / coupe) — et affiche le détail par type quand plusieurs sont présents.",
+      "Ajout d'un match : nouveau champ « 📍 Ville du match » pour les matchs amicaux, de championnat et de coupe joués à l'extérieur (ou sur terrain neutre). Sans ville, un match amical ne pouvait pas être pris en compte dans les km ; le KPI signale désormais « ⚠️ X déplacement(s) sans ville » pour les matchs à compléter.",
+      "Distances : un match sur terrain neutre avec une ville renseignée (ex. tournoi chez un autre club) compte maintenant comme déplacement. Les déplacements à venir sont aussi géocodés à l'avance (ils restaient auparavant « en calcul » tant que le match n'était pas joué)."
+    ]
+  },
+  {
+    version:'1.98', date:'10/10/2026',
+    changes:[
+      "Onglet Feuille : dans la liste des matchs, les matchs à venir sont désormais repérés par l'icône 📅 et la mention « (à venir) » au lieu de l'icône 🟡 (réservée aux matchs nuls) et d'un faux score 0-0.",
+      "Calendrier / Ajout d'un match : lors de la création d'un Plateau (ou d'un Futsal), le champ « Lieu » (Domicile / Extérieur / Neutre) est maintenant affiché. Il était masqué avec le champ Adversaire, et les matchs étaient donc toujours enregistrés en Domicile. Le lieu choisi s'applique à tous les matchs créés pour le plateau."
+    ]
+  },
+  {
+    version:'1.97', date:'10/10/2026',
+    changes:[
+      "Stats & Dashboard : nouveau bouton « 📄 Export PDF ». Il génère une version A4 à fond clair de la page (KPI, classements, tableaux et graphiques) avec un en-tête rappelant le club, l'équipe, la saison et la compétition filtrées et la date d'édition. Les listes défilantes (notes, présences) sont dépliées en entier et les cartes ne sont pas coupées entre deux pages. Dans la boîte d'impression, choisir « Enregistrer au format PDF »."
+    ]
+  },
+  {
+    version:'1.96', date:'10/10/2026',
+    changes:[
+      "Onglet Feuille : nouveau bouton « 💾 Enregistrer » à côté de « Fin du match ». Il sauvegarde la feuille et force immédiatement la synchronisation avec Firebase (tous les appareils du club), sans attendre l'envoi automatique. Un message confirme le résultat (synchronisé, déjà à jour, en attente de réseau ou échec). Indisponible en mode visiteur."
+    ]
+  },
+  {
+    version:'1.95', date:'10/10/2026',
+    changes:[
+      "Dashboard — KPI « Notes moyennes /10 » : le classement porte désormais sur l'ensemble des joueurs notés (plus de limite à 8), dans une liste défilante. Chaque ligne affiche le nombre de matchs notés sur le nombre de matchs joués (ex. 14/17 m.).",
+      "Dashboard — KPI « Notes moyennes /10 » : nouvelle ligne « ⚠️ X matchs sans notes » qui déroule la liste des matchs joués dont aucune note n'a été saisie ; un clic sur un match ouvre directement sa feuille.",
+      "Stats — Classements buteurs et passeurs : nouvelle colonne « % » donnant la part des buts (ou des passes décisives) de l'équipe pour chaque joueur.",
+      "Dashboard — nouveau KPI « 📋 Fiabilité des présences » : taux de présence de chaque joueur (présences ÷ matchs joués), avec barre colorée (vert ≥ 80 %, jaune ≥ 50 %, rouge en dessous) et le détail x/y matchs. Respecte les filtres de saison et de compétition."
+    ]
+  },
   {
     version:'1.93', date:'30/09/2026',
     changes:[
@@ -4284,6 +4537,9 @@ function aggregerStatsJoueurs(msFiltres){
         const bcsAdv=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0);
         a.encaisses+=encFeuille+bcsAdv;
         if((encFeuille+bcsAdv)===0) a.cs++;
+      } else if(a.j.poste!=='G'&&estRetenu(f,jidN)){
+        // Joueur de champ passé dans le but : ses buts encaissés comptent aussi (pas de clean sheet pour lui).
+        a.encaisses+=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
       }
     });
     let mvpBestVal=0, decBestVal=0;
@@ -4302,6 +4558,7 @@ function aggregerStatsJoueurs(msFiltres){
   return agg;
 }
 function renderStatsPage(){
+  migrerPreferenceRoute();
   const filterSaison=document.getElementById('stats-saison-filter').value;
   const filterComp=document.getElementById('stats-comp-filter')?.value||'';
   const totalMatchsSaison=getTotalMatchsSaison(filterSaison,filterComp);
@@ -4327,15 +4584,31 @@ function renderStatsPage(){
   // contrairement aux autres stats (buts, résultats…) qui elles nécessitent que le match ait eu lieu.
   const clubVilleOk=!isNaN(parseFloat(localStorage.getItem('foot8_club_lat')));
   const msDistance=matchs.filter(m=>!m.annule&&(!filterSaison||m.saison===filterSaison)&&(!filterComp||m.comp===filterComp));
+  // Calcul « au jour le jour » : seuls les déplacements dont la date est passée (ou du jour) sont cumulés ;
+  // les déplacements déjà programmés sont indiqués à part. Plateaux, tournois, matchs amicaux, etc. sont cumulés.
+  const _now=new Date();
+  const aujourdhuiStr=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0');
   const msExterieur=getTripsExterieurs(msDistance);
-  const infosConnues=msExterieur.map(m=>getDistanceInfoMatch(m));
-  const distanceTotale=infosConnues.reduce((s,i)=>s+(i?i.km:0),0);
-  const nbEnAttente=infosConnues.filter(i=>i===null).length;
-  const nbVolOiseau=infosConnues.filter(i=>i&&i.methode==='vol_oiseau').length;
+  const tripsKPI=msExterieur.map(m=>({m,info:getDistanceInfoMatch(m)}));
+  const tripsFaits=tripsKPI.filter(t=>t.m.date<=aujourdhuiStr);
+  const tripsPrevus=tripsKPI.filter(t=>t.m.date>aujourdhuiStr);
+  const distanceTotale=tripsFaits.reduce((s,t)=>s+(t.info?t.info.km:0),0);
+  const kmPrevus=tripsPrevus.reduce((s,t)=>s+(t.info?t.info.km:0),0);
+  const matchsSansVille=tripsKPI.filter(t=>t.info===null&&!getVilleDuMatch(t.m)).map(t=>t.m);
+  const nbSansVille=matchsSansVille.length;
+  // Un seul match concerné : on ouvre directement sa fiche ; plusieurs : on descend vers le tableau « Trajets » (bouton « Compléter » sur chaque ligne).
+  const actionSansVille=nbSansVille===1?`openMatchModal(${matchsSansVille[0].id})`:`document.getElementById('stats-trajets').scrollIntoView({behavior:'smooth',block:'center'})`;
+  const nbEnAttente=tripsKPI.filter(t=>t.info===null&&getVilleDuMatch(t.m)).length;
+  const nbVolOiseau=tripsKPI.filter(t=>t.info&&t.info.methode==='vol_oiseau').length;
+  const typeTrajet=m=>isPlateauType(m.comp)?'Plateaux':isTournoiType(m.comp)?'Tournois':m.comp==='Amical'?'Amicaux':'Championnat/Coupe';
+  const kmParType={};
+  tripsFaits.forEach(t=>{ if(t.info&&t.info.km>0){ const k=typeTrajet(t.m); kmParType[k]=(kmParType[k]||0)+t.info.km; } });
+  const typesAvecKm=['Plateaux','Tournois','Amicaux','Championnat/Coupe'].filter(k=>kmParType[k]);
+  const detailTypes=typesAvecKm.map(k=>`${k} ${Math.round(kmParType[k])} km`).join(' · ');
   const suffixe=nbVolOiseau?`<span style="font-size:11px;color:var(--texte-muted)"> (dont ${nbVolOiseau} estimé${nbVolOiseau>1?'s':''} à vol d'oiseau)</span>`:'';
   const distanceHTML=!clubVilleOk
     ? `<div class="kpi-card"><div class="kpi-label">🚗 Distance parcourue (A/R)</div><div class="kpi-val" style="font-size:13px;color:var(--texte-muted)">Renseigner la ville du club</div></div>`
-    : `<div class="kpi-card"><div class="kpi-label">🚗 Distance parcourue (A/R)</div><div class="kpi-val">${Math.round(distanceTotale)} km${nbEnAttente?`<span style="font-size:11px;color:var(--texte-muted)"> (+${nbEnAttente} en calcul…)</span>`:suffixe}</div></div>`;
+    : `<div class="kpi-card" title="Cumul au jour le jour des déplacements déjà effectués (plateaux, tournois, matchs amicaux…). Les déplacements à venir sont indiqués à part."><div class="kpi-label">🚗 Distance parcourue (A/R)</div><div class="kpi-val">${Math.round(distanceTotale)} km${nbEnAttente?`<span style="font-size:11px;color:var(--texte-muted)"> (+${nbEnAttente} en calcul…)</span>`:suffixe}</div>${typesAvecKm.length>1?`<div style="font-size:11px;color:var(--texte-muted);margin-top:4px">${detailTypes}</div>`:''}${kmPrevus>0?`<div style="font-size:11px;color:#60a5fa;margin-top:2px">+ ${Math.round(kmPrevus)} km programmés</div>`:''}${nbSansVille?`<div onclick="${actionSansVille}" style="font-size:11px;color:#f5c518;margin-top:2px;cursor:pointer;text-decoration:underline;text-underline-offset:2px" title="${nbSansVille===1?'Ouvrir le match pour renseigner la ville':'Voir la liste dans le tableau Trajets'}">⚠️ ${nbSansVille} déplacement${nbSansVille>1?'s':''} sans ville ›</div>`:''}</div>`;
   if(nbEnAttente) ensureVillesGeocodees(()=>renderStatsPage());
 
   // KPI
@@ -4355,6 +4628,13 @@ function renderStatsPage(){
   const mvpTries=arr.filter(a=>a.mvp>0).sort((a,b)=>b.mvp-a.mvp);
   const decisifsTries=arr.filter(a=>a.decisif>0).sort((a,b)=>b.decisif-a.decisif);
   const gardiensTries=arr.filter(a=>a.encaisses>0).sort((a,b)=>b.encaisses-a.encaisses);
+  const encNonAttrib=Math.max(0,totalButsEncaisses-arr.reduce((s,a)=>s+a.encaisses,0));
+  const renderTipEnc=()=>{
+    if(!gardiensTries.length&&!encNonAttrib) return '';
+    const rows=gardiensTries.map((a,i)=>`<div>${i+1}. ${a.j.nom} — ${a.encaisses}⛔${a.j.poste!=='G'?' <span style="color:var(--texte-muted)">(joueur de champ)</span>':''}</div>`).join('');
+    const reste=encNonAttrib?`<div style="color:var(--texte-muted)">Non attribués — ${encNonAttrib}⛔</div>`:'';
+    return `<div class="kpi-tip"><div class="kpi-tip-title">Par gardien</div>${rows}${reste}</div>`;
+  };
   const minMatchsRatio=2; // seuil pour éviter qu'1 but en 1 match écrase le classement
   const ratioTries=arr.filter(a=>a.buts>0&&a.matchs>=minMatchsRatio).map(a=>({...a,ratio:a.buts/a.matchs})).sort((a,b)=>b.ratio-a.ratio||b.buts-a.buts);
   const top3Ratio=ratioTries.slice(0,3);
@@ -4375,7 +4655,7 @@ function renderStatsPage(){
   document.getElementById('stats-kpi').innerHTML=`
     <div class="kpi-card"><div class="kpi-label">Matchs joués</div><div class="kpi-val">${totalMatchsSaison}</div></div>
     <div class="kpi-card"><div class="kpi-label">Buts marqués</div><div class="kpi-val">⚽ ${totalButs}</div>${renderTip('Qui a marqué',buteursTries,'buts','⚽')}</div>
-    <div class="kpi-card"><div class="kpi-label">Buts encaissés</div><div class="kpi-val" style="color:var(--rouge)">⛔ ${totalButsEncaisses}</div>${renderTip('Par gardien',gardiensTries,'encaisses','⛔')}</div>
+    <div class="kpi-card"><div class="kpi-label">Buts encaissés</div><div class="kpi-val" style="color:var(--rouge)">⛔ ${totalButsEncaisses}</div>${renderTipEnc()}</div>
     <div class="kpi-card"><div class="kpi-label">Passes décisives</div><div class="kpi-val">🎯 ${totalPasses}</div>${renderTip('Qui a passé',passeursTries,'passes','🎯')}</div>
     <div class="kpi-card"><div class="kpi-label">Joueurs scoreurs</div><div class="kpi-val">${arr.filter(a=>a.buts>0).length}<span style="font-size:14px;color:var(--texte-muted)"> / ${joueurs.length}</span></div>${renderTip('Qui a marqué',buteursTries,'buts','⚽')}</div>
     <div class="kpi-card" title="Un plateau ou un tournoi ne compte que pour 1, même avec plusieurs adversaires affrontés"><div class="kpi-label">🏠 Dom. / Ext. 🚗</div><div class="kpi-val" style="font-size:18px">${evenementsParLieu.domicile} <span style="color:var(--texte-muted);font-size:12px">dom.</span> — ${evenementsParLieu.exterieur} <span style="color:var(--texte-muted);font-size:12px">ext.</span></div></div>
@@ -4401,7 +4681,8 @@ function renderStatsPage(){
       <td><strong>${a.buts}</strong><span class="bar-wrap"><span class="bar-fill" style="width:${(a.buts/maxB*100).toFixed(0)}%"></span></span></td>
       <td>${a.presences}</td>
       <td style="color:var(--texte-muted)">${a.presences?+(a.buts/a.presences).toFixed(2):0}</td>
-    </tr>`).join('') : '<tr><td colspan="5" class="no-data">Aucune stat.</td></tr>';
+      <td style="color:var(--texte-muted)" title="${a.buts} but(s) sur ${totalButs}">${totalButs?(a.buts/totalButs*100).toFixed(1).replace('.0','')+'%':'—'}</td>
+    </tr>`).join('') : '<tr><td colspan="6" class="no-data">Aucune stat.</td></tr>';
 
   // ── Classement passeurs ──
   const passeurs=[...arr].filter(a=>a.passes>0||a.presences>0).sort((a,b)=>b.passes-a.passes);
@@ -4412,7 +4693,8 @@ function renderStatsPage(){
       <td><strong>${a.j.nom}</strong></td>
       <td><strong>${a.passes}</strong><span class="bar-wrap"><span class="bar-fill" style="width:${(a.passes/maxP*100).toFixed(0)}%;background:var(--bleu)"></span></span></td>
       <td>${a.presences}</td>
-    </tr>`).join('') : '<tr><td colspan="4" class="no-data">—</td></tr>';
+      <td style="color:var(--texte-muted)" title="${a.passes} passe(s) sur ${totalPasses}">${totalPasses?(a.passes/totalPasses*100).toFixed(1).replace('.0','')+'%':'—'}</td>
+    </tr>`).join('') : '<tr><td colspan="5" class="no-data">—</td></tr>';
 
   // ── Discipline ──
   const disc=[...arr].filter(a=>a.jaunes>0||a.rouges>0).sort((a,b)=>b.rouges-a.rouges||b.jaunes-a.jaunes);
@@ -4468,13 +4750,25 @@ function renderStatsPage(){
   // avec le KPI et le graphique mensuel.
   const trajets=getTripsDetails(msDistance).map(t=>({...t,info:getDistanceInfoMatch(t.repr)}));
   const trajetsConnus=trajets.filter(t=>t.info&&t.info.km>0).sort((a,b)=>b.info.km-a.info.km);
-  document.getElementById('stats-trajets').innerHTML=trajetsConnus.length?trajetsConnus.map(t=>`
+  const trajetsHTML=trajetsConnus.length?trajetsConnus.map(t=>`
     <tr>
-      <td>${new Date(t.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</td>
+      <td>${new Date(t.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})}${t.date>aujourdhuiStr?' <span style="font-size:10px;color:var(--texte-muted)">à venir</span>':''}</td>
       <td>${t.ville||'—'}</td>
       <td style="color:var(--texte-muted);font-size:12px">${[...new Set(t.adversaires)].join(', ')}</td>
       <td><strong title="Aller : ${t.info.kmAller} km · Retour : ${t.info.kmAller} km">${t.info.km} km</strong>${t.info.methode==='vol_oiseau'?' <span style="font-size:10px;color:var(--texte-muted)" title="Estimation à vol d\'oiseau">✈️</span>':''}</td>
-    </tr>`).join('') : '<tr><td colspan="4" class="no-data">Aucun déplacement à l\'extérieur pour l\'instant.</td></tr>';
+    </tr>`).join('') : '';
+  // Déplacements à l'extérieur dont la distance n'est pas encore calculable (ville manquante ou en cours de calcul) :
+  // on les affiche quand même, pour ne pas « perdre » un match amical, un tournoi, etc.
+  const trajetsIncomplets=trajets.filter(t=>t.info===null);
+  const incompletsHTML=trajetsIncomplets.map(t=>{
+    const ville=getVilleDuMatch(t.repr);
+    const dateTxt=new Date(t.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})+(t.date>aujourdhuiStr?' <span style="font-size:10px;color:var(--texte-muted)">à venir</span>':'');
+    const advTxt=[...new Set(t.adversaires)].join(', ');
+    return ville
+      ? `<tr><td>${dateTxt}</td><td>${ville}</td><td style="color:var(--texte-muted);font-size:12px">${advTxt}</td><td style="color:var(--texte-muted)">calcul…</td></tr>`
+      : `<tr><td>${dateTxt}</td><td><span style="color:#f5c518">⚠️ Ville à renseigner</span></td><td style="color:var(--texte-muted);font-size:12px">${advTxt}</td><td><button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="openMatchModal(${t.repr.id})" title="Renseigner la ville de ce match pour calculer la distance">✏️ Compléter</button></td></tr>`;
+  }).join('');
+  document.getElementById('stats-trajets').innerHTML=(trajetsHTML+incompletsHTML)||'<tr><td colspan="4" class="no-data">Aucun déplacement à l\'extérieur pour l\'instant.</td></tr>';
 
   // ── Graphiques (section visuelle, sans doublons avec les tableaux ci-dessus) ──
   renderDashboard(filterSaison, filterComp);
@@ -4544,7 +4838,7 @@ function updateHistoriqueAdversaireFM(){
 // pas être compté dans les stats/bilan V-N-D, sous peine d'apparaître comme
 // un match nul 0-0 alors qu'il n'a simplement pas encore eu lieu.
 function matchEstAVenir(m){
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=ymdLocal();
   if(m.date>todayStr) return true;
   if(m.date===todayStr){
     const f=feuilles[m.id];
@@ -4586,7 +4880,7 @@ function renderCalendrier(){
   const afficherEnts=calendrierFiltre==='tous'||calendrierFiltre==='entrainements';
   const afficherAutres=calendrierFiltre==='tous'||calendrierFiltre==='evenements';
 
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=ymdLocal();
   const premierJour=new Date(annee,mois,1);
   // Lundi = 0 ... Dimanche = 6
   const decalage=(premierJour.getDay()+6)%7;
@@ -4888,7 +5182,7 @@ function openEvenementModal(id=null,presetDate=null){
   editingEvenementId=id;
   const ev=id?evenements.find(x=>x.id===id):null;
   document.getElementById('evenement-modal-title').textContent=id?"Modifier l'événement":"Ajouter un événement";
-  document.getElementById('evt-date').value=ev?ev.date:(presetDate||new Date().toISOString().slice(0,10));
+  document.getElementById('evt-date').value=ev?ev.date:(presetDate||ymdLocal());
   document.getElementById('evt-heure').value=ev?(ev.heure||'19:00'):'19:00';
   document.getElementById('evt-lieu').value=ev?(ev.lieu||''):'';
   document.getElementById('evt-notes').value=ev?(ev.notes||''):'';
@@ -4984,6 +5278,9 @@ function getJoursSelectionnes(){
   return [...document.querySelectorAll('.ent-jour-chip.active')].map(b=>+b.dataset.jour);
 }
 
+// Date locale AAAA-MM-JJ. Ne pas utiliser toISOString() : il convertit en UTC, ce qui ramène à la veille une date construite à minuit en heure locale (France : UTC+1/+2).
+function ymdLocal(d){ d=d||new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
 function calculerDatesRecurrence(){
   const dateDebut=document.getElementById('ent-date').value;
   if(!dateDebut) return [];
@@ -5006,7 +5303,7 @@ function calculerDatesRecurrence(){
     for(const j of jours.slice().sort((a,b)=>((a+6)%7)-((b+6)%7))){
       const d=new Date(baseSemaine); d.setDate(baseSemaine.getDate()+((j+6)%7));
       if(d<start) continue;
-      const dStr=d.toISOString().slice(0,10);
+      const dStr=ymdLocal(d);
       if(dateFin&&dStr>dateFin) return dates;
       dates.push(dStr);
       if(dates.length>=maxCount) break;
@@ -5032,7 +5329,7 @@ function openEntrainementModal(id=null,presetDate=null){
   editingEntrainementId=id;
   const e=id?entrainements.find(x=>x.id===id):null;
   document.getElementById('entrainement-modal-title').textContent=id?"Modifier la séance":"Ajouter une séance";
-  document.getElementById('ent-date').value=e?e.date:(presetDate||new Date().toISOString().slice(0,10));
+  document.getElementById('ent-date').value=e?e.date:(presetDate||ymdLocal());
   document.getElementById('ent-heure').value=e?(e.heure||'18:30'):'18:30';
   const typeSel=document.getElementById('ent-type');
   const typeAutre=document.getElementById('ent-type-autre');
@@ -5287,7 +5584,7 @@ function renderEntrainements(){
   const sorted=[...entrainements].sort((a,b)=>b.date.localeCompare(a.date));
 
   // KPI d'assiduité (les séances annulées ou à venir ne comptent pas)
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=ymdLocal();
   const entsJouees=entrainements.filter(e=>!e.annule&&e.date<=todayStr);
   const totalSeances=entsJouees.length;
   const tousJoueurs=[...joueurs].sort((a,b)=>a.numero-b.numero);
@@ -5413,8 +5710,9 @@ function openMatchModal(id=null,presetDate=null){
       document.getElementById('fm-plateau-equipes').value='';
     }
     document.getElementById('fm-tournoi-ville').value=isTournoiType(m.comp)?(m.tournoiVille||''):'';
+    document.getElementById('fm-match-ville').value=(!isPlateauType(m.comp)&&!isTournoiType(m.comp))?(m.matchVille||''):'';
   } else {
-    document.getElementById('fm-date').value=presetDate||new Date().toISOString().slice(0,10);
+    document.getElementById('fm-date').value=presetDate||ymdLocal();
     document.getElementById('fm-comp').value='Championnat';
     document.getElementById('fm-adversaire').value='';
     document.getElementById('fm-lieu').value='D';
@@ -5427,6 +5725,7 @@ function openMatchModal(id=null,presetDate=null){
     document.getElementById('fm-plateau-ville').value='';
     document.getElementById('fm-plateau-equipes').value='';
     document.getElementById('fm-tournoi-ville').value='';
+    document.getElementById('fm-match-ville').value='';
   }
   updateMatchTypeFields();
   updateHistoriqueAdversaireFM();
@@ -5572,18 +5871,22 @@ function renderMaillots(){
 
 function updateMatchTypeFields(){
   const comp=document.getElementById('fm-comp').value;
+  const mvGroup=document.getElementById('fm-match-ville-group');
+  if(mvGroup) mvGroup.style.display=(!isPlateauType(comp)&&!isTournoiType(comp)&&document.getElementById('fm-lieu').value!=='D')?'':'none';
   const plateauFields=document.getElementById('plateau-fields');
   const tournoiFields=document.getElementById('tournoi-fields');
   const adversaireRow=document.getElementById('fm-adversaire-row');
   const scoreRow=document.getElementById('fm-score-row');
   const equipesGroup=document.getElementById('fm-plateau-equipes-group');
   const villeLabel=plateauFields.querySelector('label');
+  const advGroup=document.getElementById('fm-adversaire-group');
 
   tournoiFields.style.display=isTournoiType(comp)?'block':'none';
 
   if(!isPlateauType(comp)){
     plateauFields.style.display='none';
     adversaireRow.style.display='';
+    advGroup.style.display='';
     scoreRow.style.display='';
     return;
   }
@@ -5593,10 +5896,13 @@ function updateMatchTypeFields(){
   const isNewGroupCreation=!editingMatchId;
   const isLegacyAggregate=!!(m && !m.plateauGroupId);
 
+  advGroup.style.display='';
   if(isNewGroupCreation){
     // Création : on ne demande qu'une fois la ville + la liste des équipes.
     // Un match distinct sera automatiquement créé pour chaque équipe.
-    adversaireRow.style.display='none';
+    // Seul le champ Adversaire est masqué : le Lieu (Domicile / Extérieur / Neutre) reste saisissable
+    adversaireRow.style.display='';
+    advGroup.style.display='none';
     scoreRow.style.display='none';
     equipesGroup.style.display='';
   } else if(isLegacyAggregate){
@@ -5688,6 +5994,7 @@ function saveMatch(){
   } else {
     data.tournoiVille='';
   }
+  data.matchVille=(!isPlateauType(comp)&&!isTournoiType(comp)&&lieu!=='D')?document.getElementById('fm-match-ville').value.trim():'';
 
   if(editingMatchId){ const i=matchs.findIndex(m=>m.id===editingMatchId); matchs[i]={...matchs[i],...data}; }
   else { data.id=Date.now(); matchs.push(data); }
@@ -5895,11 +6202,12 @@ function populateFeuilleSelect(){
   sel.innerHTML='<option value="">— Sélectionner un match —</option>';
   [...matchs].sort((a,b)=>b.date.localeCompare(a.date)).forEach(m=>{
     const r=resultat(m);
-    const cl=r==='V'?'✅':r==='N'?'🟡':'❌';
+    const aVenir=!m.annule&&matchEstAVenir(m);
+    const cl=aVenir?'📅':r==='V'?'✅':r==='N'?'🟡':'❌';
     const d=m.date?new Date(m.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'}):'—';
     const o=document.createElement('option');
     o.value=m.id;
-    o.textContent=`${cl} ${d} – ${m.adversaire} (${m.butsNous}-${m.butsEux})`;
+    o.textContent=`${cl} ${d} – ${m.adversaire} ${aVenir?'(à venir)':`(${m.butsNous}-${m.butsEux})`}`;
     sel.appendChild(o);
   });
   if(cur) sel.value=cur;
@@ -5919,7 +6227,7 @@ function goToConvocationDepuisAccueil(mid){
 }
 
 function getNextMatch(){
-  const today=new Date().toISOString().slice(0,10);
+  const today=ymdLocal();
   const upcoming=matchs.filter(m=>m.date>=today&&!m.annule).sort((a,b)=>a.date.localeCompare(b.date));
   return upcoming[0]||null;
 }
@@ -6053,7 +6361,12 @@ async function geocodeEtCacheVille(ville){
 }
 // Ville d'accueil d'un match (plateau ou tournoi à l'extérieur).
 function getVilleDuMatch(m){
-  return (isPlateauType(m.comp)?m.plateauVille:(isTournoiType(m.comp)?m.tournoiVille:null))||'';
+  return (isPlateauType(m.comp)?m.plateauVille:(isTournoiType(m.comp)?m.tournoiVille:m.matchVille))||'';
+}
+// Un match donne lieu à un déplacement s'il est à l'extérieur, ou sur terrain neutre avec une ville renseignée
+// (ex. tournoi organisé chez un autre club) : la distance est alors calculée depuis la ville du club.
+function matchADeplacement(m){
+  return m.lieu==='E' || (m.lieu==='N' && !!getVilleDuMatch(m));
 }
 // Clé de trajet : un plateau (plusieurs adversaires le même jour, même plateauGroupId)
 // = un seul trajet aller-retour. Pour les autres matchs à l'extérieur, on regroupe
@@ -6066,7 +6379,7 @@ function getTripKey(m){
 // pour ne compter la distance qu'une seule fois par plateau/jour au lieu d'une fois par adversaire affronté.
 function getTripsExterieurs(liste){
   const vus=new Map();
-  liste.filter(m=>m.lieu==='E').forEach(m=>{
+  liste.filter(matchADeplacement).forEach(m=>{
     const key=getTripKey(m);
     if(!vus.has(key)) vus.set(key,m);
   });
@@ -6076,7 +6389,7 @@ function getTripsExterieurs(liste){
 // lors de ce trajet (utile pour l'affichage détaillé, ex. tableau des trajets).
 function getTripsDetails(liste){
   const groupes=new Map();
-  liste.filter(m=>m.lieu==='E').forEach(m=>{
+  liste.filter(matchADeplacement).forEach(m=>{
     const key=getTripKey(m);
     if(!groupes.has(key)) groupes.set(key,{key,date:m.date,ville:getVilleDuMatch(m),repr:m,adversaires:[]});
     groupes.get(key).adversaires.push(m.adversaire);
@@ -6123,8 +6436,24 @@ async function testerOrsKey(){
   if(statusEl) statusEl.textContent='🔍 Test en cours…';
   // Petit test réel : Paris → Rouen
   const km=await fetchRouteKm(48.8566,2.3522,49.4431,1.0993);
-  if(statusEl) statusEl.textContent = km!==null ? `✅ Clé valide (test : ${Math.round(km)} km).` : "❌ Clé invalide ou service indisponible. Vérifie sur openrouteservice.org.";
+  if(statusEl) statusEl.textContent = km!==null ? `✅ Clé valide (test : ${Math.round(km)} km).` : orsErreurMessage();
   if(km!==null) recalculerDistancesRoutieres(true);
+}
+// Les distances routières déjà en cache ont été calculées avec l'itinéraire le plus rapide : on les recalcule une seule fois
+// avec l'itinéraire le plus court (les anciennes valeurs restent affichées pendant le recalcul).
+// Le recalcul n'est marqué « fait » que s'il est allé au bout (pas de quota dépassé / clé refusée) ; sinon il sera retenté plus tard.
+let _migrRouteEnCours=false;
+async function migrerPreferenceRoute(){
+  if(_migrRouteEnCours||!getOrsKey()) return;
+  if(localStorage.getItem('foot8_route_pref')==='shortest') return;
+  const dernier=parseInt(localStorage.getItem('foot8_route_migr_essai')||'0',10);
+  if(Date.now()-dernier<10*60*1000) return; // au plus un essai toutes les 10 min
+  _migrRouteEnCours=true;
+  localStorage.setItem('foot8_route_migr_essai',String(Date.now()));
+  try{
+    const complet=await recalculerDistancesRoutieres(true);
+    if(complet) localStorage.setItem('foot8_route_pref','shortest');
+  } finally { _migrRouteEnCours=false; }
 }
 function getVillesDistanceRouteCache(){ return JSON.parse(localStorage.getItem('foot8_villes_distance_route')||'{}'); }
 function setVilleDistanceRouteCache(key,km){
@@ -6146,19 +6475,62 @@ function updateDistanceStatusCount(){
     ? `📍 ${total} ville${total>1?'s':''} connue${total>1?'s':''} — ${routier} en distance routière, ${volOiseau} encore à vol d'oiseau ✈️`
     : `📍 ${total} ville${total>1?'s':''} connue${total>1?'s':''} — toutes en distance routière ✅`;
 }
+// Dernière erreur ORS ({code:'cle'|'quota'|'reseau'|'http', status}) — sert à afficher un message précis dans les réglages.
+let _orsLastError=null;
+// Si le navigateur bloque l'appel POST (réseau / CORS), on ne le retente pas et on passe directement au GET.
+let _orsPostBloque=false;
+function orsErreurMessage(){
+  const e=_orsLastError;
+  if(!e) return "❌ Réponse inattendue du service ORS. Réessaie plus tard.";
+  if(e.code==='cle') return `❌ Clé refusée par OpenRouteService (erreur ${e.status}) : clé invalide, expirée ou révoquée. Génère-en une nouvelle sur openrouteservice.org (Dashboard → Request a token) puis colle-la ici.`;
+  if(e.code==='quota') return "⚠️ Limite d'utilisation ORS atteinte (offre gratuite : 40 requêtes/minute, 2000/jour). La clé est valide : réessaie dans quelques minutes.";
+  if(e.code==='delai') return "⏳ OpenRouteService ne répond pas (délai de 15 s dépassé). Le service est probablement surchargé ou en panne : réessaie plus tard.";
+  if(e.code==='reseau') return "❌ Service ORS injoignable (connexion coupée, ou requête bloquée par le navigateur / un bloqueur de publicités).";
+  return `❌ Le service ORS a répondu avec l'erreur ${e.status}. Réessaie plus tard.`;
+}
+// fetch avec délai maximum : sans cela, un service ORS qui ne répond pas laisse « Test en cours… » affiché indéfiniment.
+function fetchAvecDelai(url,opts,ms){
+  const c=new AbortController(); const t=setTimeout(()=>c.abort(),ms||15000);
+  return fetch(url,Object.assign({},opts||{},{signal:c.signal})).finally(()=>clearTimeout(t));
+}
 async function fetchRouteKm(lat1,lng1,lat2,lng2){
   const key=getOrsKey();
+  _orsLastError=null;
   if(!key) return null;
+  // 401/403 (clé refusée) et 429 (quota) : inutile de retenter par un autre appel.
+  const fatale=st=>{
+    if(st===401||st===403){ _orsLastError={code:'cle',status:st}; return true; }
+    if(st===429){ _orsLastError={code:'quota',status:st}; return true; }
+    return false;
+  };
+  // 1) Itinéraire le plus COURT en distance (preference:'shortest') : option disponible uniquement sur l'appel POST d'ORS.
+  if(!_orsPostBloque){
+    try{
+      const resp=await fetchAvecDelai('https://api.openrouteservice.org/v2/directions/driving-car/geojson',{
+        method:'POST',
+        headers:{'Authorization':key,'Content-Type':'application/json','Accept':'application/geo+json'},
+        body:JSON.stringify({coordinates:[[lng1,lat1],[lng2,lat2]],preference:'shortest'})
+      });
+      if(resp.ok){
+        const data=await resp.json();
+        const meters=data?.features?.[0]?.properties?.summary?.distance;
+        if(typeof meters==='number') return meters/1000;
+      } else if(fatale(resp.status)) return null;
+      else _orsLastError={code:'http',status:resp.status};
+    }catch(err){ if(err&&err.name==='AbortError'){ _orsLastError={code:'delai'}; return null; } _orsPostBloque=true; }
+  }
+  // 2) Repli : appel GET (itinéraire « recommandé », souvent le plus rapide) si le POST est indisponible.
   try{
     const url=`https://api.openrouteservice.org/v2/directions/driving-car?api_key=${encodeURIComponent(key)}&start=${lng1},${lat1}&end=${lng2},${lat2}`;
-    const resp=await fetch(url);
-    if(!resp.ok) return null;
+    const resp=await fetchAvecDelai(url);
+    if(!resp.ok){ if(!fatale(resp.status)) _orsLastError={code:'http',status:resp.status}; return null; }
     const data=await resp.json();
     const meters=data?.features?.[0]?.properties?.summary?.distance;
     // Non arrondi ici : l'arrondi n'est fait qu'une fois, après doublement aller-retour,
     // dans getDistanceInfoMatch (évite l'écart cumulatif d'un double arrondi).
-    return typeof meters==='number' ? meters/1000 : null;
-  }catch(err){ return null; }
+    if(typeof meters==='number'){ _orsLastError=null; return meters/1000; }
+    return null;
+  }catch(err){ _orsLastError={code:(err&&err.name==='AbortError')?'delai':'reseau'}; return null; }
 }
 // Recalcule la distance routière pour les villes déjà géocodées.
 // force=false (par défaut) : ne calcule que les villes pas encore en cache (utilisé par le
@@ -6168,18 +6540,21 @@ async function fetchRouteKm(lat1,lng1,lat2,lng2){
 async function recalculerDistancesRoutieres(force){
   const clubLat=parseFloat(localStorage.getItem('foot8_club_lat'));
   const clubLng=parseFloat(localStorage.getItem('foot8_club_lng'));
-  if(isNaN(clubLat)||isNaN(clubLng)) return;
+  if(isNaN(clubLat)||isNaN(clubLng)) return false;
   const coords=getVillesCoordsCache();
   const routes=getVillesDistanceRouteCache();
+  let complet=true;
   for(const [key,c] of Object.entries(coords)){
     if(!force && routes[key]!==undefined) continue;
     const km=await fetchRouteKm(clubLat,clubLng,c.lat,c.lng);
     if(km!==null) setVilleDistanceRouteCache(key,km);
-    await new Promise(r=>setTimeout(r,1100));
+    else if(_orsLastError&&(_orsLastError.code==='quota'||_orsLastError.code==='cle')){ complet=false; break; }
+    await new Promise(r=>setTimeout(r,1700));
   }
   if(typeof renderStatsPage==='function' && document.getElementById('stats-kpi')) renderStatsPage();
   if(typeof loadFeuille==='function' && document.getElementById('feuille-match-select')?.value) loadFeuille();
   updateDistanceStatusCount();
+  return complet;
 }
 
 // Distance entre le club et la ville d'accueil de ce match.
@@ -6189,7 +6564,7 @@ async function recalculerDistancesRoutieres(force){
 // Priorité à la distance routière (ORS) si disponible, sinon vol d'oiseau (Haversine).
 // Les matchs à domicile comptent pour 0 km.
 function getDistanceInfoMatch(m){
-  if(m.lieu!=='E') return {km:0,kmAller:0,methode:'route'};
+  if(!matchADeplacement(m)) return {km:0,kmAller:0,methode:'route'};
   const clubLat=parseFloat(localStorage.getItem('foot8_club_lat'));
   const clubLng=parseFloat(localStorage.getItem('foot8_club_lng'));
   if(isNaN(clubLat)||isNaN(clubLng)) return null;
@@ -6214,7 +6589,7 @@ async function ensureVillesGeocodees(callback){
   if(_geocodageEnCours) return;
   const villes=new Set();
   matchs.forEach(m=>{
-    if(m.annule||matchEstAVenir(m)||m.lieu!=='E') return;
+    if(m.annule||!matchADeplacement(m)) return;
     const v=getVilleDuMatch(m);
     if(v) villes.add(v);
   });
@@ -6231,14 +6606,16 @@ async function ensureVillesGeocodees(callback){
   });
   if(!aFaire.length) return;
   _geocodageEnCours=true;
+  let stopOrs=false;
   for(const v of aFaire){
     const key=normVilleKey(v);
     let c=coordsCache[key];
     if(!c){ c=await geocodeEtCacheVille(v); await new Promise(r=>setTimeout(r,1100)); }
-    if(c && orsKey && routeCache[key]===undefined && !isNaN(clubLat) && !isNaN(clubLng)){
+    if(c && orsKey && !stopOrs && routeCache[key]===undefined && !isNaN(clubLat) && !isNaN(clubLng)){
       const km=await fetchRouteKm(clubLat,clubLng,c.lat,c.lng);
       if(km!==null) setVilleDistanceRouteCache(key,km);
-      await new Promise(r=>setTimeout(r,1100));
+      else if(_orsLastError&&(_orsLastError.code==='quota'||_orsLastError.code==='cle')) stopOrs=true;
+      await new Promise(r=>setTimeout(r,1700));
     }
   }
   _geocodageEnCours=false;
@@ -6460,14 +6837,14 @@ function loadFeuille(){
           </div>
           ${bcs>0?`<div class="ev-minutes">${evMins('bcs')}</div>`:''}
         </div>
-        ${isGK?`<div style="display:flex;flex-direction:column;gap:2px">
+        ${`<div style="display:flex;flex-direction:column;gap:2px">
           <div class="ev-group">
-            <button class="ev-plus" style="background:rgba(224,48,48,.2);color:#f87171;border-color:rgba(224,48,48,.4)" onclick="addEvent(${mid},${j.id},'encaisses')" title="Buts encaissés">⛔+</button>
+            <button class="ev-plus" style="background:rgba(224,48,48,.2);color:#f87171;border-color:rgba(224,48,48,.4)" onclick="addEvent(${mid},${j.id},'encaisses')" title="${isGK?'Buts encaissés':'Buts encaissés (joueur de champ dans le but)'}">⛔+</button>
             <span class="ev-count ${encaisses>0?'ev-count-active':''}">${encaisses}</span>
             <button class="ev-minus" onclick="addEvent(${mid},${j.id},'encaisses',true)" ${encaisses>0?'':'disabled'}>−</button>
           </div>
           ${encaisses>0?`<div class="ev-minutes">${evMins('encaisses')}</div>`:''}
-        </div>`:''}
+        </div>`}
       </div>
       ${present?`<div style="display:flex;flex-direction:column;gap:2px;${jouera?'':'opacity:.25;pointer-events:none'}">
         <div>${dots}<span style="font-size:11px;font-weight:700;color:${note?'var(--jaune)':'var(--texte-muted)'};margin-left:4px">${note||'—'}</span></div>
@@ -6769,7 +7146,7 @@ function renderFeuilleRecap(mid,f){
       <span>${p?`🎯×${p}`:''}</span>
       <span>${bcs?`<span style="color:#d8b4fe">BCS×${bcs}</span>`:''}</span>
       <span>${jn?`🟨×${jn}`:''}</span><span>${r?`🟥×${r}`:''}</span>
-      <span>${isGK&&enc?`⛔×${enc}`:''}</span>
+      <span>${enc?`⛔×${enc}`:''}</span>
       ${nBadge}
     </div>`;
   }).join('');
@@ -7476,6 +7853,9 @@ function recalcStatsFromFeuilles(){
         const enc=encFeuille>0?encFeuille:0;
         cumul[k].encaisses+=enc+bcsAdv;
         if((enc+bcsAdv)===0) cumul[k].cs++;
+      } else if(j){
+        // Joueur de champ passé dans le but : ses buts encaissés sont comptés (pas de clean sheet).
+        cumul[k].encaisses+=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
       }
     });
     // Homme du match (meilleure note) et joueur le plus décisif (buts+passes) de ce match précis
@@ -8583,6 +8963,238 @@ function onTouchEnd(e){
 // ══════════════════════════════════════════════
 //  DASHBOARD
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+//  JOUEURS DU MOIS (Dashboard)
+//  Palmarès calculé sur les matchs joués du mois choisi (et des filtres saison / compétition du Dashboard).
+//  Seuls les joueurs convoqués (présents et retenus) sont pris en compte.
+//  Égalité parfaite sur le critère principal => « ex æquo » (aucun départage caché).
+// ══════════════════════════════════════════════
+let _dashMoisSel='';
+let _dernierPalmaresMois=null;
+function setDashMois(v){ _dashMoisSel=v; renderDashboard(); }
+const _MOIS_MED=['🥇','🥈','🥉'];
+const _pl=(n,mot)=>`${n} ${mot}${n>1?'s':''}`;
+function _labMois(k,court){
+  const [y,mm]=k.split('-');
+  const t=new Date(+y,+mm-1,1).toLocaleDateString('fr-FR',{month:court?'short':'long',year:'numeric'});
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+const _fmtJdm=l=>`${l.noteMoy!==null?l.noteMoy.toFixed(1)+'/10 · ':''}${l.buts}⚽ ${l.passes}🎯${l.mvp?' · '+l.mvp+'×🏅':''}${l.gk&&l.cs?' · '+l.cs+' CS':''}`;
+const _fmtButeur=l=>`${_pl(l.buts,'but')} · ${_pl(l.jouees,'match')}`;
+const _fmtPasseur=l=>`${_pl(l.passes,'passe')} décisive${l.passes>1?'s':''} · ${_pl(l.jouees,'match')}`;
+const _fmtGardien=l=>`${_pl(l.cs,'clean sheet')} · ${(l.enc/l.jouees).toFixed(1)} enc./match`;
+// Classement avec ex æquo (rangs « compétition » : 1, 1, 3…) ; cmp renvoie 0 si égalité parfaite. On garde les rangs 1 à 3.
+function _classerExAequo(list,cmp){
+  const tri=list.slice().sort((a,b)=>cmp(a,b)||String(a.j.nom).localeCompare(String(b.j.nom),'fr'));
+  const groupes=[];
+  tri.forEach((l,i)=>{
+    if(i>0&&cmp(tri[i-1],l)===0) groupes[groupes.length-1].items.push(l);
+    else groupes.push({rang:i+1,items:[l]});
+  });
+  return groupes.filter(g=>g.rang<=3);
+}
+// Calcule les quatre palmarès pour une liste de matchs joués (ceux d'un mois).
+function _calcPalmaresMois(msM){
+  const agg=aggregerStatsJoueurs(msM);
+  const st={};
+  msM.forEach(m=>{
+    const f=feuilles[m.id]; if(!f||!f.presents) return;
+    f.presents.filter(jid=>estRetenu(f,jid)).forEach(jid=>{
+      const k=+jid, ks=String(jid);
+      const o=st[k]||(st[k]={jouees:0,sn:0,nn:0});
+      o.jouees++;
+      const n=+(f.notes?.[ks]||f.notes?.[k]||0);
+      if(n>0){ o.sn+=n; o.nn++; }
+    });
+  });
+  const totN=Object.values(st).reduce((s,o)=>s+o.nn,0), totS=Object.values(st).reduce((s,o)=>s+o.sn,0);
+  const moyEquipe=totN?totS/totN:6; // note neutre pour un joueur sans note (évite de le pénaliser)
+  const minM=msM.length>=3?2:1;     // minimum de matchs joués pour figurer au classement
+  const lignes=Object.values(agg).map(a=>{
+    const o=st[a.j.id]||{jouees:0,sn:0,nn:0};
+    const noteMoy=o.nn?o.sn/o.nn:null;
+    const gk=a.j.poste==='G';
+    const score=2*(noteMoy!==null?noteMoy:moyEquipe)+3*a.buts+2*a.passes+3*a.mvp+(gk?3*a.cs:0)-a.jaunes-3*a.rouges;
+    return {j:a.j,jouees:o.jouees,noteMoy,buts:a.buts,passes:a.passes,mvp:a.mvp,cs:a.cs,enc:a.encaisses,gk,score};
+  }).filter(l=>l.jouees>=minM);
+  return {
+    nbMatchs:msM.length, minM, saison:(msM[0]&&msM[0].saison)||'',
+    jdm:_classerExAequo(lignes,(a,b)=>Math.round(b.score*100)-Math.round(a.score*100)),
+    buteurs:_classerExAequo(lignes.filter(l=>l.buts>0),(a,b)=>b.buts-a.buts),
+    passeurs:_classerExAequo(lignes.filter(l=>l.passes>0),(a,b)=>b.passes-a.passes),
+    gardiens:_classerExAequo(lignes.filter(l=>l.gk),(a,b)=>(b.cs-a.cs)||(Math.round(a.enc/a.jouees*100)-Math.round(b.enc/b.jouees*100)))
+  };
+}
+function _panelPalmares(nom,emoji,groupes,fmt,accent){
+  let body;
+  if(!groupes.length) body='<div style="margin-top:8px;color:var(--texte-muted);font-size:12.5px">—</div>';
+  else body=groupes.map(g=>{
+    const med=_MOIS_MED[g.rang-1], ex=g.items.length>1;
+    if(g.rang===1&&!ex){
+      const l=g.items[0];
+      return `<div style="margin-top:8px"><div style="font-size:18px;font-weight:800">${med} ${l.j.nom}</div><div style="font-size:12px;color:var(--texte-muted)">${fmt(l)}</div></div>`;
+    }
+    const tag=ex?'<div style="font-size:10px;font-weight:700;color:var(--jaune);text-transform:uppercase;letter-spacing:.05em">ex æquo</div>':'';
+    const rows=g.items.map(l=>`<div style="${g.rang===1?'font-size:15px;font-weight:700;':'font-size:12.5px;'}margin-top:3px">${med} ${l.j.nom} <span style="font-weight:400;font-size:12px;color:var(--texte-muted)">— ${fmt(l)}</span></div>`).join('');
+    return `<div style="margin-top:${g.rang===1?8:6}px">${tag}${rows}</div>`;
+  }).join('');
+  return `<div style="background:var(--gris-card);border:1px solid ${accent||'var(--gris-border)'};border-radius:12px;padding:14px"><div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-muted)">${emoji} ${nom}</div>${body}</div>`;
+}
+// Frise « joueur du mois » de chaque mois + compteur de titres (le mois en cours n'est pas compté dans les titres).
+function _palmaresMoisHTML(ms,mois){
+  const n=new Date(), ymNow=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
+  const titres={}, chips=[];
+  mois.slice().sort().forEach(k=>{
+    const p=_calcPalmaresMois(ms.filter(m=>(m.date||'').slice(0,7)===k));
+    const g=p.jdm[0]; if(!g) return;
+    const enCours=(k===ymNow);
+    chips.push({k,noms:g.items.map(l=>l.j.nom),enCours});
+    if(!enCours) g.items.forEach(l=>{ const o=titres[l.j.id]||(titres[l.j.id]={nom:l.j.nom,n:0}); o.n++; });
+  });
+  if(!chips.length) return '';
+  const frise=chips.map(c=>`<div onclick="setDashMois('${c.k}')" title="Voir ce mois" style="cursor:pointer;flex:0 0 auto;min-width:120px;background:var(--gris-card);border:1px solid ${c.k===_dashMoisSel?'var(--jaune)':'var(--gris-border)'};border-radius:10px;padding:8px 12px"><div style="font-size:11px;color:var(--texte-muted)">${_labMois(c.k,true)}${c.enCours?' · en cours':''}</div><div style="font-size:13.5px;font-weight:700">🏆 ${c.noms.join(' · ')}</div></div>`).join('');
+  const classTitres=Object.values(titres).sort((a,b)=>b.n-a.n||a.nom.localeCompare(b.nom,'fr'));
+  const compteur=classTitres.length
+    ?classTitres.map(t=>`<span style="display:inline-block;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:999px;padding:4px 10px;font-size:12.5px;margin:0 6px 6px 0">🏆 ${t.nom} <strong>×${t.n}</strong></span>`).join('')
+    :'<span style="font-size:12.5px;color:var(--texte-muted)">Aucun mois terminé pour l\'instant.</span>';
+  return `<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--gris-border)">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-muted);margin-bottom:8px">📅 Joueur du mois — mois par mois</div>
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px">${frise}</div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-muted);margin:10px 0 8px">Titres de joueur du mois <span style="text-transform:none;font-weight:400">(mois en cours non compté)</span></div>
+    <div>${compteur}</div>
+  </div>`;
+}
+function renderJoueursDuMoisHTML(ms){
+  const titre='🏆 Joueurs du mois';
+  const mois=[...new Set(ms.map(m=>(m.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  if(!mois.length){ _dernierPalmaresMois=null; return `<div class="dash-card" style="grid-column:1/-1"><div class="dash-card-title">${titre}</div><div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Aucun match joué</div></div>`; }
+  if(!mois.includes(_dashMoisSel)) _dashMoisSel=mois[0];
+  const sel=_dashMoisSel;
+  const msM=ms.filter(m=>(m.date||'').slice(0,7)===sel);
+  const p=_calcPalmaresMois(msM);
+  _dernierPalmaresMois={mois:sel,label:_labMois(sel),p};
+  const panels=[
+    _panelPalmares('Joueur du mois','🏆',p.jdm,_fmtJdm,'var(--jaune)'),
+    _panelPalmares('Meilleur buteur','⚽',p.buteurs,_fmtButeur),
+    _panelPalmares('Meilleur passeur','🎯',p.passeurs,_fmtPasseur),
+    _panelPalmares('Meilleur gardien','🧤',p.gardiens,_fmtGardien)
+  ].join('');
+  const opts=mois.map(k=>`<option value="${k}" ${k===sel?'selected':''}>${_labMois(k)}</option>`).join('');
+  return `<div class="dash-card" style="grid-column:1/-1">
+    <div class="dash-card-title">${titre}
+      <select onchange="setDashMois(this.value)" style="margin-left:6px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:6px;color:var(--texte);padding:3px">${opts}</select>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--texte-muted)">${_pl(p.nbMatchs,'match')} joué${p.nbMatchs>1?'s':''} en ${_labMois(sel).toLowerCase()} · minimum ${_pl(p.minM,'match')} joué${p.minM>1?'s':''} pour figurer au classement</div>
+      <button type="button" class="btn btn-secondary" onclick="ouvrirCarteJoueurMois()" style="font-size:12px;padding:5px 10px">🖼️ Carte à partager</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">${panels}</div>
+    <div style="font-size:11px;color:var(--texte-muted);margin-top:12px">Joueur du mois : 2 × note moyenne + 3 par but + 2 par passe décisive + 3 par homme du match + 3 par clean sheet (gardien) − 1 par carton jaune − 3 par carton rouge. Un joueur sans note reçoit la note moyenne de l'équipe. Égalité parfaite : les joueurs sont affichés « ex æquo ».</div>
+    ${_palmaresMoisHTML(ms,mois)}
+  </div>`;
+}
+
+// ── Carte « Joueur du mois » à partager (image PNG générée dans le navigateur) ──
+function ouvrirCarteJoueurMois(){
+  const d=_dernierPalmaresMois;
+  if(!d||!d.p.jdm.length){ alert('Aucun joueur du mois à afficher pour ce mois.'); return; }
+  const logo=localStorage.getItem('foot8_club_logo');
+  if(logo){
+    const im=new Image();
+    im.onload=()=>_dessinerCarteJoueurMois(d,im);
+    im.onerror=()=>_dessinerCarteJoueurMois(d,null);
+    im.src=logo;
+  } else _dessinerCarteJoueurMois(d,null);
+}
+function _dessinerCarteJoueurMois(d,logoImg){
+  const W=1080,H=1350,FONT='"Segoe UI",Arial,sans-serif';
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d');
+  const club=(localStorage.getItem('foot8_club_name')||'').trim();
+  const nomComplet=l=>`${l.j.prenom?l.j.prenom+' ':''}${l.j.nom}`;
+  const fit=(txt,max,poids,largeur)=>{ let s=max; for(;s>26;s-=2){ x.font=`${poids} ${s}px ${FONT}`; if(x.measureText(txt).width<=largeur) break; } return s; };
+  const centre=(txt,px,y,couleur,poids)=>{ x.fillStyle=couleur; x.font=`${poids||'400'} ${px}px ${FONT}`; x.fillText(txt,W/2,y); };
+  // Fond
+  const g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,'#0b1220'); g.addColorStop(1,'#16314d');
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  x.fillStyle='rgba(245,197,24,.10)'; x.beginPath(); x.arc(W-120,160,300,0,Math.PI*2); x.fill();
+  x.strokeStyle='#f5c518'; x.lineWidth=6; x.strokeRect(30,30,W-60,H-60);
+  x.textAlign='center'; x.textBaseline='alphabetic';
+  let y=70;
+  if(logoImg){
+    x.save(); x.beginPath(); x.arc(W/2,y+70,70,0,Math.PI*2); x.closePath(); x.clip();
+    x.drawImage(logoImg,W/2-70,y,140,140); x.restore();
+    x.strokeStyle='#f5c518'; x.lineWidth=4; x.beginPath(); x.arc(W/2,y+70,70,0,Math.PI*2); x.stroke();
+    y+=170;
+  }
+  if(club){ const s=fit(club.toUpperCase(),44,'700',W-200); centre(club.toUpperCase(),s,y+40,'#ffffff','700'); y+=70; }
+  y+=30;
+  try{ x.letterSpacing='6px'; }catch(e){}
+  centre('JOUEUR DU MOIS',70,y+60,'#f5c518','800'); y+=90;
+  try{ x.letterSpacing='2px'; }catch(e){}
+  centre(d.label,40,y+50,'#c7cbe0','400'); y+=90;
+  try{ x.letterSpacing='0px'; }catch(e){}
+  const gagnants=d.p.jdm[0].items.slice(0,3), ex=d.p.jdm[0].items.length>1;
+  if(gagnants.length<3){ centre('🏆',150,y+150,'#ffffff','400'); y+=220; }
+  const tailleNom=gagnants.length===1?92:gagnants.length===2?72:56;
+  const tailleStat=gagnants.length===1?38:gagnants.length===2?32:28;
+  if(ex){ try{ x.letterSpacing='4px'; }catch(e){} centre('EX ÆQUO',30,y+30,'#f5c518','700'); try{ x.letterSpacing='0px'; }catch(e){} y+=50; }
+  gagnants.forEach(l=>{
+    const nom=nomComplet(l).toUpperCase();
+    const s=fit(nom,tailleNom,'800',W-140);
+    centre(nom,s,y+s,'#ffffff','800'); y+=s+10;
+    centre(_fmtJdm(l),tailleStat,y+tailleStat+4,'#c7cbe0','400'); y+=tailleStat+30;
+  });
+  // Autres distinctions
+  const yC=Math.max(y+40,1010);
+  x.strokeStyle='rgba(255,255,255,.18)'; x.lineWidth=2; x.beginPath(); x.moveTo(100,yC-30); x.lineTo(W-100,yC-30); x.stroke();
+  const cases=[
+    ['⚽','MEILLEUR BUTEUR',d.p.buteurs,_fmtButeur],
+    ['🎯','MEILLEUR PASSEUR',d.p.passeurs,_fmtPasseur],
+    ['🧤','MEILLEUR GARDIEN',d.p.gardiens,_fmtGardien]
+  ];
+  const cw=(W-160)/3;
+  cases.forEach((cs,i)=>{
+    const cx=80+cw*(i+0.5), grp=cs[2][0];
+    x.fillStyle='#ffffff'; x.font=`400 56px ${FONT}`; x.fillText(cs[0],cx,yC+60);
+    x.fillStyle='#9aa0c3'; x.font=`600 22px ${FONT}`; x.fillText(cs[1],cx,yC+105);
+    if(!grp){ x.fillStyle='#9aa0c3'; x.font=`400 30px ${FONT}`; x.fillText('—',cx,yC+155); return; }
+    const noms=grp.items.map(l=>l.j.nom).join(' & ');
+    const s=fit(noms,34,'700',cw-24);
+    x.fillStyle='#ffffff'; x.font=`700 ${s}px ${FONT}`; x.fillText(noms,cx,yC+155);
+    if(grp.items.length===1){ x.fillStyle='#c7cbe0'; x.font=`400 22px ${FONT}`; x.fillText(cs[3](grp.items[0]).split(' · ')[0],cx,yC+190); }
+  });
+  // Pied de carte
+  const pied=`${club?club+' · ':''}${d.p.saison?'Saison '+d.p.saison:''}`;
+  if(pied) centre(pied,28,H-70,'#9aa0c3','400');
+  _afficherCarteJoueurMois(c,`joueur-du-mois-${d.mois}.png`);
+}
+function _afficherCarteJoueurMois(canvas,nomFichier){
+  const url=canvas.toDataURL('image/png');
+  const old=document.getElementById('carte-jdm-overlay'); if(old) old.remove();
+  const ov=document.createElement('div');
+  ov.id='carte-jdm-overlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px';
+  ov.innerHTML=`<img src="${url}" alt="Carte joueur du mois" style="max-height:72vh;max-width:92vw;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.6)">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <a class="btn btn-primary" href="${url}" download="${nomFichier}" style="text-decoration:none">⬇️ Télécharger</a>
+      <button type="button" class="btn btn-secondary" id="carte-jdm-share" style="display:none">📤 Partager</button>
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('carte-jdm-overlay').remove()">Fermer</button>
+    </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+  if(navigator.share&&navigator.canShare){
+    canvas.toBlob(blob=>{
+      if(!blob) return;
+      const file=new File([blob],nomFichier,{type:'image/png'});
+      if(!navigator.canShare({files:[file]})) return;
+      const b=document.getElementById('carte-jdm-share'); if(!b) return;
+      b.style.display='';
+      b.onclick=()=>{ navigator.share({files:[file],title:'Joueur du mois'}).catch(()=>{}); };
+    },'image/png');
+  }
+}
+
 function renderDashboard(filterSaison, filterComp=''){
   const fs=filterSaison!==undefined?filterSaison:(document.getElementById('stats-saison-filter')?.value||'');
   const fc=filterComp!==undefined?filterComp:(document.getElementById('stats-comp-filter')?.value||'');
@@ -8673,14 +9285,38 @@ function renderDashboard(filterSaison, filterComp=''){
   });
   const arr=Object.values(agg);
 
-  const topNotes=[...arr].filter(a=>a.noteNb>0).sort((a,b)=>(b.noteSum/b.noteNb)-(a.noteSum/a.noteNb)).slice(0,8);
+  const topNotes=[...arr].filter(a=>a.noteNb>0).sort((a,b)=>(b.noteSum/b.noteNb)-(a.noteSum/a.noteNb));
   const notesHTML=topNotes.length
     ?topNotes.map(a=>{
       const moy=Math.round(a.noteSum/a.noteNb*10)/10;
       const col=moy>=7?'#4ade80':moy>=5?'#f5c518':'#f87171';
-      return `<div class="dash-bar-row"><div class="dash-bar-label">${a.j.nom}</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${moy*10}%;background:${col}"></div></div><div class="dash-bar-val" style="color:${col}">${moy}/10</div></div>`;
+      return `<div class="dash-bar-row"><div class="dash-bar-label">${a.j.nom}</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${moy*10}%;background:${col}"></div></div><div class="dash-bar-val" style="color:${col}">${moy}/10</div><div class="dash-bar-val" style="min-width:48px;font-size:11px;color:var(--texte-muted)" title="${a.noteNb} match(s) noté(s) sur ${ms.length} joué(s)">${a.noteNb}/${ms.length} m.</div></div>`;
     }).join('')
     :'<div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Aucune note saisie</div>';
+
+  const sansNotes=ms.filter(m=>{
+    const f=feuilles[m.id];
+    return !f||!f.notes||!Object.values(f.notes).some(n=>(+n||0)>0);
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const sansNotesHTML=sansNotes.length?`<details style="margin-top:10px;border-top:1px solid var(--gris-border);padding-top:8px">
+    <summary style="cursor:pointer;font-size:12px;color:#f5c518;user-select:none">⚠️ ${sansNotes.length} match${sansNotes.length>1?'s':''} sans notes — voir la liste</summary>
+    <div style="margin-top:8px;max-height:180px;overflow-y:auto;padding-right:6px">${sansNotes.map(m=>{
+      const d=m.date?new Date(m.date+'T00:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'';
+      const sc=(m.butsNous!==undefined&&m.butsNous!==''&&m.butsEux!==undefined&&m.butsEux!=='')?` (${m.butsNous}-${m.butsEux})`:'';
+      const hasF=!!(feuilles[m.id]&&feuilles[m.id].presents&&feuilles[m.id].presents.length);
+      return `<div onclick="ouvrirFeuille(${m.id})" title="Ouvrir la feuille de match" style="display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;padding:5px 6px;border-radius:6px;cursor:pointer;color:var(--texte)" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background='transparent'"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d} – ${m.adversaire}${sc}</span><span style="color:var(--texte-muted);white-space:nowrap">${hasF?'':'feuille vide · '}ouvrir ›</span></div>`;
+    }).join('')}</div>
+  </details>`:'';
+
+  const totalMs=ms.length;
+  const presArr=[...arr].filter(a=>a.presences>0).sort((a,b)=>b.presences-a.presences||a.j.nom.localeCompare(b.j.nom));
+  const presHTML=(totalMs&&presArr.length)
+    ?`<div style="max-height:300px;overflow-y:auto;padding-right:6px">${presArr.map(a=>{
+      const pct=Math.round(a.presences/totalMs*100);
+      const col=pct>=80?'#4ade80':pct>=50?'#f5c518':'#f87171';
+      return `<div class="dash-bar-row" title="${a.j.nom} ${a.j.prenom||''} : ${a.presences} présence(s) sur ${totalMs} match(s) joué(s)"><div class="dash-bar-label">${a.j.nom}</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${pct}%;background:${col}"></div></div><div class="dash-bar-val" style="color:${col}">${pct}%</div><div class="dash-bar-val" style="min-width:48px;font-size:11px;color:var(--texte-muted)">${a.presences}/${totalMs} m.</div></div>`;
+    }).join('')}</div>`
+    :'<div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Aucune présence saisie</div>';
 
   const radarJid=Number(localStorage.getItem('dash_radar_jid'))||joueurs[0]?.id||0;
   const ra=agg[radarJid];
@@ -8872,8 +9508,11 @@ function renderDashboard(filterSaison, filterComp=''){
   const tripsInfos=tripsMs.map(m=>({m,info:getDistanceInfoMatch(m)})).filter(t=>t.info&&t.info.km>0);
   const kmMoisHTML=(()=>{
     if(!tripsInfos.length) return '<div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Aucun déplacement</div>';
-    const parMois={};
-    tripsInfos.forEach(t=>{ const k=t.m.date.slice(0,7); parMois[k]=(parMois[k]||0)+t.info.km; });
+    const _n=new Date();
+    const auj=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0');
+    const parMois={}, parMoisFait={};
+    tripsInfos.forEach(t=>{ const k=t.m.date.slice(0,7); parMois[k]=(parMois[k]||0)+t.info.km; if(t.m.date<=auj) parMoisFait[k]=(parMoisFait[k]||0)+t.info.km; });
+    const unPrevu=Object.keys(parMois).some(k=>(parMoisFait[k]||0)<parMois[k]);
     const moisTries=Object.keys(parMois).sort();
     const PL=32,PR=12,PT=18,PB=30;
     const CW=Math.max(160,moisTries.length*44),CH=110;
@@ -8889,31 +9528,48 @@ function renderDashboard(filterSaison, filterComp=''){
       const y=yOf(val);
       const h=Math.max(1,(PT+CH)-y);
       const label=new Date(k+'-01').toLocaleDateString('fr-FR',{month:'short',year:'2-digit'});
-      return `<rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${h}" rx="3" fill="#fb923c" opacity=".85"><title>${label} — ${Math.round(val)} km (A/R) · dont ~${Math.round(val/2)} km aller + ~${Math.round(val/2)} km retour</title></rect>
+      const fait=parMoisFait[k]||0, prevu=val-fait;
+      const hF=prevu>0?Math.max(0,h*(fait/val)):0;
+      const overlay=(prevu>0&&fait>0)?`<rect x="${cx-barW/2}" y="${(PT+CH)-hF}" width="${barW}" height="${hF}" rx="3" fill="#fb923c" opacity=".9"/>`:'';
+      const tip=prevu>0?`${label} — ${Math.round(fait)} km effectués + ${Math.round(prevu)} km programmés (A/R)`:`${label} — ${Math.round(val)} km (A/R) · dont ~${Math.round(val/2)} km aller + ~${Math.round(val/2)} km retour`;
+      return `<rect x="${cx-barW/2}" y="${y}" width="${barW}" height="${h}" rx="3" fill="#fb923c" opacity="${prevu>0?'.3':'.85'}"><title>${tip}</title></rect>${overlay}
         <text x="${cx}" y="${y-4}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--texte)" font-family="Segoe UI,sans-serif">${Math.round(val)}</text>
         <text x="${cx}" y="${PT+CH+12}" text-anchor="middle" font-size="9" fill="var(--texte-muted)" font-family="Segoe UI,sans-serif">${label}</text>`;
     }).join('');
     return `<div style="overflow-x:auto;overflow-y:hidden">
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:${Math.min(W,520)}px;display:block">${bg}${bars}</svg>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:${Math.min(W,520)}px;display:block">${bg}${bars}</svg>${unPrevu?'<div style="font-size:10px;color:var(--texte-muted);margin-top:4px">Teinte pleine : effectués · teinte claire : programmés</div>':''}
     </div>`;
   })();
   const topVillesHTML=(()=>{
     if(!tripsInfos.length) return '<div style="color:var(--texte-muted);font-size:13px;text-align:center;padding:16px">Aucun déplacement</div>';
+    // Top 10 de toutes les villes de déplacement : plateaux, tournois, matchs amicaux, championnat/coupe…
+    const _n=new Date();
+    const auj=_n.getFullYear()+'-'+String(_n.getMonth()+1).padStart(2,'0')+'-'+String(_n.getDate()).padStart(2,'0');
+    const typeLbl=m=>isPlateauType(m.comp)?'Plateau':isTournoiType(m.comp)?'Tournoi':(m.comp||'Match');
     const parVille={};
     tripsInfos.forEach(t=>{
       const ville=getVilleDuMatch(t.m)||'—';
       const key=normVilleKey(ville);
-      if(!parVille[key]||t.info.km>parVille[key].km) parVille[key]={ville,km:t.info.km,kmAller:t.info.kmAller,methode:t.info.methode};
+      const p=parVille[key]||(parVille[key]={ville,km:0,kmAller:0,methode:t.info.methode,types:new Set(),nb:0,cumul:0,passe:false});
+      p.nb++; p.cumul+=t.info.km; p.types.add(typeLbl(t.m));
+      if(t.m.date<=auj) p.passe=true;
+      if(t.info.km>=p.km){ p.km=t.info.km; p.kmAller=t.info.kmAller; p.methode=t.info.methode; }
     });
-    const top=Object.values(parVille).sort((a,b)=>b.km-a.km).slice(0,5);
+    const top=Object.values(parVille).sort((a,b)=>b.km-a.km).slice(0,10);
     const maxKm=Math.max(1,...top.map(v=>v.km));
-    return top.map(v=>`<div class="dash-bar-row"><div class="dash-bar-label">${v.ville}</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(v.km/maxKm*100).toFixed(0)}%;background:#fb923c"></div></div><div class="dash-bar-val" title="Aller : ${v.kmAller} km · Retour : ${v.kmAller} km">${v.km} km${v.methode==='vol_oiseau'?' ✈️':''}</div></div>`).join('');
+    return top.map(v=>{
+      const types=[...v.types].join(', ');
+      const tip=`Aller : ${v.kmAller} km · Retour : ${v.kmAller} km`+(v.nb>1?` — ${v.nb} déplacements (cumul ${Math.round(v.cumul)} km)`:'');
+      return `<div class="dash-bar-row" title="${tip}"><div class="dash-bar-label" title="${v.ville}">${v.ville}</div><div class="dash-bar-track"><div class="dash-bar-fill" style="width:${(v.km/maxKm*100).toFixed(0)}%;background:#fb923c"></div></div><div class="dash-bar-val" style="white-space:nowrap">${v.km} km${v.methode==='vol_oiseau'?' ✈️':''} <span style="font-size:10px;color:var(--texte-muted)">${types}${v.passe?'':' · à venir'}</span></div></div>`;
+    }).join('');
   })();
 
+  const joueursMoisHTML=renderJoueursDuMoisHTML(ms);
   grid.innerHTML=`
+    ${joueursMoisHTML}
     <div class="dash-card"><div class="dash-card-title">🏆 Bilan V/N/D</div>${donutHTML}</div>
     <div class="dash-card"><div class="dash-card-title">📈 Courbe de forme</div>${formeHTML}</div>
-    <div class="dash-card"><div class="dash-card-title">⭐ Notes moyennes /10</div>${notesHTML}</div>
+    <div class="dash-card"><div class="dash-card-title">⭐ Notes moyennes /10</div><div style="max-height:300px;overflow-y:auto;padding-right:6px">${notesHTML}</div>${sansNotesHTML}</div>
     <div class="dash-card">
       <div class="dash-card-title">🕸️ Radar joueur
         <select onchange="localStorage.setItem('dash_radar_jid',this.value);renderStatsPage()" style="margin-left:6px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:6px;color:var(--texte);padding:3px 8px;font-size:12px;outline:none">${radarOpts}</select>
@@ -8926,7 +9582,8 @@ function renderDashboard(filterSaison, filterComp=''){
     <div class="dash-card"><div class="dash-card-title">🟠 Buts encaissés par match</div>${evoEncHTML}</div>
     <div class="dash-card"><div class="dash-card-title">⚖️ Différentiel de buts par match</div>${evoDiffHTML}</div>
     <div class="dash-card"><div class="dash-card-title">🚗 Km parcourus par mois (A/R)</div>${kmMoisHTML}</div>
-    <div class="dash-card"><div class="dash-card-title">🏁 Villes les plus éloignées (A/R)</div>${topVillesHTML}</div>`;
+    <div class="dash-card"><div class="dash-card-title">🏁 Villes les plus éloignées (A/R) — Top 10</div>${topVillesHTML}</div>
+    <div class="dash-card"><div class="dash-card-title">📋 Fiabilité des présences</div>${presHTML}</div>`;
 }
 
 
@@ -9158,7 +9815,7 @@ function exportJSON(){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   const club=(localStorage.getItem('foot8_club_name')||'foot8').replace(/[^a-zA-Z0-9]/g,'_').slice(0,20);
-  a.download=`${club}_complet_${new Date().toISOString().slice(0,10)}.json`;
+  a.download=`${club}_complet_${ymdLocal()}.json`;
   a.click();
   localStorage.setItem('foot8_last_backup_date', new Date().toISOString());
   showSaveIndicator();
@@ -9278,7 +9935,7 @@ function checkBackupReminder(){
   if(elapsedDays<days) return;
   // Ne pas re-spammer plusieurs fois le même jour
   const lastShown=localStorage.getItem('foot8_backup_reminder_last_shown');
-  const today=new Date().toISOString().slice(0,10);
+  const today=ymdLocal();
   if(lastShown===today) return;
   localStorage.setItem('foot8_backup_reminder_last_shown', today);
   const txt=document.getElementById('backup-reminder-text');
@@ -9395,7 +10052,7 @@ function saveCompoSnapshot(){
   const snap={
     id:Date.now(),
     label:label||'Composition',
-    date:new Date().toISOString().slice(0,10),
+    date:ymdLocal(),
     matchId:mid||null,
     schema:currentSchema,
     format:currentFormat,
@@ -9480,6 +10137,26 @@ const CHAMPS_JOUEUR={
 //  NOTIFICATIONS VISUELLES
 // ══════════════════════════════════════════════
 let notifTimer=null;
+// Enregistre l'état courant (feuille de match comprise) et force la synchro Firebase immédiate.
+async function enregistrerEtSynchroniser(){
+  const btn=document.getElementById('btn-save-sync');
+  if(btn&&btn.disabled) return;
+  const label=btn?btn.innerHTML:'';
+  if(btn){ btn.disabled=true; btn.style.opacity='.7'; btn.innerHTML='⏳ Envoi…'; }
+  try{
+    try{ save(); }catch(e){ console.error('save() a échoué', e); }
+    const status = (typeof window.syncNowFirebase==='function') ? await window.syncNowFirebase() : 'offline';
+    if(status==='ok')            showNotif('💾 Feuille enregistrée et synchronisée','green');
+    else if(status==='uptodate') showNotif('✅ Enregistré — déjà synchronisé avec Firebase','green');
+    else if(status==='pending')  showNotif('⏳ Enregistré en local — envoi dès que le réseau revient','yellow');
+    else if(status==='viewer')   showNotif('👁️ Mode lecture seule : rien à enregistrer','yellow');
+    else if(status==='error')    showNotif('⚠️ Enregistré en local, mais la synchro Firebase a échoué','red');
+    else                         showNotif('💾 Enregistré en local (non connecté à un club)','yellow');
+  } finally {
+    if(btn){ btn.disabled=false; btn.style.opacity=''; btn.innerHTML=label; }
+  }
+}
+
 function showNotif(msg, type='red'){
   // Supprimer popup existante
   document.getElementById('notif-popup')?.remove();
@@ -9688,7 +10365,7 @@ function getAlertsJoueurs(){
     const warnings=[];
     if(j.statut==='Blessé') warnings.push('Blessé');
     if(j.statut==='Suspendu') warnings.push('Suspendu');
-    if((j.statut==='Blessé'||j.statut==='Suspendu')&&j.retourPrevu&&j.retourPrevu<new Date().toISOString().slice(0,10)) warnings.push('Retour dépassé');
+    if((j.statut==='Blessé'||j.statut==='Suspendu')&&j.retourPrevu&&j.retourPrevu<ymdLocal()) warnings.push('Retour dépassé');
     return {j, manquants, warnings};
   }).filter(a=>a.manquants.length>0||a.warnings.length>0);
 }
@@ -9913,7 +10590,7 @@ function moRender(){
         ${evGrp('jaunes',jaunes,'🟨','mo-ev-yellow')}
         ${evGrp('rouges',rouges,'🟥','mo-ev-red')}
         ${evGrp('bcs',bcs,'BCS','mo-ev-bcs')}
-        ${isGK?evGrp('encaisses',enc,'⛔','mo-ev-enc'):''}
+        ${evGrp('encaisses',enc,'⛔','mo-ev-enc')}
       </div>
     </div>`;
   }).join('');
@@ -11051,7 +11728,7 @@ function confirmImportCycle(){
     seances.push({
       id: 'sc_'+Date.now()+'_'+i,
       nom: s.nom,
-      date: d.toISOString().slice(0,10),
+      date: ymdLocal(d),
       heure: '18:30',
       exercices,
       dureeTotale: total
@@ -12148,6 +12825,21 @@ if ('serviceWorker' in navigator) {
     pushTimer = setTimeout(pushSnapshot, 1200);
   }
 
+  // Synchro manuelle (bouton « Enregistrer » de la feuille de match).
+  // Retourne : 'ok' | 'uptodate' | 'pending' | 'viewer' | 'error' | 'offline'
+  window.syncNowFirebase = function(){
+    if(window.isViewer()) return Promise.resolve('viewer');
+    if(!currentClubId) return Promise.resolve('offline');
+    clearTimeout(pushTimer);
+    const dejaAJour = JSON.stringify(collectSnapshot()) === lastPushedJSON;
+    const attente = new Promise(res => setTimeout(() => res('pending'), 8000));
+    const envoi = pushSnapshot().then(() => {
+      if(lastPushedJSON === null) return 'error';
+      return dejaAJour ? 'uptodate' : 'ok';
+    });
+    return Promise.race([envoi, attente]);
+  };
+
   // On intercepte localStorage.setItem/removeItem pour déclencher la synchro
   // sans avoir à modifier les ~100 appels existants dans l'app.
   // Un compte "visiteur" (lecture seule) ne doit jamais pouvoir modifier ni
@@ -12241,7 +12933,7 @@ if ('serviceWorker' in navigator) {
     'clearActiveFeuille','confirmImport','confirmImportCycle','copyClubInviteCode',
     'deleteEduc','deleteEntrainement','deleteEquipeConfirm','deleteEvenement','deleteExerciceCustom',
     'deleteJoueur','deleteMatch','deletePlateauGroup','deleteRempl','deleteSeance','editMinute',
-    'executeReset','executeResetStats','finDeMatch','geocodeVille','invertPresences','moAddEvent',
+    'executeReset','executeResetStats','enregistrerEtSynchroniser','finDeMatch','geocodeVille','invertPresences','moAddEvent',
     'moFinMatch','moMiTemps','moveSeanceItem','openClubShareInfo','openImport','openResetStatsModal',
     'preRemplirCompoDepuisFeuille','removeClubLogo','removeFromSeanceBuilder','removeFromSpot',
     'removeRemplacant','repliquerTournoi','resetCompo','retirerJoueurPrete','saveCompoSnapshot',
