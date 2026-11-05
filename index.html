@@ -3810,8 +3810,40 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.115';
+const APP_VERSION='1.121';
 const CHANGELOG=[
+  {
+    version:'1.121', date:'06/11/2026',
+    changes:[
+      "Carte « Joueur du mois » à partager (assidus : les 5 plus assidus listés) : la partie basse (meilleur buteur, passeur, gardien, assidu) est refaite en 4 lignes pleine largeur ; les noms ne se chevauchent plus, même en cas d'ex æquo (retour à la ligne, « +N » si trop nombreux)."
+    ]
+  },
+  {
+    version:'1.119', date:'06/11/2026',
+    changes:[
+      "Gardiens — joueur de champ dans le but pris en compte : un clean sheet est désormais crédité à un gardien uniquement si l'ÉQUIPE n'a encaissé aucun but sur le match (avant, il suffisait que ses propres buts encaissés soient à zéro, même si un joueur de champ avait encaissé à sa place ou si des buts n'étaient attribués à personne). Règle appliquée partout : tableau Gardiens, Dashboard, joueurs du mois (meilleur gardien), bilan joueur et cumuls par saison. Les clean sheets de certains gardiens peuvent donc baisser par rapport aux versions précédentes.",
+      "Gardiens — tableau Gardiens des Stats : les joueurs de champ qui ont encaissé en jouant dans le but y figurent (mention « joueur de champ », buts encaissés et nombre de matchs concernés), une ligne « Non attribués » signale les buts encaissés rattachés à personne (score saisi sans détail) et une ligne « Équipe » donne le total des buts encaissés sur les matchs avec feuille."
+    ]
+  },
+  {
+    version:'1.118', date:'06/11/2026',
+    changes:[
+      "Stats — tuile « 🩹 Indisponibles » : comme les Top 3, elle affiche maintenant directement le nom des joueurs blessés ou suspendus, un par ligne, avec la durée d'indisponibilité en jours (⚠️ si le retour prévu est dépassé). Les plus longues indisponibilités sont en tête, 5 noms au maximum (« + N autres » au-delà), et l'infobulle garde le détail complet avec les dates de retour."
+    ]
+  },
+  {
+    version:'1.117', date:'06/11/2026',
+    changes:[
+      "Nouveau — Joueurs du mois : palmarès « 📅 Assidu du mois ». Taux de présence aux séances d'entraînement du mois, sans compter les séances manquées pendant une blessure ou une suspension (au moins 2 séances disponibles, ex æquo gérés). Le nombre de séances du mois est rappelé, les titres d'assidu sont comptés sous la frise, et la distinction apparaît dans le bilan joueur et sur la carte à partager.",
+      "Contrôle des données — nouvelle rubrique « Blessures » : débuts de blessure ou de suspension encore estimés à corriger, retours prévus dépassés, blessures sans motif ou sans date de retour depuis plus de 14 jours, joueurs convoqués à un match alors qu'ils étaient déclarés blessés ou suspendus, présences à l'entraînement pendant une blessure (information), périodes aux dates incohérentes ou qui se chevauchent. Les anomalies de période ouvrent l'historique des indisponibilités."
+    ]
+  },
+  {
+    version:'1.116', date:'05/11/2026',
+    changes:[
+      "Indisponibilités — matchs manqués plus fiables : un match n'est désormais compté « manqué » que s'il a une feuille de match où le joueur ne figure pas parmi les convoqués. Les matchs sans feuille (impossible de savoir qui y a joué) ne gonflent plus les chiffres : ils sont indiqués à part (« +N sans feuille »), et le pourcentage de matchs manqués est calculé sur les matchs avec feuille. Appliqué à la carte du Dashboard (liste « en ce moment », tuile et bilan par joueur) et au bilan joueur."
+    ]
+  },
   {
     version:'1.115', date:'05/11/2026',
     changes:[
@@ -4561,11 +4593,12 @@ function renderDerniersTempsForts(filterSaison){
 // calculées directement depuis les feuilles des matchs fournis. Contrairement à la table `stats`
 // (qui ne conserve que des totaux par saison, toutes compétitions confondues), ceci permet un
 // filtrage fiable par compétition (Championnat, Amical, Tournoi, Plateau…) sur la page Dashboard.
+// Clean sheet d'un gardien = aucun but encaissé par l'ÉQUIPE sur le match (y compris par un joueur de champ passé dans le but).
 // Un joueur présent mais marqué "non retenu" (non convoqué) n'est jamais crédité d'un clean sheet,
 // d'un homme du match ni d'un titre de plus décisif pour ce match.
 function aggregerStatsJoueurs(msFiltres){
   const agg={};
-  joueurs.forEach(j=>{ agg[j.id]={j,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,mvp:0,decisif:0,presences:0}; });
+  joueurs.forEach(j=>{ agg[j.id]={j,matchs:0,buts:0,passes:0,jaunes:0,rouges:0,cs:0,encaisses:0,matchsEnBut:0,mvp:0,decisif:0,presences:0}; });
   msFiltres.forEach(m=>{
     const f=feuilles[m.id]; if(!f||!f.presents||!f.presents.length)return;
     f.presents.forEach(jid=>{
@@ -4582,10 +4615,13 @@ function aggregerStatsJoueurs(msFiltres){
         const encFeuille=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
         const bcsAdv=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0);
         a.encaisses+=encFeuille+bcsAdv;
-        if((encFeuille+bcsAdv)===0) a.cs++;
+        // Clean sheet = l'ÉQUIPE n'a encaissé aucun but sur le match (un joueur de champ passé dans le but compte aussi).
+        if(scoreEffectif(m).butsEux===0) a.cs++;
       } else if(a.j.poste!=='G'&&estRetenu(f,jidN)){
         // Joueur de champ passé dans le but : ses buts encaissés comptent aussi (pas de clean sheet pour lui).
-        a.encaisses+=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
+        const encC=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
+        a.encaisses+=encC;
+        if(encC>0) a.matchsEnBut++;
       }
     });
     let mvpBestVal=0, decBestVal=0;
@@ -4755,18 +4791,38 @@ function renderStatsPage(){
     </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--texte-muted)">Aucun carton 🎉</td></tr>';
 
   // ── Gardiens ──
+  // Les joueurs de champ passés dans le but apparaissent aussi (buts encaissés), et une ligne « Non attribués » rend visibles les buts encaissés rattachés à personne.
   const gard=joueurs.filter(j=>j.poste==='G').map(j=>({j,a:agg[j.id]}));
-  document.getElementById('stats-gardiens').innerHTML=gard.length?gard.map((g,i)=>{
+  const enBut=joueurs.filter(j=>j.poste!=='G'&&agg[j.id]&&agg[j.id].encaisses>0).map(j=>({j,a:agg[j.id]})).sort((x,y)=>y.a.encaisses-x.a.encaisses);
+  const mAvecFeuille=msFiltres.filter(m=>{ const f=feuilles[m.id]; return f&&f.presents&&f.presents.length; });
+  const totEq=mAvecFeuille.reduce((s,m)=>s+scoreEffectif(m).butsEux,0);
+  const sumAttrib=gard.reduce((s,g)=>s+g.a.encaisses,0)+enBut.reduce((s,g)=>s+g.a.encaisses,0);
+  const nonAttr=Math.max(0,totEq-sumAttrib);
+  const mu='style="color:var(--texte-muted)"';
+  const rowsG=gard.map((g,i)=>{
     const pct=g.a.presences?Math.round(g.a.cs/g.a.presences*100):0;
     return `
     <tr>
       <td>${i+1}</td>
       <td><strong>${g.j.nom}</strong></td>
       <td style="color:#4ade80"><strong>${g.a.cs}</strong></td>
-      <td style="color:var(--texte-muted)">${g.a.presences?pct+'%':'—'}</td>
+      <td ${mu}>${g.a.presences?pct+'%':'—'}</td>
       <td style="color:var(--rouge)">${g.a.encaisses}</td>
       <td>${g.a.presences}</td>
-    </tr>`;}).join('') : '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--texte-muted)">Aucun gardien enregistré</td></tr>';
+    </tr>`;});
+  const rowsF=enBut.map(g=>`
+    <tr>
+      <td ${mu}>·</td>
+      <td><strong>${g.j.nom}</strong> <span style="color:var(--texte-muted);font-size:11px">(joueur de champ)</span></td>
+      <td ${mu}>—</td><td ${mu}>—</td>
+      <td style="color:var(--rouge)">${g.a.encaisses}</td>
+      <td title="Matchs où il a encaissé en tant que gardien">${g.a.matchsEnBut}</td>
+    </tr>`);
+  const rowNonAttr=nonAttr>0?`
+    <tr ${mu}><td>·</td><td>Non attribués <span style="font-size:11px">(score saisi sans détail)</span></td><td>—</td><td>—</td><td style="color:var(--rouge)">${nonAttr}</td><td>—</td></tr>`:'';
+  const rowTotal=(gard.length||enBut.length||nonAttr>0)&&mAvecFeuille.length?`
+    <tr style="border-top:2px solid var(--gris-border)"><td></td><td><strong>Équipe</strong></td><td ${mu}>—</td><td ${mu}>—</td><td style="color:var(--rouge)"><strong>${totEq}</strong></td><td>${mAvecFeuille.length}</td></tr>`:'';
+  document.getElementById('stats-gardiens').innerHTML=(gard.length||enBut.length)?rowsG.join('')+rowsF.join('')+rowNonAttr+rowTotal:'<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--texte-muted)">Aucun gardien enregistré</td></tr>';
 
   // ── Homme du match (cumul) ──
   const mvps=[...arr].filter(a=>a.mvp>0||a.presences>0).sort((a,b)=>b.mvp-a.mvp||b.presences-a.presences);
@@ -7899,7 +7955,7 @@ function recalcStatsFromFeuilles(){
         const bcsAdv=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0);
         const enc=encFeuille>0?encFeuille:0;
         cumul[k].encaisses+=enc+bcsAdv;
-        if((enc+bcsAdv)===0) cumul[k].cs++;
+        if(scoreEffectif(m).butsEux===0) cumul[k].cs++; // clean sheet = aucun but encaissé par l'équipe
       } else if(j){
         // Joueur de champ passé dans le but : ses buts encaissés sont comptés (pas de clean sheet).
         cumul[k].encaisses+=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
@@ -9036,6 +9092,7 @@ const _fmtJdm=l=>`${l.noteMoy!==null?l.noteMoy.toFixed(1)+'/10 · ':''}${l.buts}
 const _fmtButeur=l=>`${_pl(l.buts,'but')} · ${_pl(l.jouees,'match')}`;
 const _fmtPasseur=l=>`${_pl(l.passes,'passe')} décisive${l.passes>1?'s':''} · ${_pl(l.jouees,'match')}`;
 const _fmtGardien=l=>`${_pl(l.cs,'clean sheet')} · ${(l.enc/l.jouees).toFixed(1)} enc./match`;
+const _fmtAssidu=l=>`${l.pres}/${l.dispo} séance${l.dispo>1?'s':''} · ${l.taux} %`;
 // Classement avec ex æquo (rangs « compétition » : 1, 1, 3…) ; cmp renvoie 0 si égalité parfaite. On garde les rangs 1 à 3.
 function _classerExAequo(list,cmp){
   const tri=list.slice().sort((a,b)=>cmp(a,b)||String(a.j.nom).localeCompare(String(b.j.nom),'fr'));
@@ -9045,6 +9102,22 @@ function _classerExAequo(list,cmp){
     else groupes.push({rang:i+1,items:[l]});
   });
   return groupes.filter(g=>g.rang<=3);
+}
+// Assiduité aux entraînements d'un mois (AAAA-MM) : présences / séances disponibles.
+// Les séances manquées pendant une blessure ou une suspension ne pénalisent pas le joueur. Il faut au moins 2 séances disponibles (1 si le mois n'en compte qu'une).
+function _calcAssiduiteMois(moisKey){
+  const today=ymdLocal();
+  const ents=entrainements.filter(e=>!e.annule&&e.date<=today&&(e.date||'').slice(0,7)===moisKey);
+  if(!ents.length) return {nb:0,lignes:[]};
+  const lignes=joueurs.map(j=>{
+    const eps=(j.indispos||[]).filter(x=>x&&x.debut);
+    const aPres=e=>(e.presents||[]).some(p=>+p===+j.id);
+    const pres=ents.filter(aPres).length;
+    const manqIndispo=ents.filter(e=>!aPres(e)&&eps.some(x=>e.date>=x.debut&&e.date<=(x.fin||today))).length;
+    const dispo=ents.length-manqIndispo;
+    return {j,pres,dispo,taux:dispo>0?Math.round(100*pres/dispo):0};
+  }).filter(l=>l.pres>0&&l.dispo>=Math.min(2,ents.length));
+  return {nb:ents.length,lignes};
 }
 // Calcule les quatre palmarès pour une liste de matchs joués (ceux d'un mois).
 function _calcPalmaresMois(msM){
@@ -9072,6 +9145,7 @@ function _calcPalmaresMois(msM){
   }).filter(l=>l.jouees>=minM);
   return {
     nbMatchs:msM.length, minM, saison:(msM[0]&&msM[0].saison)||'',
+    ...(()=>{ const as=_calcAssiduiteMois(((msM[0]&&msM[0].date)||'').slice(0,7)); return {nbSeances:as.nb,assidus:_classerExAequo(as.lignes,(a,b)=>(b.taux-a.taux)||(b.pres-a.pres))}; })(),
     jdm:_classerExAequo(lignes,(a,b)=>Math.round(b.score*100)-Math.round(a.score*100)),
     buteurs:_classerExAequo(lignes.filter(l=>l.buts>0),(a,b)=>b.buts-a.buts),
     passeurs:_classerExAequo(lignes.filter(l=>l.passes>0),(a,b)=>b.passes-a.passes),
@@ -9096,13 +9170,14 @@ function _panelPalmares(nom,emoji,groupes,fmt,accent){
 // Frise « joueur du mois » de chaque mois + compteur de titres (le mois en cours n'est pas compté dans les titres).
 function _palmaresMoisHTML(ms,mois){
   const n=new Date(), ymNow=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');
-  const titres={}, chips=[];
+  const titres={}, titresAss={}, chips=[];
   mois.slice().sort().forEach(k=>{
     const p=_calcPalmaresMois(ms.filter(m=>(m.date||'').slice(0,7)===k));
     const g=p.jdm[0]; if(!g) return;
     const enCours=(k===ymNow);
     chips.push({k,noms:g.items.map(l=>l.j.nom),enCours});
     if(!enCours) g.items.forEach(l=>{ const o=titres[l.j.id]||(titres[l.j.id]={nom:l.j.nom,n:0}); o.n++; });
+    if(!enCours&&p.assidus[0]) p.assidus[0].items.forEach(l=>{ const o=titresAss[l.j.id]||(titresAss[l.j.id]={nom:l.j.nom,n:0}); o.n++; });
   });
   if(!chips.length) return '';
   const frise=chips.map(c=>`<div onclick="setDashMois('${c.k}')" title="Voir ce mois" style="cursor:pointer;flex:0 0 auto;min-width:120px;background:var(--gris-card);border:1px solid ${c.k===_dashMoisSel?'var(--jaune)':'var(--gris-border)'};border-radius:10px;padding:8px 12px"><div style="font-size:11px;color:var(--texte-muted)">${_labMois(c.k,true)}${c.enCours?' · en cours':''}</div><div style="font-size:13.5px;font-weight:700">🏆 ${c.noms.join(' · ')}</div></div>`).join('');
@@ -9115,6 +9190,7 @@ function _palmaresMoisHTML(ms,mois){
     <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px">${frise}</div>
     <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-muted);margin:10px 0 8px">Titres de joueur du mois <span style="text-transform:none;font-weight:400">(mois en cours non compté)</span></div>
     <div>${compteur}</div>
+    ${(()=>{ const c=Object.values(titresAss).sort((a,b)=>b.n-a.n||a.nom.localeCompare(b.nom,'fr')); return c.length?`<div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-muted);margin:10px 0 8px">Titres d'assidu du mois</div><div>${c.map(t=>`<span style="display:inline-block;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:999px;padding:4px 10px;font-size:12.5px;margin:0 6px 6px 0">📅 ${t.nom} <strong>×${t.n}</strong></span>`).join('')}</div>`:''; })()}
   </div>`;
 }
 function renderJoueursDuMoisHTML(ms){
@@ -9130,7 +9206,8 @@ function renderJoueursDuMoisHTML(ms){
     _panelPalmares('Joueur du mois','🏆',p.jdm,_fmtJdm,'var(--jaune)'),
     _panelPalmares('Meilleur buteur','⚽',p.buteurs,_fmtButeur),
     _panelPalmares('Meilleur passeur','🎯',p.passeurs,_fmtPasseur),
-    _panelPalmares('Meilleur gardien','🧤',p.gardiens,_fmtGardien)
+    _panelPalmares('Meilleur gardien','🧤',p.gardiens,_fmtGardien),
+    _panelPalmares('Assidu du mois','📅',p.assidus,_fmtAssidu)
   ].join('');
   const opts=mois.map(k=>`<option value="${k}" ${k===sel?'selected':''}>${_labMois(k)}</option>`).join('');
   return `<div class="dash-card" style="grid-column:1/-1">
@@ -9138,11 +9215,11 @@ function renderJoueursDuMoisHTML(ms){
       <select onchange="setDashMois(this.value)" style="margin-left:6px;background:var(--gris-card);border:1px solid var(--gris-border);border-radius:6px;color:var(--texte);padding:3px">${opts}</select>
     </div>
     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px">
-      <div style="font-size:12px;color:var(--texte-muted)">${_pl(p.nbMatchs,'match')} joué${p.nbMatchs>1?'s':''} en ${_labMois(sel).toLowerCase()} · minimum ${_pl(p.minM,'match')} joué${p.minM>1?'s':''} pour figurer au classement</div>
+      <div style="font-size:12px;color:var(--texte-muted)">${_pl(p.nbMatchs,'match')} joué${p.nbMatchs>1?'s':''} en ${_labMois(sel).toLowerCase()} · minimum ${_pl(p.minM,'match')} joué${p.minM>1?'s':''} pour figurer au classement · ${_pl(p.nbSeances||0,'séance')} d'entraînement</div>
       <button type="button" class="btn btn-secondary" onclick="ouvrirCarteJoueurMois()" style="font-size:12px;padding:5px 10px">🖼️ Carte à partager</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px">${panels}</div>
-    <div style="font-size:11px;color:var(--texte-muted);margin-top:12px">Joueur du mois : 2 × note moyenne + 3 par but + 2 par passe décisive + 3 par homme du match + 3 par clean sheet (gardien) − 1 par carton jaune − 3 par carton rouge. Un joueur sans note reçoit la note moyenne de l'équipe. Égalité parfaite : les joueurs sont affichés « ex æquo ».</div>
+    <div style="font-size:11px;color:var(--texte-muted);margin-top:12px">Joueur du mois : 2 × note moyenne + 3 par but + 2 par passe décisive + 3 par homme du match + 3 par clean sheet (gardien) − 1 par carton jaune − 3 par carton rouge. Un joueur sans note reçoit la note moyenne de l'équipe. Assidu du mois : taux de présence aux séances d'entraînement du mois, sans compter les séances manquées pendant une blessure ou une suspension (au moins 2 séances disponibles). Égalité parfaite : les joueurs sont affichés « ex æquo ».</div>
     ${_palmaresMoisHTML(ms,mois)}
   </div>`;
 }
@@ -9198,25 +9275,48 @@ function _dessinerCarteJoueurMois(d,logoImg){
     centre(nom,s,y+s,'#ffffff','800'); y+=s+10;
     centre(_fmtJdm(l),tailleStat,y+tailleStat+4,'#c7cbe0','400'); y+=tailleStat+30;
   });
-  // Autres distinctions
-  const yC=Math.max(y+40,1010);
-  x.strokeStyle='rgba(255,255,255,.18)'; x.lineWidth=2; x.beginPath(); x.moveTo(100,yC-30); x.lineTo(W-100,yC-30); x.stroke();
+  // Autres distinctions : 4 lignes pleine largeur (libellé à gauche, noms à droite)
+  const yR=Math.max(y+20,930);
+  x.strokeStyle='rgba(255,255,255,.18)'; x.lineWidth=2; x.beginPath(); x.moveTo(100,yR-20); x.lineTo(W-100,yR-20); x.stroke();
   const cases=[
     ['⚽','MEILLEUR BUTEUR',d.p.buteurs,_fmtButeur],
     ['🎯','MEILLEUR PASSEUR',d.p.passeurs,_fmtPasseur],
-    ['🧤','MEILLEUR GARDIEN',d.p.gardiens,_fmtGardien]
+    ['🧤','MEILLEUR GARDIEN',d.p.gardiens,_fmtGardien],
+    ['📅','ASSIDU DU MOIS',d.p.assidus,_fmtAssidu]
   ];
-  const cw=(W-160)/3;
+  const rowH=Math.min(88,(H-95-yR)/cases.length);
+  const xL=100, xR=W-100, xTxt=xL+400, wTxt=xR-xTxt;
+  x.textAlign='left'; x.textBaseline='middle';
   cases.forEach((cs,i)=>{
-    const cx=80+cw*(i+0.5), grp=cs[2][0];
-    x.fillStyle='#ffffff'; x.font=`400 56px ${FONT}`; x.fillText(cs[0],cx,yC+60);
-    x.fillStyle='#9aa0c3'; x.font=`600 22px ${FONT}`; x.fillText(cs[1],cx,yC+105);
-    if(!grp){ x.fillStyle='#9aa0c3'; x.font=`400 30px ${FONT}`; x.fillText('—',cx,yC+155); return; }
-    const noms=grp.items.map(l=>l.j.nom).join(' & ');
-    const s=fit(noms,34,'700',cw-24);
-    x.fillStyle='#ffffff'; x.font=`700 ${s}px ${FONT}`; x.fillText(noms,cx,yC+155);
-    if(grp.items.length===1){ x.fillStyle='#c7cbe0'; x.font=`400 22px ${FONT}`; x.fillText(cs[3](grp.items[0]).split(' · ')[0],cx,yC+190); }
+    const cy=yR+rowH*(i+0.5), grp=cs[2][0];
+    x.fillStyle='#ffffff'; x.font=`400 ${Math.min(44,rowH*0.6)}px ${FONT}`; x.fillText(cs[0],xL,cy);
+    x.fillStyle='#9aa0c3'; x.font=`600 24px ${FONT}`; x.fillText(cs[1],xL+70,cy-14);
+    x.textAlign='right';
+    if(!grp){ x.fillStyle='#9aa0c3'; x.font=`400 30px ${FONT}`; x.fillText('—',xR,cy); x.textAlign='left'; return; }
+    const its=(i===3)?cs[2].flatMap(g=>g.items).slice(0,5):grp.items;
+    const noms=its.map(l=>l.j.nom);
+    const stats=its.map(l=>cs[3](l).split(' · ')[0]);
+    const stat=stats.every(t=>t===stats[0])?stats[0]:'';
+    let txt=noms.join(', '), sz=34;
+    x.font=`700 ${sz}px ${FONT}`;
+    while(x.measureText(txt).width>wTxt-(stat?0:0) && sz>24){ sz--; x.font=`700 ${sz}px ${FONT}`; }
+    let lines=[txt];
+    if(x.measureText(txt).width>wTxt){
+      sz=26; x.font=`700 ${sz}px ${FONT}`;
+      lines=[]; let cur='';
+      noms.forEach(n=>{ const t=cur?cur+', '+n:n; if(x.measureText(t).width<=wTxt||!cur) cur=t; else { lines.push(cur); cur=n; } });
+      lines.push(cur);
+      if(lines.length>2){ const reste=noms.length-lines.slice(0,2).join(', ').split(', ').length; lines=lines.slice(0,2); lines[1]+=' +'+Math.max(reste,1); }
+      lines=lines.map(l=>{ while(x.measureText(l).width>wTxt && l.length>3) l=l.slice(0,-2).trimEnd()+'…'; return l; });
+    }
+    x.fillStyle='#ffffff'; x.font=`700 ${sz}px ${FONT}`;
+    const lh=sz+4;
+    let ty=cy-(lines.length*lh)/2+lh/2;
+    lines.forEach(l=>{ x.fillText(l,xR,ty); ty+=lh; });
+    x.textAlign='left';
+    if(stat){ x.fillStyle='#ffd23f'; x.font=`700 24px ${FONT}`; x.fillText(stat,xL+70,cy+18); }
   });
+  x.textAlign='center'; x.textBaseline='alphabetic';
   // Pied de carte
   const pied=`${club?club+' · ':''}${d.p.saison?'Saison '+d.p.saison:''}`;
   if(pied) centre(pied,28,H-70,'#9aa0c3','400');
@@ -9275,7 +9375,7 @@ function bilanJoueurData(j,saison,du,au,comp,ctx){
   const ms=_bMatchsPeriode(saison,du,au,comp);
   const msF=ms.filter(m=>{ const f=feuilles[m.id]; return f&&f.presents&&f.presents.length; });
   const d={j,saison,du,au,comp,nbMatchsEquipe:msF.length,joues:0,buts:0,passes:0,jaunes:0,rouges:0,mvp:0,notes:[],cs:0,enc:0,v:0,n:0,def:0,
-    meilleurNote:null,meilleurButs:null,parMois:{},gk:j.poste==='G',nbSeances:0,seancesPresent:0,titres:{jdm:[],but:[],pas:[],gar:[]}};
+    meilleurNote:null,meilleurButs:null,parMois:{},gk:j.poste==='G',nbSeances:0,seancesPresent:0,titres:{jdm:[],but:[],pas:[],gar:[],ass:[]}};
   const jidS=String(j.id);
   msF.forEach(m=>{
     const f=feuilles[m.id];
@@ -9294,7 +9394,7 @@ function bilanJoueurData(j,saison,du,au,comp,ctx){
     }
     if(b>0&&(!d.meilleurButs||b>d.meilleurButs.b)) d.meilleurButs={b,m};
     const enc=val(f.encaisses);
-    if(j.poste==='G'){ const bcs=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0); d.enc+=enc+bcs; if(enc+bcs===0) d.cs++; }
+    if(j.poste==='G'){ const bcs=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0); d.enc+=enc+bcs; if(scoreEffectif(m).butsEux===0) d.cs++; }
     else if(enc>0){ d.enc+=enc; d.gk=true; }
     const s=scoreEffectif(m);
     if(s.butsNous>s.butsEux) d.v++; else if(s.butsNous===s.butsEux) d.n++; else d.def++;
@@ -9315,6 +9415,7 @@ function bilanJoueurData(j,saison,du,au,comp,ctx){
     if(a(p.buteurs)) d.titres.but.push(k);
     if(a(p.passeurs)) d.titres.pas.push(k);
     if(a(p.gardiens)) d.titres.gar.push(k);
+    if(a(p.assidus)) d.titres.ass.push(k);
   });
   d.indispo=indispoJoueurData(j,saison,du,au,comp);
   d.noteMoy=d.notes.length?d.notes.reduce((s,x)=>s+x,0)/d.notes.length:null;
@@ -9360,13 +9461,13 @@ function bilanPageHTML(d,commentaire){
   const chip=(txt,bg,fg)=>`<span style="display:inline-block;padding:3px 11px;border-radius:999px;background:${bg};color:${fg};font-weight:700;font-size:12px;margin-right:6px">${txt}</span>`;
   const titre=t=>`<div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:${C.mut};margin:0 0 6px">${t}</div>`;
   const dist=[];
-  [['jdm','🏆','Joueur du mois'],['but','⚽','Meilleur buteur du mois'],['pas','🎯','Meilleur passeur du mois'],['gar','🧤','Meilleur gardien du mois']].forEach(([k,ic,lab])=>{
+  [['jdm','🏆','Joueur du mois'],['but','⚽','Meilleur buteur du mois'],['pas','🎯','Meilleur passeur du mois'],['gar','🧤','Meilleur gardien du mois'],['ass','📅','Assidu du mois']].forEach(([k,ic,lab])=>{
     if(d.titres[k].length) dist.push(`${ic} ${lab} ×${d.titres[k].length} <span style="color:${C.mut}">(${d.titres[k].map(m=>_bEsc(_labMois(m,true).replace(/\s?\d{4}$/,''))).join(', ')})</span>`);
   });
   if(d.mvp) dist.push(`🏅 Homme du match ×${d.mvp}`);
   const graph=_bGraphNotes(d.parMois);
   const indBloc=ind.jours>0?`<div style="margin-bottom:14px">${titre('Indisponibilités')}
-      <div style="font-size:13.5px;margin-bottom:4px">${ind.blessures.n?`🩹 ${_pl(ind.blessures.n,'blessure')} · ${_pl(ind.blessures.jours,'jour')}`:''}${ind.blessures.n&&ind.suspensions.n?' &nbsp;·&nbsp; ':''}${ind.suspensions.n?`🚫 ${_pl(ind.suspensions.n,'suspension')} · ${_pl(ind.suspensions.jours,'jour')}`:''} &nbsp;—&nbsp; <strong>${_pl(ind.matchsManques,'match')}</strong> et <strong>${_pl(ind.seancesManquees,'séance')}</strong> manqué${(ind.matchsManques+ind.seancesManquees)>1?'s':''}</div>
+      <div style="font-size:13.5px;margin-bottom:4px">${ind.blessures.n?`🩹 ${_pl(ind.blessures.n,'blessure')} · ${_pl(ind.blessures.jours,'jour')}`:''}${ind.blessures.n&&ind.suspensions.n?' &nbsp;·&nbsp; ':''}${ind.suspensions.n?`🚫 ${_pl(ind.suspensions.n,'suspension')} · ${_pl(ind.suspensions.jours,'jour')}`:''} &nbsp;—&nbsp; <strong>${_pl(ind.matchsManques,'match')}</strong> et <strong>${_pl(ind.seancesManquees,'séance')}</strong> manqué${(ind.matchsManques+ind.seancesManquees)>1?'s':''}${ind.matchsSansFeuille?` <span style="color:${C.mut};font-size:12px">(+${_pl(ind.matchsSansFeuille,'match')} sans feuille, non compté${ind.matchsSansFeuille>1?'s':''})</span>`:''}</div>
       <div style="font-size:12.5px;color:${C.mut};line-height:1.6">${ind.episodes.map(e=>`${e.type==='Suspendu'?'🚫':'🩹'} ${_bEsc(e.motif||(e.type==='Suspendu'?'Suspension':'Blessure'))} : ${dfr(e.a)} → ${e.enCours?'en cours':dfr(e.z)} (${_pl(e.jours,'jour')})`).join('<br>')}</div></div>`:'';
   const best=[];
   if(d.meilleurNote) best.push(`Meilleure note : <strong>${d.meilleurNote.note}/10</strong> contre ${_bEsc(d.meilleurNote.m.adversaire||'—')} (${dfr(d.meilleurNote.m.date)})`);
@@ -9534,7 +9635,7 @@ function _dessinerBilanImage(d,logoImg){
   y+=2*(th+24)+10;
   centre(`Bilan des matchs joués :  ${d.v} V  ·  ${d.n} N  ·  ${d.def} D`,32,y+30,'#ffffff','600'); y+=62;
   const lignes=[];
-  [['jdm','🏆','Joueur du mois'],['but','⚽','Meilleur buteur du mois'],['pas','🎯','Meilleur passeur du mois'],['gar','🧤','Meilleur gardien du mois']].forEach(([k,ic,lab])=>{
+  [['jdm','🏆','Joueur du mois'],['but','⚽','Meilleur buteur du mois'],['pas','🎯','Meilleur passeur du mois'],['gar','🧤','Meilleur gardien du mois'],['ass','📅','Assidu du mois']].forEach(([k,ic,lab])=>{
     if(d.titres[k].length) lignes.push(`${ic} ${lab} ×${d.titres[k].length}`);
   });
   if(d.gk&&(d.cs||d.enc)) lignes.push(`🧤 ${_pl(d.cs,'clean sheet')} · ${_pl(d.enc,'but')} encaissé${d.enc>1?'s':''}`);
@@ -9551,6 +9652,7 @@ function _dessinerBilanImage(d,logoImg){
 //  Une anomalie acceptée peut être « ignorée » (mémorisé sur cet appareil et synchronisé avec le club).
 // ══════════════════════════════════════════════
 let _cListe=[], _cEtat={infos:false,ignores:false};
+const _C_CATS=['Matchs','Entraînements','Blessures','Joueurs'];
 function _cIgnores(){ try{ return JSON.parse(localStorage.getItem(eqKey('controle_ignores'))||'[]'); }catch(e){ return []; } }
 function _cSaveIgnores(a){ localStorage.setItem(eqKey('controle_ignores'),JSON.stringify(a)); }
 
@@ -9622,6 +9724,39 @@ function calculerAnomalies(){
     const inc=(e.presents||[]).filter(p=>!getJoueur(+p));
     if(inc.length) add(`E:inconnu:${e.id}`,'warn','Entraînements',`${lib} : ${_pl(inc.length,'joueur')} présent${inc.length>1?'s':''} absent${inc.length>1?'s':''} de l'effectif`,act);
   });
+  // ── Blessures et suspensions ──
+  const typ=t=>t==='Suspendu'?'suspension':'blessure';
+  joueurs.forEach(j=>{
+    const eps=(j.indispos||[]).filter(e=>e&&e.debut), nomc=`${j.nom} ${j.prenom}`, aj={type:'joueur',id:j.id}, open=eps.find(e=>!e.fin);
+    if(open){
+      const jours=_iJours(open.debut,today<open.debut?open.debut:today);
+      if(open.estime) add(`B:est:${j.id}`,'warn','Blessures',`${nomc} : début de ${typ(open.type)} estimé au ${_iDfr(open.debut)} (date d'enregistrement par l'appli) — renseigne la vraie date et le motif dans sa fiche`,aj);
+      else if(!open.motif) add(`B:motif:${j.id}`,'info','Blessures',`${nomc} : ${typ(open.type)} en cours depuis le ${_iDfr(open.debut)} sans motif renseigné`,aj);
+      if(j.retourPrevu){ const n=_iEcart(today,j.retourPrevu); if(n<0) add(`B:retour:${j.id}`,'warn','Blessures',`${nomc} : retour prévu le ${_iDfr(j.retourPrevu)} dépassé de ${_pl(-n,'jour')} (toujours déclaré ${open.type==='Suspendu'?'suspendu':'blessé'})`,aj); }
+      else if(jours>=14) add(`B:sansretour:${j.id}`,'info','Blessures',`${nomc} : ${typ(open.type)} depuis ${_pl(jours,'jour')} sans date de retour prévue`,aj);
+    }
+    eps.forEach((e,i)=>{ if(e.fin&&e.fin<e.debut) add(`B:inc:${j.id}:${i}`,'err','Blessures',`${nomc} : période de ${typ(e.type)} dont la fin (${_iDfr(e.fin)}) précède le début (${_iDfr(e.debut)})`,{type:'historique'}); });
+    const valides=eps.filter(e=>!e.fin||e.fin>=e.debut).slice().sort((a,b)=>String(a.debut).localeCompare(String(b.debut)));
+    for(let i=1;i<valides.length;i++){ const fp=valides[i-1].fin||today; if(valides[i].debut<fp) add(`B:chev:${j.id}:${i}`,'warn','Blessures',`${nomc} : deux périodes d'indisponibilité se chevauchent (${_iDfr(valides[i].debut)} / fin de la précédente le ${_iDfr(fp)})`,{type:'historique'}); }
+  });
+  matchs.forEach(m=>{
+    if(m.annule||!m.date||m.date>today) return;
+    const f=feuilles[m.id]; if(!f||!f.presents||!f.presents.length) return;
+    const bl=[], su=[];
+    f.presents.forEach(p=>{
+      const j=getJoueur(+p); if(!j||!estRetenu(f,+p)) return;
+      const e=(j.indispos||[]).find(x=>x&&x.debut&&m.date>=x.debut&&m.date<=(x.fin||today));
+      if(e) (e.type==='Suspendu'?su:bl).push(j.nom);
+    });
+    const lib=`Match du ${dfr(m.date)} contre ${m.adversaire||'?'}`;
+    if(su.length) add(`B:matchsusp:${m.id}`,'warn','Blessures',`${lib} : ${su.join(', ')} convoqué${su.length>1?'s':''} alors que déclaré${su.length>1?'s':''} suspendu${su.length>1?'s':''} à cette date`,{type:'match',id:m.id});
+    if(bl.length) add(`B:matchbles:${m.id}`,'warn','Blessures',`${lib} : ${bl.join(', ')} convoqué${bl.length>1?'s':''} alors que déclaré${bl.length>1?'s':''} blessé${bl.length>1?'s':''} à cette date`,{type:'match',id:m.id});
+  });
+  entrainements.forEach(e=>{
+    if(e.annule||!e.date||e.date>today) return;
+    const l=(e.presents||[]).map(p=>getJoueur(+p)).filter(Boolean).filter(j=>(j.indispos||[]).some(x=>x&&x.debut&&x.type!=='Suspendu'&&e.date>=x.debut&&e.date<=(x.fin||today)));
+    if(l.length) add(`B:seance:${e.id}`,'info','Blessures',`Séance du ${dfr(e.date)} : ${l.map(j=>j.nom).join(', ')} noté${l.length>1?'s':''} présent${l.length>1?'s':''} pendant une blessure (participation partielle, ou dates à vérifier)`,{type:'seance',id:e.id});
+  });
   // ── Joueurs ──
   const parNum={}, parNom={};
   joueurs.forEach(j=>{ (parNum[j.numero]=parNum[j.numero]||[]).push(j); const k=_cNomNorm(j.nom+' '+j.prenom); (parNom[k]=parNom[k]||[]).push(j); });
@@ -9664,9 +9799,9 @@ function _renderControle(){
       </div></div>`;
   const groupe=(cat,arr)=>{ const v=arr.filter(a=>a.cat===cat); return v.length?`<div style="margin-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-muted)">${cat} (${v.length})</div>${v.map(a=>ligne(a,tous.indexOf(a),arr===ignorees)).join('')}</div>`:''; };
   const visibles=actives.filter(a=>_cEtat.infos||a.niv!=='info');
-  const corps=visibles.length?['Matchs','Entraînements','Joueurs'].map(c=>groupe(c,visibles)).join(''):
+  const corps=visibles.length?_C_CATS.map(c=>groupe(c,visibles)).join(''):
     `<div style="padding:26px;text-align:center;font-size:14px">✅ Aucune anomalie à signaler${nI&&!_cEtat.infos?` <div style="font-size:12px;color:var(--texte-muted);margin-top:6px">(${nI} information${nI>1?'s':''} masquée${nI>1?'s':''})</div>`:''}</div>`;
-  const ignBloc=_cEtat.ignores&&ignorees.length?`<div style="margin-top:18px;padding-top:6px;border-top:2px solid var(--gris-border)"><div style="font-size:12px;color:var(--texte-muted)">Anomalies ignorées</div>${['Matchs','Entraînements','Joueurs'].map(c=>groupe(c,ignorees)).join('')}</div>`:'';
+  const ignBloc=_cEtat.ignores&&ignorees.length?`<div style="margin-top:18px;padding-top:6px;border-top:2px solid var(--gris-border)"><div style="font-size:12px;color:var(--texte-muted)">Anomalies ignorées</div>${_C_CATS.map(c=>groupe(c,ignorees)).join('')}</div>`:'';
   ov.innerHTML=`<div style="background:var(--gris-panel);border:1px solid var(--gris-border);border-radius:14px;width:min(860px,98vw);max-height:94vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:16px 20px 8px;display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="font-size:18px;margin:0">🔍 Contrôle des données</h2><button type="button" class="btn btn-secondary" onclick="fermerControle()">✖ Fermer</button></div>
     <div style="padding:0 20px 8px;font-size:12.5px;color:var(--texte-muted)">${nE} à corriger · ${nW} à vérifier · ${nI} information${nI>1?'s':''}${ignorees.length?` · ${ignorees.length} ignorée${ignorees.length>1?'s':''}`:''}</div>
@@ -9687,6 +9822,7 @@ function ouvrirAnomalie(idx){
   else if(ac.type==='matchmodal'){ showTab('resultats'); openMatchModal(ac.id); }
   else if(ac.type==='seance'){ showTab('entrainements'); openEntrainementModal(ac.id); }
   else if(ac.type==='joueur'){ showTab('licences'); openModal(ac.id); }
+  else if(ac.type==='historique'){ ouvrirHistoriqueIndispos(); }
 }
 function ignorerAnomalie(idx){ const a=_cListe[idx]; if(!a) return; const ign=_cIgnores(); if(!ign.includes(a.key)) ign.push(a.key); _cSaveIgnores(ign); _renderControle(); majBadgeControle(); }
 function retablirAnomalie(idx){ const a=_cListe[idx]; if(!a) return; _cSaveIgnores(_cIgnores().filter(k=>k!==a.key)); _renderControle(); majBadgeControle(); }
@@ -9733,6 +9869,10 @@ function _indispoApresSauvegarde(prev,statut,debutSaisi,motif){
   ep.push({type:statut,debut:debutSaisi||today,fin:'',motif:motif||''});
   return ep;
 }
+// Un match n'est « manqué » que s'il a une feuille de match (liste des présents saisie) où le joueur ne figure pas parmi les convoqués.
+// Les matchs sans feuille sont comptés à part : on ne sait pas qui y a joué.
+function _iAFeuille(m){ const f=feuilles[m.id]; return !!(f&&f.presents&&f.presents.length); }
+function _iJoueurPresent(m,j){ const f=feuilles[m.id]; return !!(f&&f.presents&&f.presents.some(p=>+p===+j.id)&&estRetenu(f,j.id)); }
 // Calcul des indicateurs sur la saison filtrée (type : '' = les deux, 'Blessé' ou 'Suspendu')
 function calcIndispos(fs,fc,type){
   reconcilierIndispos();
@@ -9740,7 +9880,7 @@ function calcIndispos(fs,fc,type){
   const du=b.du, au=(b.au&&b.au<today)?b.au:(fs?today:'');
   const ms=matchs.filter(m=>!m.annule&&!matchEstAVenir(m)&&(!fs||(m.saison||getSaisonCourante())===fs)&&(!fc||m.comp===fc)).sort((a,c)=>String(a.date).localeCompare(String(c.date)));
   const ents=entrainements.filter(e=>!e.annule&&e.date<=today&&(!du||e.date>=du)&&(!au||e.date<=au));
-  const jouePas=(m,j)=>{ const f=feuilles[m.id]; return !(f&&f.presents&&f.presents.some(p=>+p===+j.id)&&estRetenu(f,j.id)); };
+  const manque=(m,j)=>_iAFeuille(m)&&!_iJoueurPresent(m,j);
   const episodes=[];
   joueurs.forEach(j=>{
     (j.indispos||[]).forEach(e=>{
@@ -9750,13 +9890,14 @@ function calcIndispos(fs,fc,type){
       const a=(du&&d0<du)?du:d0, z=(au&&d1>au)?au:d1;
       if(z<a) return;
       episodes.push({j,e,a,z,jours:_iJours(a,z),
-        matchsManques:ms.filter(m=>m.date>=a&&m.date<=z&&jouePas(m,j)).length,
+        matchsManques:ms.filter(m=>m.date>=a&&m.date<=z&&manque(m,j)).length,
+        matchsSansFeuille:ms.filter(m=>m.date>=a&&m.date<=z&&!_iAFeuille(m)).length,
         seancesManquees:ents.filter(x=>x.date>=a&&x.date<=z&&!(x.presents||[]).some(p=>+p===+j.id)).length,
         enCours:!e.fin});
     });
   });
   const parMap={};
-  episodes.forEach(x=>{ const o=parMap[x.j.id]||(parMap[x.j.id]={j:x.j,episodes:0,jours:0,matchsManques:0,seancesManquees:0,enCours:false}); o.episodes++; o.jours+=x.jours; o.matchsManques+=x.matchsManques; o.seancesManquees+=x.seancesManquees; if(x.enCours) o.enCours=true; });
+  episodes.forEach(x=>{ const o=parMap[x.j.id]||(parMap[x.j.id]={j:x.j,episodes:0,jours:0,matchsManques:0,matchsSansFeuille:0,seancesManquees:0,enCours:false}); o.episodes++; o.jours+=x.jours; o.matchsManques+=x.matchsManques; o.matchsSansFeuille+=x.matchsSansFeuille; o.seancesManquees+=x.seancesManquees; if(x.enCours) o.enCours=true; });
   const parJoueur=Object.values(parMap).sort((a,c)=>c.jours-a.jours||c.matchsManques-a.matchsManques||String(a.j.nom).localeCompare(String(c.j.nom),'fr'));
   // Nombre de joueurs indisponibles à chaque match de la période
   const parMatch=ms.map(m=>new Set(episodes.filter(x=>m.date>=x.a&&m.date<=x.z).map(x=>x.j.id)).size);
@@ -9764,11 +9905,14 @@ function calcIndispos(fs,fc,type){
   const actuels=joueurs.filter(j=>(j.indispos||[]).some(e=>!e.fin&&(!type||e.type===type))).map(j=>{
     const e=j.indispos.find(x=>!x.fin);
     return {j,e,jours:_iJours(e.debut,today<e.debut?e.debut:today),
-      matchsManques:matchs.filter(m=>!m.annule&&!matchEstAVenir(m)&&m.date>=e.debut&&m.date<=today&&jouePas(m,j)).length};
+      matchsManques:matchs.filter(m=>!m.annule&&!matchEstAVenir(m)&&m.date>=e.debut&&m.date<=today&&manque(m,j)).length,
+      matchsSansFeuille:matchs.filter(m=>!m.annule&&!matchEstAVenir(m)&&m.date>=e.debut&&m.date<=today&&!_iAFeuille(m)).length};
   }).sort((a,c)=>c.jours-a.jours);
   return {episodes,parJoueur,actuels,nbEpisodes:episodes.length,totalJours,
     dureeMoy:episodes.length?totalJours/episodes.length:0,
     totalMatchsManques:episodes.reduce((s,x)=>s+x.matchsManques,0),
+    totalMatchsSansFeuille:episodes.reduce((s,x)=>s+x.matchsSansFeuille,0),
+    nbMatchsFeuille:ms.filter(_iAFeuille).length,
     totalSeancesManquees:episodes.reduce((s,x)=>s+x.seancesManquees,0),
     nbMatchs:ms.length,nbSeances:ents.length,
     moyParMatch:parMatch.length?parMatch.reduce((s,v)=>s+v,0)/parMatch.length:0,
@@ -9788,18 +9932,19 @@ function indispoJoueurData(j,saison,du,au,comp){
   const duE=du||bs.du, auRaw=au||bs.au, auE=(auRaw&&auRaw<today)?auRaw:today;
   const ms=_bMatchsPeriode(saison,du,au,comp);
   const ents=entrainements.filter(e=>!e.annule&&e.date<=today&&(!duE||e.date>=duE)&&(!auE||e.date<=auE));
-  const jouePas=m=>{ const f=feuilles[m.id]; return !(f&&f.presents&&f.presents.some(p=>+p===+j.id)&&estRetenu(f,j.id)); };
-  const d={episodes:[],jours:0,matchsManques:0,seancesManquees:0,blessures:{n:0,jours:0},suspensions:{n:0,jours:0}};
+  const manque=m=>_iAFeuille(m)&&!_iJoueurPresent(m,j);
+  const d={episodes:[],jours:0,matchsManques:0,matchsSansFeuille:0,seancesManquees:0,blessures:{n:0,jours:0},suspensions:{n:0,jours:0}};
   (j.indispos||[]).forEach(e=>{
     const d0=e.debut, d1=e.fin||today;
     if(!d0||(duE&&d1<duE)||(auE&&d0>auE)) return;
     const a=(duE&&d0<duE)?duE:d0, z=(auE&&d1>auE)?auE:d1;
     if(z<a) return;
     const jours=_iJours(a,z);
-    const mm=ms.filter(m=>m.date>=a&&m.date<=z&&jouePas(m)).length;
+    const mm=ms.filter(m=>m.date>=a&&m.date<=z&&manque(m)).length;
+    const sf=ms.filter(m=>m.date>=a&&m.date<=z&&!_iAFeuille(m)).length;
     const ss=ents.filter(x=>x.date>=a&&x.date<=z&&!(x.presents||[]).some(p=>+p===+j.id)).length;
-    d.episodes.push({type:e.type,motif:e.motif||'',a,z,jours,matchsManques:mm,seancesManquees:ss,enCours:!e.fin,estime:!!e.estime});
-    d.jours+=jours; d.matchsManques+=mm; d.seancesManquees+=ss;
+    d.episodes.push({type:e.type,motif:e.motif||'',a,z,jours,matchsManques:mm,matchsSansFeuille:sf,seancesManquees:ss,enCours:!e.fin,estime:!!e.estime});
+    d.jours+=jours; d.matchsManques+=mm; d.matchsSansFeuille+=sf; d.seancesManquees+=ss;
     const t=e.type==='Suspendu'?d.suspensions:d.blessures; t.n++; t.jours+=jours;
   });
   d.episodes.sort((x,y)=>String(x.a).localeCompare(String(y.a)));
@@ -9818,8 +9963,14 @@ function indispoKpiHTML(){
     return `<div>${_I_TYPES[j.statut].ico} ${_bEsc(j.nom)}${dep}${ret}</div>`;
   }).join('');
   const tip=act.length?`<div class="kpi-tip"><div class="kpi-tip-title">Indisponibles en ce moment</div>${rows}</div>`:'';
-  const sous=act.length?`<div style="font-size:11px;color:var(--texte-muted)">${bl?_pl(bl,'blessé'):''}${bl&&su?' · ':''}${su?_pl(su,'suspendu'):''}</div>`:`<div style="font-size:11px;color:var(--texte-muted)">Effectif au complet</div>`;
-  return `<div class="kpi-card"><div class="kpi-label">🩹 Indisponibles</div><div class="kpi-val" style="color:${act.length?'var(--rouge)':'var(--texte)'}">${act.length}<span style="font-size:14px;color:var(--texte-muted)"> / ${joueurs.length}</span></div>${sous}${tip}</div>`;
+  // Comme les « Top 3 » : un nom par ligne (les plus longues indisponibilités d'abord), le détail complet reste dans l'infobulle.
+  const MAX=5;
+  const tries=act.map(j=>{ const e=(j.indispos||[]).find(x=>!x.fin); return {j,jours:e?_iJours(e.debut,today<e.debut?e.debut:today):0,retard:!!(j.retourPrevu&&j.retourPrevu<today)}; })
+    .sort((a,b)=>b.jours-a.jours||String(a.j.nom).localeCompare(String(b.j.nom),'fr'));
+  const lignes=tries.slice(0,MAX).map(a=>`<div>${_I_TYPES[a.j.statut].ico} ${_bEsc(a.j.nom)} <span style="color:var(--texte-muted)">(${a.jours?a.jours+' j':'—'}${a.retard?' <span title="Retour prévu dépassé">⚠️</span>':''})</span></div>`).join('')
+    +(tries.length>MAX?`<div style="color:var(--texte-muted)">+ ${tries.length-MAX} autre${tries.length-MAX>1?'s':''}</div>`:'');
+  const corps=act.length?lignes:'<div style="color:var(--texte-muted)">✅ Effectif au complet</div>';
+  return `<div class="kpi-card"><div class="kpi-label">🩹 Indisponibles <span style="text-transform:none;letter-spacing:0;color:var(--texte-muted)">· ${act.length} / ${joueurs.length}${bl&&su?' · '+_pl(bl,'blessé')+', '+_pl(su,'suspendu'):''}</span></div><div class="kpi-val" style="font-size:13px;line-height:1.6">${corps}</div>${tip}</div>`;
 }
 function setIndispoType(v){ _indispoType=v; renderDashboard(); }
 // Carte du Dashboard
@@ -9832,14 +9983,14 @@ function indispoCardHTML(fs,fc){
       <div style="font-weight:700;min-width:150px">${_I_TYPES[a.e.type].ico} ${_bEsc(a.j.nom)} <span style="font-weight:400;color:var(--texte-muted)">${_bEsc(a.j.prenom)}</span></div>
       <div style="color:var(--texte-muted)">${a.e.motif?_bEsc(a.e.motif)+' · ':''}depuis le ${_iDfr(a.e.debut)}${a.e.estime?' <span title="Date de début estimée : corrige-la dans la fiche du joueur ou dans l\'historique">(estimé)</span>':''} · ${_pl(a.jours,'jour')}</div>
       <div>${_iRetourTxt(a.j)}</div>
-      <div style="color:var(--texte-muted)">${_pl(a.matchsManques,'match')} manqué${a.matchsManques>1?'s':''}</div></div>`).join('')
+      <div style="color:var(--texte-muted)">${_pl(a.matchsManques,'match')} manqué${a.matchsManques>1?'s':''}${a.matchsSansFeuille?` <span title="Matchs sans feuille de match : on ne sait pas si le joueur y a participé">(+${a.matchsSansFeuille} sans feuille)</span>`:''}</div></div>`).join('')
     :`<div style="padding:10px 0;font-size:13px;color:var(--texte-muted)">✅ Aucun joueur indisponible en ce moment.</div>`;
   const maxJ=Math.max(1,...d.parJoueur.map(x=>x.jours));
   const lignes=d.parJoueur.slice(0,10).map(x=>`<tr>
       <td><strong>${_bEsc(x.j.nom)}</strong> <span style="color:var(--texte-muted);font-size:11px">${_bEsc(x.j.prenom)}</span>${x.enCours?' <span title="Indisponible en ce moment">🔴</span>':''}</td>
       <td>${x.episodes}</td>
       <td><strong>${x.jours}</strong><span class="bar-wrap"><span class="bar-fill" style="width:${(x.jours/maxJ*100).toFixed(0)}%"></span></span></td>
-      <td>${x.matchsManques}${d.nbMatchs?` <span style="color:var(--texte-muted);font-size:11px">(${Math.round(100*x.matchsManques/d.nbMatchs)} %)</span>`:''}</td>
+      <td>${x.matchsManques}${d.nbMatchsFeuille?` <span style="color:var(--texte-muted);font-size:11px">(${Math.round(100*x.matchsManques/d.nbMatchsFeuille)} %)</span>`:''}</td>
       <td>${x.seancesManquees}</td></tr>`).join('');
   const table=d.parJoueur.length?`<div style="overflow-x:auto"><table style="width:100%"><thead><tr><th>Joueur</th><th>Épisodes</th><th>Jours</th><th>Matchs manqués</th><th>Séances manquées</th></tr></thead><tbody>${lignes}</tbody></table></div>${d.parJoueur.length>10?`<div style="font-size:11px;color:var(--texte-muted);margin-top:4px">${d.parJoueur.length-10} autre${d.parJoueur.length-10>1?'s':''} joueur${d.parJoueur.length-10>1?'s':''} dans l'historique.</div>`:''}`
     :`<div style="font-size:13px;color:var(--texte-muted);padding:6px 0">Aucune ${nomType} enregistrée sur la période.</div>`;
@@ -9852,7 +10003,7 @@ function indispoCardHTML(fs,fc){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
       ${tuile(d.actuels.length,'En ce moment')}
       ${tuile(d.totalJours,'Jours d\'indisponibilité',_pl(d.nbEpisodes,'épisode')+(d.nbEpisodes?` · moy. ${d.dureeMoy.toFixed(1).replace('.0','')} j`:''))}
-      ${tuile(d.totalMatchsManques,'Matchs manqués','cumul des joueurs')}
+      ${tuile(d.totalMatchsManques,'Matchs manqués','cumul des joueurs'+(d.totalMatchsSansFeuille?` · +${d.totalMatchsSansFeuille} sans feuille non comptés`:''))}
       ${tuile(d.totalSeancesManquees,'Séances manquées','cumul des joueurs')}
       ${tuile(d.nbMatchs?d.moyParMatch.toFixed(1).replace('.0',''):'—','Indisponibles / match',d.nbMatchs?`maximum ${d.maxParMatch}`:'')}
     </div>
@@ -9860,7 +10011,7 @@ function indispoCardHTML(fs,fc){
     ${actuelsHTML}
     <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--texte-muted);margin:14px 0 6px">Bilan par joueur${fs?' — saison '+_bEsc(fs):''}</div>
     ${table}
-    <div style="font-size:11px;color:var(--texte-muted);margin-top:10px">Les durées comptent les jours calendaires. Un match ou une séance est « manqué » s'il tombe pendant la période d'indisponibilité et que le joueur n'y a pas participé.</div>
+    <div style="font-size:11px;color:var(--texte-muted);margin-top:10px">Les durées comptent les jours calendaires. Une séance est « manquée » si elle tombe pendant la période d'indisponibilité et que le joueur n'y est pas noté présent. Un match n'est « manqué » que s'il a une feuille de match où le joueur ne figure pas parmi les convoqués ; les matchs sans feuille ne sont pas comptés (le pourcentage est calculé sur les matchs avec feuille).</div>
   </div>`;
 }
 // ── Historique : ajout, correction, suppression des périodes ──
