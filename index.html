@@ -3810,8 +3810,14 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.121';
+const APP_VERSION='1.122';
 const CHANGELOG=[
+  {
+    version:'1.122', date:'18/11/2026',
+    changes:[
+      "Contre son camp (CSC) : un CSC d'un joueur de champ est désormais bien affiché comme but encaissé par le gardien (feuille de match, récapitulatif et match en direct), et n'est compté qu'une seule fois dans les stats même avec plusieurs gardiens."
+    ]
+  },
   {
     version:'1.121', date:'06/11/2026',
     changes:[
@@ -4613,7 +4619,7 @@ function aggregerStatsJoueurs(msFiltres){
       a.rouges+=+(f.rouges?.[jidS]||f.rouges?.[jidN]||0);
       if(a.j.poste==='G'&&estRetenu(f,jidN)){
         const encFeuille=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
-        const bcsAdv=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0);
+        const bcsAdv=getBcsPourGardien(f,a.j);
         a.encaisses+=encFeuille+bcsAdv;
         // Clean sheet = l'ÉQUIPE n'a encaissé aucun but sur le match (un joueur de champ passé dans le but compte aussi).
         if(scoreEffectif(m).butsEux===0) a.cs++;
@@ -6184,6 +6190,17 @@ function getFeuille(mid){
   return feuilles[mid];
 }
 
+// Buts contre son camp (BCS) de l'équipe : comptés comme buts encaissés par le gardien.
+// Attribués au 1er gardien présent et retenu (évite le double comptage si plusieurs gardiens).
+function retenuG(f,jid){ return estRetenu(f,jid); }
+function getBcsPourGardien(f,j){
+  if(!f||!j||j.poste!=='G') return 0;
+  const total=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0);
+  if(!total) return 0;
+  const gks=(f.presents||[]).filter(id=>estRetenu(f,id)&&(getJoueur(+id)||{}).poste==='G');
+  return (gks.length&&+gks[0]===+j.id)?total:0;
+}
+
 // Un joueur "présent" est-il retenu (= convoqué) pour ce match ?
 function estRetenu(f,jid){
   return !(f.nonRetenus||[]).some(p=>+p===+jid);
@@ -6872,6 +6889,7 @@ function loadFeuille(){
     const note=f.notes[j.id]||0;
     const tj=getTempsJeu(f,j.id);
     const isGK=j.poste==='G';
+    const bcsGK=jouera?getBcsPourGardien(f,j):0;
     const dots=Array.from({length:10},(_,i)=>{
       const v=i+1;
       const col=v<=3?'#f87171':v<=6?'#f5c518':'#4ade80';
@@ -6943,10 +6961,10 @@ function loadFeuille(){
         ${`<div style="display:flex;flex-direction:column;gap:2px">
           <div class="ev-group">
             <button class="ev-plus" style="background:rgba(224,48,48,.2);color:#f87171;border-color:rgba(224,48,48,.4)" onclick="addEvent(${mid},${j.id},'encaisses')" title="${isGK?'Buts encaissés':'Buts encaissés (joueur de champ dans le but)'}">⛔+</button>
-            <span class="ev-count ${encaisses>0?'ev-count-active':''}">${encaisses}</span>
+            <span class="ev-count ${(encaisses+bcsGK)>0?'ev-count-active':''}" ${bcsGK?`title="dont ${bcsGK} CSC"`:''}>${encaisses+bcsGK}</span>
             <button class="ev-minus" onclick="addEvent(${mid},${j.id},'encaisses',true)" ${encaisses>0?'':'disabled'}>−</button>
           </div>
-          ${encaisses>0?`<div class="ev-minutes">${evMins('encaisses')}</div>`:''}
+          ${encaisses>0?`<div class="ev-minutes">${evMins('encaisses')}</div>`:''}${bcsGK?`<div style="font-size:10px;color:#d8b4fe">dont ${bcsGK} CSC</div>`:''}
         </div>`}
       </div>
       ${present?`<div style="display:flex;flex-direction:column;gap:2px;${jouera?'':'opacity:.25;pointer-events:none'}">
@@ -7234,7 +7252,8 @@ function renderFeuilleRecap(mid,f){
     const jidS=String(jid);
     const b=+(f.buts?.[jidS]||0), p=+(f.passes?.[jidS]||0);
     const jn=+(f.jaunes?.[jidS]||0), r=+(f.rouges?.[jidS]||0);
-    const enc=+(f.encaisses?.[jidS]||0);
+    const bcsGK=getBcsPourGardien(f,j);
+    const enc=+(f.encaisses?.[jidS]||0)+bcsGK;
     const bcs=+(f.bcs?.[jidS]||0);
     const pen=+(f.penalties?.[jidS]||0);
     const n=f.notes[jid]||0;
@@ -7952,7 +7971,7 @@ function recalcStatsFromFeuilles(){
       const j=getJoueur(jidN);
       if(j&&j.poste==='G'){
         const encFeuille=+(f.encaisses?.[jidS]||f.encaisses?.[jidN]||0);
-        const bcsAdv=Object.values(f.bcs||{}).reduce((s,v)=>s+(+v||0),0);
+        const bcsAdv=(retenuG(f,jidN)?getBcsPourGardien(f,j):0);
         const enc=encFeuille>0?encFeuille:0;
         cumul[k].encaisses+=enc+bcsAdv;
         if(scoreEffectif(m).butsEux===0) cumul[k].cs++; // clean sheet = aucun but encaissé par l'équipe
@@ -11500,7 +11519,9 @@ function moRender(){
     const jaunes=+(f.jaunes?.[jidS]||0);
     const rouges=+(f.rouges?.[jidS]||0);
     const bcs=+(f.bcs?.[jidS]||0);
+    const bcsGK=getBcsPourGardien(f,j);
     const enc=+(f.encaisses?.[jidS]||0);
+    const encAff=enc+bcsGK;
 
     const evGrp=(type,val,label,cls)=>`
       <div class="mo-ev-group">
@@ -11522,7 +11543,7 @@ function moRender(){
         ${evGrp('jaunes',jaunes,'🟨','mo-ev-yellow')}
         ${evGrp('rouges',rouges,'🟥','mo-ev-red')}
         ${evGrp('bcs',bcs,'BCS','mo-ev-bcs')}
-        ${evGrp('encaisses',enc,'⛔','mo-ev-enc')}
+        ${evGrp('encaisses',enc,'⛔','mo-ev-enc').replace(`<span class="mo-ev-count">${enc}</span>`,`<span class="mo-ev-count"${bcsGK?` title="dont ${bcsGK} CSC"`:''}>${encAff}</span>`)}
       </div>
     </div>`;
   }).join('');
