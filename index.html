@@ -676,8 +676,8 @@ body.viewer-mode .jcr-check{cursor:not-allowed;opacity:.6;}
   top:50%;left:50%;transform:translate(-50%,-44%);
 }
 .spot-nom-tag{
-  color:#fff;text-align:center;width:88px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:#fff;text-align:center;width:max-content;min-width:60px;max-width:120px;
+  white-space:nowrap;overflow:hidden;text-overflow:clip;
   letter-spacing:.07em;text-transform:uppercase;font-weight:800;
   background:linear-gradient(135deg,rgba(0,0,0,.78),rgba(15,15,35,.85));
   backdrop-filter:blur(6px);padding:3px 6px;border-radius:20px;
@@ -1327,6 +1327,21 @@ thead th.sort-desc::after{content:' ↓';opacity:1;color:var(--vert-clair);}
   color:var(--sidebar-text);padding:5px 10px;font-size:13px;outline:none;transition:border-color .15s;}
 .cib-input:focus{border-color:rgba(45,168,88,.7);}
 .cib-sep{color:var(--sidebar-border);font-size:18px;}
+.cib-edit{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;padding-top:8px;border-top:1px dashed var(--terrain-header-border);}
+.cib-summary{width:100%;display:flex;flex-direction:column;gap:8px;}
+.cibs-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--sidebar-text-muted);}
+.cibs-badge{font-weight:800;letter-spacing:.06em;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid;}
+.cibs-badge.D{background:rgba(45,168,88,.18);color:#4ade80;border-color:rgba(45,168,88,.5);}
+.cibs-badge.E{background:rgba(251,146,60,.16);color:#fb923c;border-color:rgba(251,146,60,.5);}
+.cibs-badge.N{background:rgba(148,163,184,.16);color:#cbd5e1;border-color:rgba(148,163,184,.4);}
+.cibs-badge.X{background:rgba(255,255,255,.06);color:var(--sidebar-text-muted);border-color:rgba(255,255,255,.15);}
+.cibs-edit{margin-left:auto;background:none;border:1px solid var(--terrain-header-border);color:var(--sidebar-text-muted);border-radius:8px;padding:3px 9px;font-size:12px;cursor:pointer;}
+.cibs-edit:hover{color:var(--sidebar-text);border-color:rgba(45,168,88,.6);}
+.cibs-vs{display:flex;align-items:center;justify-content:center;gap:10px;}
+.cibs-team{flex:1;min-width:0;text-align:center;font-weight:800;font-size:15px;letter-spacing:.03em;text-transform:uppercase;color:var(--sidebar-text);line-height:1.2;word-break:break-word;}
+.cibs-team.us{color:#4ade80;}
+.cibs-team small{display:block;font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--sidebar-text-muted);margin-bottom:2px;}
+.cibs-v{font-size:11px;font-weight:800;color:var(--sidebar-text-muted);border:1px solid var(--terrain-header-border);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
 /* ══ IMPRESSION ══ */
 .print-header{display:none;width:100%;max-width:480px;padding:8px 0;border-bottom:2px solid #333;margin-bottom:6px;}
@@ -2648,6 +2663,8 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
 
     <!-- Barre match : date / lieu / adversaire — visible à l'écran ET à l'impression -->
     <div class="compo-info-bar" id="compo-info-bar">
+      <div id="cib-summary" class="cib-summary"></div>
+      <div id="cib-edit" class="cib-edit" style="display:none">
       <span class="cib-label">📅</span>
       <input type="date" id="cib-date" class="cib-input" title="Date du match" oninput="saveCompoMeta()">
       <span class="cib-sep">|</span>
@@ -2659,9 +2676,10 @@ header{padding-top:calc(14px + env(safe-area-inset-top));}
         <option value="N">⚖️ Neutre</option>
       </select>
       <span class="cib-sep">|</span>
-      <input type="text" id="cib-adv" class="cib-input" data-field="adversaire" placeholder="Équipe adverse…" style="flex:1;min-width:90px" oninput="saveCompoMeta()">
+      <input type="text" id="cib-adv" class="cib-input" data-field="adversaire" placeholder="Équipe adverse…" style="flex:1;min-width:150px" oninput="saveCompoMeta()">
       <span class="cib-sep" id="cib-sep-plateau" style="display:none;">|</span>
-      <input type="text" id="cib-ville" class="cib-input" placeholder="Ville (Plateau)…" style="flex:1;min-width:90px;display:none" oninput="saveCompoMeta()" readonly>
+      <input type="text" id="cib-ville" class="cib-input" placeholder="Ville…" style="flex:1;min-width:150px;display:none" oninput="saveCompoMeta()" readonly>
+      </div>
     </div>
 
     <!-- En-tête d'impression (masqué à l'écran) -->
@@ -3810,8 +3828,17 @@ function openImport(){ document.getElementById('modal-import-bg').classList.add(
 //  À chaque modification livrée, ajouter une entrée
 //  en tête de tableau (ordre du plus récent au plus ancien).
 // ══════════════════════════════════════════════
-const APP_VERSION='1.122';
+const APP_VERSION='1.124';
 const CHANGELOG=[
+  {
+    version:'1.124', date:'20/11/2026',
+    changes:[
+      "Compo : nouvel en-tête visuel du match — pastille Domicile / Extérieur / Neutre, date en toutes lettres, ville et affiche « Nom de l'équipe VS Adversaire » avec club et catégorie en sous-titre (l'équipe qui reçoit à gauche). Les champs se modifient via le bouton ✏️.",
+      "Compo : les noms des joueurs ne sont plus tronqués sur le terrain (nom complet affiché, taille ajustée si le nom est long).",
+      "Compo : le lieu (domicile / extérieur / neutre) et la ville du match sont de nouveau repris depuis la feuille de match, à l'écran comme à l'impression, y compris pour un match classique avec ville renseignée.",
+      "Compo : la récupération automatique se refait aussi quand le match a été modifié (lieu, ville, adversaire, date) depuis la dernière ouverture de la compo."
+    ]
+  },
   {
     version:'1.122', date:'18/11/2026',
     changes:[
@@ -6808,6 +6835,8 @@ function goToCompoFromFeuille(){
     document.getElementById('cib-lieu').value=m.lieu||'D';
     document.getElementById('cib-adv').value=m.adversaire||'';
     updateCompoPlateauFields(m);
+    localStorage.setItem('foot8_cib_synced_mid', String(mid));
+    saveCompoMeta();
   }
   
   showTab('compo');
@@ -8624,7 +8653,7 @@ function renderSpots(){
     div.dataset.spotId=s.id;
     if(j){
       const display=getSpotDisplay();
-      const nomCourt = j.nom.length > 9 ? j.nom.slice(0,8).trimEnd()+'.' : j.nom;
+      const nomCourt = j.nom;
       const pc = getPC(j.poste);
       let tagContent;
       if(display==='num')        tagContent = j.numero;
@@ -8635,7 +8664,7 @@ function renderSpots(){
           <button class="spot-remove" type="button" onclick="removeFromSpot('${s.id}')">×</button>
           ${shirtSVG(j.poste, j.numero)}
         </div>
-        <div class="spot-nom-tag" style="border-color:${pc.c2}66;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px ${pc.c2}33">${tagContent}</div>`;
+        <div class="spot-nom-tag" style="border-color:${pc.c2}66;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 1px ${pc.c2}33${(display!=='num'&&j.nom.length>9)?`;font-size:${Math.max(6.5,Math.min(10,90/j.nom.length)).toFixed(1)}px;letter-spacing:.02em;padding:3px 5px`:''}">${tagContent}</div>`;
       const sw=div.querySelector('.spot-shirt-wrap');
       sw.setAttribute('draggable','true');
       sw.addEventListener('dragstart',e=>{ e.stopPropagation(); onDragStartSpot(e,j.id,s.id); });
@@ -8743,7 +8772,10 @@ function loadCompoMeta(){
   const mid=parseInt(localStorage.getItem('foot8_active_feuille_match')||'0');
   const m=mid?matchs.find(x=>x.id===mid):null;
   const lastSyncedMid=parseInt(localStorage.getItem('foot8_cib_synced_mid')||'0');
-  const matchChanged=mid!==lastSyncedMid;
+  // Resynchroniser aussi quand les infos du match ont été modifiées depuis la dernière synchro
+  // (lieu, ville, adversaire, date), tout en conservant les retouches manuelles sinon.
+  const sig=m?JSON.stringify([m.date||'',m.lieu||'',m.adversaire||'',getVilleDuMatch(m)]):'';
+  const matchChanged=mid!==lastSyncedMid || (m && sig!==localStorage.getItem('foot8_cib_synced_sig'));
   if(m){
     if((matchChanged||!document.getElementById('cib-date').value) && m.date)
       document.getElementById('cib-date').value=m.date;
@@ -8755,11 +8787,14 @@ function loadCompoMeta(){
       document.getElementById('cib-ville').value=m.plateauVille;
     if((matchChanged||!document.getElementById('cib-ville').value) && isTournoiType(m.comp) && m.tournoiVille)
       document.getElementById('cib-ville').value=m.tournoiVille;
+    if((matchChanged||!document.getElementById('cib-ville').value) && !isPlateauType(m.comp) && !isTournoiType(m.comp) && m.matchVille)
+      document.getElementById('cib-ville').value=m.matchVille;
     // Afficher/cacher le champ ville selon le type de match
-    updateCompoPlateauFields(m);
+    updateCompoPlateauFields(m, matchChanged);
     // Mémoriser ce match comme dernier synchronisé et persister les valeurs
     // affichées, pour que l'auto-remplissage ne soit pas perdu au prochain chargement.
     localStorage.setItem('foot8_cib_synced_mid', String(mid));
+    localStorage.setItem('foot8_cib_synced_sig', sig);
     localStorage.setItem('foot8_cib_date',  document.getElementById('cib-date').value||'');
     localStorage.setItem('foot8_cib_lieu',  document.getElementById('cib-lieu').value||'');
     localStorage.setItem('foot8_cib_adv',   document.getElementById('cib-adv').value||'');
@@ -8771,9 +8806,11 @@ function loadCompoMeta(){
   }
   updatePrintHeader();
 }
-function updateCompoPlateauFields(m){
+function updateCompoPlateauFields(m, force=true){
   const villeField=document.getElementById('cib-ville');
   const villeSep=document.getElementById('cib-sep-plateau');
+  const keep=!force && villeField.value;
+  const _v=villeField.value;
   if(m && isPlateauType(m.comp)){
     villeField.style.display='block';
     villeSep.style.display='block';
@@ -8782,11 +8819,16 @@ function updateCompoPlateauFields(m){
     villeField.style.display='block';
     villeSep.style.display='block';
     villeField.value=m.tournoiVille||'';
+  } else if(m && getVilleDuMatch(m)){
+    villeField.style.display='block';
+    villeSep.style.display='block';
+    villeField.value=getVilleDuMatch(m);
   } else {
     villeField.style.display='none';
     villeSep.style.display='none';
     villeField.value='';
   }
+  if(keep && m && getVilleDuMatch(m)) villeField.value=_v;
 }
 function updatePrintHeader(){
   const d=document.getElementById('cib-date').value;
@@ -8797,8 +8839,39 @@ function updatePrintHeader(){
   const dateTxt=d?new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}):'';
   const titre=a?`${a}`:'Composition';
   document.getElementById('ph-titre').textContent=titre;
-  const meta=[dateTxt,lieuTxt,v?`Plateau: ${v}`:'',`Schéma : ${currentSchema}`].filter(Boolean).join('  ·  ');
+  const meta=[dateTxt,lieuTxt,v?`📍 ${v}`:'',`Schéma : ${currentSchema}`].filter(Boolean).join('  ·  ');
   document.getElementById('ph-meta').textContent=meta;
+  renderCompoSummary();
+}
+function toggleCompoEdit(){
+  const e=document.getElementById('cib-edit');
+  e.style.display=(e.style.display==='none')?'flex':'none';
+}
+function renderCompoSummary(){
+  const box=document.getElementById('cib-summary'); if(!box) return;
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const d=document.getElementById('cib-date').value;
+  const l=document.getElementById('cib-lieu').value;
+  const a=document.getElementById('cib-adv').value.trim();
+  const v=document.getElementById('cib-ville').value.trim();
+  const club=(localStorage.getItem('foot8_club_name')||'').trim();
+  const eq=(typeof equipes!=='undefined'&&equipes.find(e=>e.id===currentEquipeId))||null;
+  const eqNom=eq&&eq.nom?eq.nom:(club||'Mon équipe');
+  const eqCat=eq&&eq.categorie&&eq.categorie!=='Autre'?eq.categorie:'';
+  const sousTitre=[club&&club!==eqNom?club:'',eqCat&&!eqNom.includes(eqCat)?eqCat:''].filter(Boolean).join(' · ');
+  const dateTxt=d?new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'Date ?';
+  const badge={D:'🏠 DOMICILE',E:'✈️ EXTÉRIEUR',N:'⚖️ TERRAIN NEUTRE'}[l]||'📍 LIEU ?';
+  const us=`<div class="cibs-team us">${sousTitre?`<small>${esc(sousTitre)}</small>`:''}${esc(eqNom)}</div>`;
+  const them=`<div class="cibs-team">${a?esc(a):'Adversaire ?'}</div>`;
+  const vs=`<div class="cibs-v">VS</div>`;
+  const left=(l==='E')?them:us, right=(l==='E')?us:them;
+  box.innerHTML=`<div class="cibs-top">
+      <span class="cibs-badge ${l||'X'}">${badge}</span>
+      <span>📅 ${esc(dateTxt)}</span>${v?`<span>📍 ${esc(v)}</span>`:''}
+      <button type="button" class="cibs-edit" onclick="toggleCompoEdit()" title="Modifier les infos du match">✏️</button>
+    </div>
+    <div class="cibs-vs">${left}${vs}${right}</div>`;
+  if(!a && !l){ const e=document.getElementById('cib-edit'); if(e) e.style.display='flex'; }
 }
 window.addEventListener('beforeprint',()=>{ updatePrintHeader(); });
 
